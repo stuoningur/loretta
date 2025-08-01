@@ -50,13 +50,26 @@ class LorettaBot(commands.Bot):
         # Erstelle Datenverzeichnis falls es nicht existiert
         Path("data").mkdir(exist_ok=True)
 
-        # Lade alle Cogs
-        try:
-            await self.load_extension("cogs.serverinfo")
-            await self.load_extension("cogs.command_sync")
-            logger.info("Cogs erfolgreich geladen")
-        except Exception as e:
-            logger.error(f"Fehler beim Laden der Cogs: {e}")
+        # Lade alle Cogs automatisch aus dem cogs-Ordner
+        cogs_dir = Path("cogs")
+        loaded_cogs = 0
+        failed_cogs = 0
+
+        for cog_file in cogs_dir.glob("*.py"):
+            if cog_file.name.startswith("__"):
+                continue
+
+            cog_name = f"cogs.{cog_file.stem}"
+            try:
+                await self.load_extension(cog_name)
+                loaded_cogs += 1
+            except Exception as e:
+                logger.error(f"Fehasler beim Laden von Cog '{cog_name}': {e}")
+                failed_cogs += 1
+
+        logger.info(
+            f"Cog-Ladevorgang abgeschlossen: {loaded_cogs} erfolgreich, {failed_cogs} fehlgeschlagen"
+        )
 
     async def on_ready(self):
         """Wird ausgeführt wenn der Bot bereit ist"""
