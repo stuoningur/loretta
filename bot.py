@@ -53,6 +53,7 @@ class LorettaBot(commands.Bot):
         # Lade alle Cogs
         try:
             await self.load_extension("cogs.serverinfo")
+            await self.load_extension("cogs.command_sync")
             logger.info("Cogs erfolgreich geladen")
         except Exception as e:
             logger.error(f"Fehler beim Laden der Cogs: {e}")
@@ -70,6 +71,23 @@ class LorettaBot(commands.Bot):
                 type=discord.ActivityType.watching, name="über die Server"
             )
         )
+
+        # Synchronisiere Slash-Commands
+        try:
+            # Sync für jeden Server einzeln (sofort verfügbar)
+            total_synced = 0
+            for guild in self.guilds:
+                # Kopiere globale Commands zu jeden Server für sofortige Verfügbarkeit
+                self.tree.copy_global_to(guild=guild)
+                synced = await self.tree.sync(guild=guild)
+                total_synced += len(synced)
+                logger.info(
+                    f"Slash-Commands für Server '{guild.name}' synchronisiert: {len(synced)} Commands"
+                )
+
+            logger.info(f"Gesamt synchronisierte Commands: {total_synced}")
+        except Exception as e:
+            logger.error(f"Fehler beim Synchronisieren der Slash-Commands: {e}")
 
     async def on_guild_join(self, guild):
         """Wird ausgeführt wenn der Bot einem Server beitritt"""
