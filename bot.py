@@ -64,7 +64,7 @@ class LorettaBot(commands.Bot):
                 await self.load_extension(cog_name)
                 loaded_cogs += 1
             except Exception as e:
-                logger.error(f"Fehasler beim Laden von Cog '{cog_name}': {e}")
+                logger.error(f"Fehler beim Laden von Cog '{cog_name}': {e}")
                 failed_cogs += 1
 
         logger.info(
