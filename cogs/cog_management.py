@@ -194,7 +194,7 @@ class CogManagement(commands.Cog):
         # Geladene Cogs
         loaded_cogs = list(self.bot.extensions.keys())
 
-        embed = discord.Embed(title="Cog-Übersicht", color=discord.Color.blue())
+        embed = discord.Embed(title="Cog-Übersicht", color=discord.Color.blurple())
 
         # Verfügbare Cogs anzeigen
         if available_cogs:
@@ -241,7 +241,7 @@ class CogManagement(commands.Cog):
         temp_embed = discord.Embed(
             title="Lade alle Cogs neu...",
             description=f"Bearbeite {len(loaded_cogs)} Cogs...",
-            color=discord.Color.orange(),
+            color=discord.Color.blurple(),
         )
         message = await ctx.send(embed=temp_embed)
 
@@ -256,7 +256,7 @@ class CogManagement(commands.Cog):
         # Ergebnis anzeigen
         if failed_cogs:
             embed = discord.Embed(
-                title="Cogs teilweise neu geladen", color=discord.Color.orange()
+                title="Cogs teilweise neu geladen", color=discord.Color.blurple()
             )
 
             embed.add_field(

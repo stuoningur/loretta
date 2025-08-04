@@ -26,14 +26,21 @@ class Purge(commands.Cog):
 
         # Validierung der Eingabe
         if anzahl <= 0:
-            await ctx.send("Die Anzahl muss größer als 0 sein!", ephemeral=True)
+            embed = discord.Embed(
+                title="Ungültige Eingabe",
+                description="Die Anzahl muss größer als 0 sein!",
+                color=discord.Color.red(),
+            )
+            await ctx.send(embed=embed, ephemeral=True)
             return
 
         if anzahl > 100:
-            await ctx.send(
-                "Es können maximal 100 Nachrichten auf einmal gelöscht werden!",
-                ephemeral=True,
+            embed = discord.Embed(
+                title="Limit überschritten",
+                description="Es können maximal 100 Nachrichten auf einmal gelöscht werden!",
+                color=discord.Color.red(),
             )
+            await ctx.send(embed=embed, ephemeral=True)
             return
 
         try:
@@ -46,41 +53,51 @@ class Purge(commands.Cog):
                 # Slash Command - lösche nur die angegebene Anzahl
                 deleted = await ctx.channel.purge(limit=anzahl)
                 # Follow-up response für Slash-Commands
-                await ctx.interaction.followup.send(
-                    f"{len(deleted)} Nachrichten wurden erfolgreich gelöscht."
+                embed = discord.Embed(
+                    title="Nachrichten gelöscht",
+                    description=f"{len(deleted)} Nachrichten wurden erfolgreich gelöscht.",
+                    color=discord.Color.green(),
                 )
+                await ctx.interaction.followup.send(embed=embed)
             else:
                 # Prefix Command - lösche Nachrichten und den Befehl selbst
                 deleted = await ctx.channel.purge(limit=anzahl + 1)
                 # Bestätigungsnachricht
-                confirmation = await ctx.send(
-                    f"{len(deleted) - 1} Nachrichten wurden erfolgreich gelöscht."
+                embed = discord.Embed(
+                    title="Nachrichten gelöscht",
+                    description=f"{len(deleted) - 1} Nachrichten wurden erfolgreich gelöscht.",
+                    color=discord.Color.green(),
                 )
-                # Lösche die Bestätigungsnachricht nach 5 Sekunden
-                await confirmation.delete(delay=5)
+                await ctx.send(embed=embed)
 
             logger.info(
                 f"Purge-Befehl ausgeführt von {ctx.author} in {getattr(ctx.channel, 'name', 'Unbekannter Kanal')}: {len(deleted) if ctx.interaction else len(deleted) - 1} Nachrichten gelöscht"
             )
 
         except discord.Forbidden:
-            error_msg = (
-                "Ich habe keine Berechtigung, Nachrichten in diesem Kanal zu löschen!"
+            embed = discord.Embed(
+                title="Fehlende Berechtigung",
+                description="Ich habe keine Berechtigung, Nachrichten in diesem Kanal zu löschen!",
+                color=discord.Color.red(),
             )
             if ctx.interaction and ctx.interaction.response.is_done():
-                await ctx.interaction.followup.send(error_msg)
+                await ctx.interaction.followup.send(embed=embed)
             else:
-                await ctx.send(error_msg, ephemeral=True)
+                await ctx.send(embed=embed, ephemeral=True)
             logger.warning(
                 f"Keine Berechtigung für Purge in {getattr(ctx.channel, 'name', 'Unbekannter Kanal')} durch {ctx.author}"
             )
 
         except discord.HTTPException as e:
-            error_msg = "Fehler beim Löschen der Nachrichten. Möglicherweise sind die Nachrichten zu alt (älter als 14 Tage)."
+            embed = discord.Embed(
+                title="Fehler beim Löschen",
+                description="Fehler beim Löschen der Nachrichten. Möglicherweise sind die Nachrichten zu alt (älter als 14 Tage).",
+                color=discord.Color.red(),
+            )
             if ctx.interaction and ctx.interaction.response.is_done():
-                await ctx.interaction.followup.send(error_msg)
+                await ctx.interaction.followup.send(embed=embed)
             else:
-                await ctx.send(error_msg, ephemeral=True)
+                await ctx.send(embed=embed, ephemeral=True)
             logger.error(f"Fehler beim Purge-Befehl: {e}")
 
     @purge.error
@@ -89,20 +106,36 @@ class Purge(commands.Cog):
         error_msg = None
 
         if isinstance(error, commands.MissingPermissions):
-            error_msg = "Du hast keine Berechtigung, Nachrichten zu verwalten!"
+            embed = discord.Embed(
+                title="Fehlende Berechtigung",
+                description="Du hast keine Berechtigung, Nachrichten zu verwalten!",
+                color=discord.Color.red(),
+            )
         elif isinstance(error, commands.BadArgument):
-            error_msg = "Bitte gib eine gültige Zahl ein!"
+            embed = discord.Embed(
+                title="Ungültige Eingabe",
+                description="Bitte gib eine gültige Zahl ein!",
+                color=discord.Color.red(),
+            )
         elif isinstance(error, commands.MissingRequiredArgument):
-            error_msg = "Bitte gib die Anzahl der zu löschenden Nachrichten an!\nBeispiel: `/purge 10`"
+            embed = discord.Embed(
+                title="Fehlende Parameter",
+                description="Bitte gib die Anzahl der zu löschenden Nachrichten an!\nBeispiel: `/purge 10`",
+                color=discord.Color.red(),
+            )
         else:
             logger.error(f"Unbehandelter Fehler im purge command: {error}")
-            error_msg = "Ein unerwarteter Fehler ist aufgetreten."
+            embed = discord.Embed(
+                title="Unerwarteter Fehler",
+                description="Ein unerwarteter Fehler ist aufgetreten.",
+                color=discord.Color.red(),
+            )
 
         # Sende die Fehlermeldung entsprechend dem Command-Typ
         if ctx.interaction and ctx.interaction.response.is_done():
-            await ctx.interaction.followup.send(error_msg)
+            await ctx.interaction.followup.send(embed=embed)
         else:
-            await ctx.send(error_msg, ephemeral=True)
+            await ctx.send(embed=embed, ephemeral=True)
 
 
 @app_commands.context_menu(name="Löschen bis hier")
@@ -118,22 +151,31 @@ async def delete_up_to_message(
 
         # Überprüfe ob es sich um einen Text-Kanal handelt
         if not isinstance(interaction.channel, (discord.TextChannel, discord.Thread)):
-            await interaction.followup.send(
-                "Dieser Befehl kann nur in Text-Kanälen verwendet werden!"
+            embed = discord.Embed(
+                title="Ungültiger Kanal",
+                description="Dieser Befehl kann nur in Text-Kanälen verwendet werden!",
+                color=discord.Color.red(),
             )
+            await interaction.followup.send(embed=embed)
             return
 
         # Überprüfe Berechtigungen
         if not isinstance(interaction.user, discord.Member):
-            await interaction.followup.send(
-                "Dieser Befehl kann nur auf Servern verwendet werden!"
+            embed = discord.Embed(
+                title="Nur auf Servern",
+                description="Dieser Befehl kann nur auf Servern verwendet werden!",
+                color=discord.Color.red(),
             )
+            await interaction.followup.send(embed=embed)
             return
 
         if not interaction.channel.permissions_for(interaction.user).manage_messages:
-            await interaction.followup.send(
-                "Du hast keine Berechtigung, Nachrichten zu verwalten!"
+            embed = discord.Embed(
+                title="Fehlende Berechtigung",
+                description="Du hast keine Berechtigung, Nachrichten zu verwalten!",
+                color=discord.Color.red(),
             )
+            await interaction.followup.send(embed=embed)
             return
 
         # Hole alle Nachrichten nach der ausgewählten Nachricht
@@ -146,39 +188,56 @@ async def delete_up_to_message(
         messages_to_delete.append(message)
 
         if not messages_to_delete:
-            await interaction.followup.send("Keine Nachrichten zum Löschen gefunden!")
+            embed = discord.Embed(
+                title="Keine Nachrichten",
+                description="Keine Nachrichten zum Löschen gefunden!",
+                color=discord.Color.blurple(),
+            )
+            await interaction.followup.send(embed=embed)
             return
 
         if len(messages_to_delete) > 100:
-            await interaction.followup.send(
-                f"Es wurden {len(messages_to_delete)} Nachrichten gefunden, aber maximal 100 können auf einmal gelöscht werden!"
+            embed = discord.Embed(
+                title="Limit überschritten",
+                description=f"Es wurden {len(messages_to_delete)} Nachrichten gefunden, aber maximal 100 können auf einmal gelöscht werden!",
+                color=discord.Color.red(),
             )
+            await interaction.followup.send(embed=embed)
             return
 
         # Lösche die Nachrichten
         await interaction.channel.delete_messages(messages_to_delete)
 
         # Sende Bestätigung
-        await interaction.followup.send(
-            f"{len(messages_to_delete)} Nachrichten wurden erfolgreich gelöscht."
+        embed = discord.Embed(
+            title="Nachrichten gelöscht",
+            description=f"{len(messages_to_delete)} Nachrichten wurden erfolgreich gelöscht.",
+            color=discord.Color.green(),
         )
+        await interaction.followup.send(embed=embed)
 
         logger.info(
             f"Kontext-Menu Löschung ausgeführt von {interaction.user} in {getattr(interaction.channel, 'name', 'Unbekannter Kanal')}: {len(messages_to_delete)} Nachrichten gelöscht"
         )
 
     except discord.Forbidden:
-        await interaction.followup.send(
-            "Ich habe keine Berechtigung, Nachrichten in diesem Kanal zu löschen!"
+        embed = discord.Embed(
+            title="Fehlende Berechtigung",
+            description="Ich habe keine Berechtigung, Nachrichten in diesem Kanal zu löschen!",
+            color=discord.Color.red(),
         )
+        await interaction.followup.send(embed=embed)
         logger.warning(
             f"Keine Berechtigung für Kontext-Menu Löschung in {getattr(interaction.channel, 'name', 'Unbekannter Kanal')} durch {interaction.user}"
         )
 
     except discord.HTTPException as e:
-        await interaction.followup.send(
-            "Fehler beim Löschen der Nachrichten. Möglicherweise sind einige Nachrichten zu alt (älter als 14 Tage)."
+        embed = discord.Embed(
+            title="Fehler beim Löschen",
+            description="Fehler beim Löschen der Nachrichten. Möglicherweise sind einige Nachrichten zu alt (älter als 14 Tage).",
+            color=discord.Color.red(),
         )
+        await interaction.followup.send(embed=embed)
         logger.error(f"Fehler beim Kontext-Menu Löschung: {e}")
 
 
