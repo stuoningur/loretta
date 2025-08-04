@@ -29,39 +29,39 @@ class Weather(commands.Cog):
             await self.session.close()
 
     def _get_weather_icon_url(self, weather_code: int) -> Optional[str]:
-        """Mappt Wetter-Codes zu entsprechenden Icon-URLs"""
+        """Mappt Wetter-Codes zu entsprechenden Icon-URLs aus dem GitHub Repository"""
         weather_icon_mapping = {
-            0: "01d",  # Clear sky
-            1: "01d",  # Mainly clear
-            2: "02d",  # Partly cloudy
-            3: "03d",  # Overcast
-            45: "50d",  # Fog
-            48: "50d",  # Depositing rime fog
-            51: "09d",  # Light drizzle
-            53: "09d",  # Moderate drizzle
-            55: "09d",  # Dense drizzle
-            56: "09d",  # Light freezing drizzle
-            57: "09d",  # Dense freezing drizzle
-            61: "10d",  # Slight rain
-            63: "10d",  # Moderate rain
-            65: "10d",  # Heavy rain
-            66: "10d",  # Light freezing rain
-            67: "10d",  # Heavy freezing rain
-            71: "13d",  # Slight snow fall
-            73: "13d",  # Moderate snow fall
-            75: "13d",  # Heavy snow fall
-            77: "13d",  # Snow grains
-            80: "09d",  # Slight rain showers
-            81: "09d",  # Moderate rain showers
-            82: "09d",  # Violent rain showers
-            85: "13d",  # Slight snow showers
-            86: "13d",  # Heavy snow showers
-            95: "11d",  # Thunderstorm: Slight or moderate
-            96: "11d",  # Thunderstorm with slight hail
-            99: "11d",  # Thunderstorm with heavy hail
+            0: "clear@4x.png",  # Clear sky
+            1: "mostly-clear@4x.png",  # Mainly clear
+            2: "partly-cloudy@4x.png",  # Partly cloudy
+            3: "overcast@4x.png",  # Overcast
+            45: "fog@4x.png",  # Fog
+            48: "rime-fog@4x.png",  # Depositing rime fog
+            51: "light-drizzle@4x.png",  # Light drizzle
+            53: "moderate-drizzle@4x.png",  # Moderate drizzle
+            55: "dense-drizzle@4x.png",  # Dense drizzle
+            56: "light-freezing-drizzle@4x.png",  # Light freezing drizzle
+            57: "dense-freezing-drizzle@4x.png",  # Dense freezing drizzle
+            61: "light-rain@4x.png",  # Slight rain
+            63: "moderate-rain@4x.png",  # Moderate rain
+            65: "heavy-rain@4x.png",  # Heavy rain
+            66: "light-freezing-rain@4x.png",  # Light freezing rain
+            67: "heavy-freezing-rain@4x.png",  # Heavy freezing rain
+            71: "slight-snowfall@4x.png",  # Slight snow fall
+            73: "moderate-snowfall@4x.png",  # Moderate snow fall
+            75: "heavy-snowfall@4x.png",  # Heavy snow fall
+            77: "snowflake@4x.png",  # Snow grains
+            80: "light-rain@4x.png",  # Slight rain showers
+            81: "moderate-rain@4x.png",  # Moderate rain showers
+            82: "heavy-rain@4x.png",  # Violent rain showers
+            85: "slight-snowfall@4x.png",  # Slight snow showers
+            86: "heavy-snowfall@4x.png",  # Heavy snow showers
+            95: "thunderstorm@4x.png",  # Thunderstorm: Slight or moderate
+            96: "thunderstorm-with-hail@4x.png",  # Thunderstorm with slight hail
+            99: "thunderstorm-with-hail@4x.png",  # Thunderstorm with heavy hail
         }
-        icon_code = weather_icon_mapping.get(weather_code, "01d")
-        return f"https://openweathermap.org/img/wn/{icon_code}@2x.png"
+        icon_filename = weather_icon_mapping.get(weather_code, "clear@4x.png")
+        return f"https://raw.githubusercontent.com/stuoningur/loretta/master/data/icons/weather/{icon_filename}"
 
     def _get_weather_description(self, weather_code: int) -> str:
         """Gibt deutsche Beschreibung für Wetter-Codes zurück"""
@@ -100,6 +100,10 @@ class Weather(commands.Cog):
     async def _geocode_location(self, location: str) -> Optional[Dict[str, Any]]:
         """Sucht Koordinaten für einen Ortsnamen"""
         try:
+            if not self.session:
+                logger.error("HTTP-Session nicht initialisiert")
+                return None
+
             url = "https://geocoding-api.open-meteo.com/v1/search"
             params = {"name": location, "count": 1, "language": "de", "format": "json"}
 
@@ -119,6 +123,10 @@ class Weather(commands.Cog):
     ) -> Optional[Dict[str, Any]]:
         """Holt Wetterdaten von der Open-Meteo API"""
         try:
+            if not self.session:
+                logger.error("HTTP-Session nicht initialisiert")
+                return None
+
             url = "https://api.open-meteo.com/v1/forecast"
             params = {
                 "latitude": latitude,
@@ -139,7 +147,7 @@ class Weather(commands.Cog):
                     "precipitation_probability_max",
                     "wind_speed_10m_max",
                 ],
-                "timezone": "auto",
+                "timezone": "Europe/Berlin",
                 "forecast_days": 7,
             }
 
@@ -179,13 +187,14 @@ class Weather(commands.Cog):
 
     @commands.hybrid_command(
         name="wetter",
+        aliases=["w"],
         description="Zeigt aktuelle Wetterdaten und 6-Tage-Vorhersage für einen Ort an",
     )
     async def weather(self, ctx, *, location: str):
         """Zeigt Wetterinformationen für einen angegebenen Ort"""
 
         # Defer response for longer processing (only for slash commands)
-        if hasattr(ctx, "interaction") and ctx.interaction:
+        if ctx.interaction:
             await ctx.defer()
         else:
             # For prefix commands, send a typing indicator
@@ -201,10 +210,7 @@ class Weather(commands.Cog):
                 color=discord.Color.red(),
                 timestamp=datetime.now(timezone.utc),
             )
-            if hasattr(ctx, "interaction") and ctx.interaction:
-                await ctx.followup.send(embed=embed)
-            else:
-                await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
             return
 
         # Get weather data
@@ -218,10 +224,7 @@ class Weather(commands.Cog):
                 color=discord.Color.red(),
                 timestamp=datetime.now(timezone.utc),
             )
-            if hasattr(ctx, "interaction") and ctx.interaction:
-                await ctx.followup.send(embed=embed)
-            else:
-                await ctx.send(embed=embed)
+            await ctx.send(embed=embed)
             return
 
         # Extract current weather
@@ -242,15 +245,21 @@ class Weather(commands.Cog):
         weather_code = current["weather_code"]
         wind_speed = current["wind_speed_10m"]
         wind_direction = current["wind_direction_10m"]
+        weather_time = current["time"]
 
         weather_desc = self._get_weather_description(weather_code)
         wind_dir_text = self._format_wind_direction(wind_direction)
 
+        # Format weather data timestamp using Discord formatting
+        weather_datetime = datetime.fromisoformat(weather_time.replace("Z", "+00:00"))
+        weather_timestamp = int(weather_datetime.timestamp())
+
         current_info = (
             f"**Wetter:** {weather_desc}\n"
-            f"**Temperatur:** {str(current_temp).replace('.', ',')}°C ({str(feels_like).replace('.', ',')}°C)\n"
+            f"**Temperatur:** {str(current_temp).replace('.', ',')}°C (Gefühlt {str(feels_like).replace('.', ',')}°C)\n"
             f"**Luftfeuchtigkeit:** {humidity}%\n"
-            f"**Wind:** {str(wind_speed).replace('.', ',')} km/h - {wind_dir_text}"
+            f"**Wind:** {str(wind_speed).replace('.', ',')} km/h - {wind_dir_text}\n"
+            f"**Datenstand:** <t:{weather_timestamp}:f>"
         )
 
         embed.add_field(name="Aktuelles Wetter", value=current_info, inline=False)
@@ -260,7 +269,7 @@ class Weather(commands.Cog):
         if icon_url:
             embed.set_thumbnail(url=icon_url)
 
-        # 6-day forecast - each day as separate field
+        # 6-day forecast - 2 fields per row
         for i in range(1, 7):  # Skip today, show next 6 days
             date = daily["time"][i]
             max_temp = daily["temperature_2m_max"][i]
@@ -294,8 +303,14 @@ class Weather(commands.Cog):
             )
 
             embed.add_field(
-                name=f"{day_name}, {date_formatted}", value=forecast_info, inline=True
+                name=f"{day_name}, {date_formatted}",
+                value=forecast_info,
+                inline=True,
             )
+
+            # Add invisible field after every 2nd forecast day to force new row (2 columns, 3 rows)
+            if i % 2 == 0:
+                embed.add_field(name="\u200b", value="\u200b", inline=True)
 
         # Footer
         embed.set_footer(
@@ -304,13 +319,86 @@ class Weather(commands.Cog):
         )
 
         # Send embed (icon will be used as thumbnail if file exists)
-        if hasattr(ctx, "interaction") and ctx.interaction:
-            await ctx.followup.send(embed=embed)
-        else:
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
         logger.info(
             f"Wetter-Befehl ausgeführt von {ctx.author} für '{location}' "
+            f"({geo_data['name']}, {geo_data.get('country', '')})"
+        )
+
+    @commands.hybrid_command(
+        name="weathershort",
+        aliases=["ws"],
+        description="Zeigt kurze Wetterinformationen für einen Ort an",
+    )
+    async def weather_short(self, ctx, *, location: str):
+        """Zeigt kurze Wetterinformationen für einen angegebenen Ort"""
+
+        # Defer response for longer processing (only for slash commands)
+        if ctx.interaction:
+            await ctx.defer()
+        else:
+            # For prefix commands, send a typing indicator
+            async with ctx.typing():
+                pass
+
+        # Geocode the location
+        geo_data = await self._geocode_location(location)
+        if not geo_data:
+            embed = discord.Embed(
+                title="Ort nicht gefunden",
+                description=f"Der Ort '{location}' konnte nicht gefunden werden.",
+                color=discord.Color.red(),
+                timestamp=datetime.now(timezone.utc),
+            )
+            await ctx.send(embed=embed)
+            return
+
+        # Get weather data
+        weather_data = await self._get_weather_data(
+            geo_data["latitude"], geo_data["longitude"]
+        )
+        if not weather_data:
+            embed = discord.Embed(
+                title="Wetterdaten nicht verfügbar",
+                description="Die Wetterdaten konnten nicht abgerufen werden.",
+                color=discord.Color.red(),
+                timestamp=datetime.now(timezone.utc),
+            )
+            await ctx.send(embed=embed)
+            return
+
+        # Extract current weather
+        current = weather_data["current"]
+        current_temp = current["temperature_2m"]
+        feels_like = current["apparent_temperature"]
+        weather_code = current["weather_code"]
+
+        weather_desc = self._get_weather_description(weather_code)
+
+        # Create compact embed
+        embed = discord.Embed(
+            title=f"{geo_data['name']}, {geo_data.get('country', '')}",
+            description=f"**{weather_desc}**\n{str(current_temp).replace('.', ',')}°C (Gefühlt {str(feels_like).replace('.', ',')}°C)",
+            color=discord.Color.blurple(),
+            timestamp=datetime.now(timezone.utc),
+        )
+
+        # Set weather icon as thumbnail
+        icon_url = self._get_weather_icon_url(weather_code)
+        if icon_url:
+            embed.set_thumbnail(url=icon_url)
+
+        # Footer
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
+        )
+
+        await ctx.send(embed=embed)
+
+        logger.info(
+            f"Wetter-Kurz-Befehl ausgeführt von {ctx.author} für '{location}' "
             f"({geo_data['name']}, {geo_data.get('country', '')})"
         )
 
