@@ -271,6 +271,7 @@ name = "loretta"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "aiosqlite" },
     { name = "discord-py", extra = ["speed", "voice"] },
     { name = "psutil" },
@@ -288,6 +289,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.12.15" },
     { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "discord-py", extras = ["speed", "voice"], specifier = ">=2.5.2" },
     { name = "psutil", specifier = ">=7.0.0" },

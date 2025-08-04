@@ -77,7 +77,6 @@ loretta.db
 *.db
 *.sqlite
 *.sqlite3
-icons
 
 # Discord bot
 config.json
