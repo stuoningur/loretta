@@ -23,9 +23,7 @@ class ServerInfo(commands.Cog):
     async def serverinfo(self, ctx):
         """Zeigt detaillierte Informationen über den Server an"""
         if not ctx.guild:
-            await ctx.send(
-                "❌ Dieser Befehl kann nur auf einem Server verwendet werden!"
-            )
+            await ctx.send("Dieser Befehl kann nur auf einem Server verwendet werden!")
             return
 
         guild = ctx.guild
@@ -154,7 +152,7 @@ class ServerInfo(commands.Cog):
             )
         except discord.HTTPException as e:
             logger.error(f"Fehler beim Senden der Serverinfo: {e}")
-            await ctx.send("❌ Fehler beim Anzeigen der Serverinformationen.")
+            await ctx.send("Fehler beim Anzeigen der Serverinformationen.")
 
 
 async def setup(bot):

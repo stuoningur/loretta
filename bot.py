@@ -15,6 +15,9 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from models.database import initialize_database
+from utils.database import DatabaseManager
+
 load_dotenv()
 
 logging.basicConfig(
@@ -37,11 +40,30 @@ class LorettaBot(commands.Bot):
         intents.presences = True
 
         super().__init__(
-            command_prefix="!",
+            command_prefix=self.get_prefix,  # type: ignore
             intents=intents,
             help_command=None,
             description="Loretta - Ein vielseitiger Discord-Bot",
         )
+
+        # Database setup
+        self.db_path = os.getenv("DATABASE_PATH", "data/loretta.db")
+        self.db = DatabaseManager(self.db_path)
+
+    async def get_prefix(self, message):
+        """Dynamische Prefix-Funktion die Einstellungen aus der Datenbank lädt"""
+        # Handle edge cases where message might be None or missing guild
+        if not message or not hasattr(message, "guild") or not message.guild:
+            return "!"  # Standard-Prefix für DMs oder ungültige Messages
+
+        try:
+            config = await self.db.get_server_config(message.guild.id)
+            return config.command_prefix
+        except Exception as e:
+            logger.error(
+                f"Fehler beim Laden des Prefix für Server {message.guild.id}: {e}"
+            )
+            return "!"  # Fallback auf Standard-Prefix
 
     async def setup_hook(self):
         """Wird beim Bot-Start ausgeführt"""
@@ -49,6 +71,14 @@ class LorettaBot(commands.Bot):
 
         # Erstelle Datenverzeichnis falls es nicht existiert
         Path("data").mkdir(exist_ok=True)
+
+        # Initialisiere Datenbank
+        try:
+            await initialize_database(self.db_path)
+            logger.info("Datenbank erfolgreich initialisiert")
+        except Exception as e:
+            logger.error(f"Fehler bei der Datenbankinitialisierung: {e}")
+            raise
 
         # Lade alle Cogs automatisch aus dem cogs-Ordner
         cogs_dir = Path("cogs")
@@ -106,9 +136,28 @@ class LorettaBot(commands.Bot):
         """Wird ausgeführt wenn der Bot einem Server beitritt"""
         logger.info(f'Bot ist dem Server "{guild.name}" (ID: {guild.id}) beigetreten')
 
+        # Erstelle Standardkonfiguration für neuen Server
+        try:
+            config = await self.db.get_server_config(guild.id)
+            await self.db.set_server_config(config)
+            logger.info(f"Standardkonfiguration für Server {guild.id} erstellt")
+        except Exception as e:
+            logger.error(
+                f"Fehler beim Erstellen der Serverkonfiguration für {guild.id}: {e}"
+            )
+
     async def on_guild_remove(self, guild):
         """Wird ausgeführt wenn der Bot einen Server verlässt"""
         logger.info(f'Bot hat den Server "{guild.name}" (ID: {guild.id}) verlassen')
+
+    async def on_message(self, message):
+        """Wird bei jeder Nachricht ausgeführt"""
+        # Ignoriere Bot-Nachrichten
+        if message.author.bot:
+            return
+
+        # Verarbeite Commands normal
+        await self.process_commands(message)
 
 
 class KeyboardInterruptHandler:
@@ -119,7 +168,7 @@ class KeyboardInterruptHandler:
         self._task = None
         self._shutdown_initiated = False
 
-    def __call__(self, signum=None, frame=None):
+    def __call__(self, signum=None, _frame=None):
         """Signal handler callback"""
         if self._shutdown_initiated:
             logger.warning("Shutdown bereits eingeleitet, warte auf Abschluss...")

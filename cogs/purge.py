@@ -103,8 +103,6 @@ class Purge(commands.Cog):
     @purge.error
     async def purge_error(self, ctx, error):
         """Error handler für den purge command"""
-        error_msg = None
-
         if isinstance(error, commands.MissingPermissions):
             embed = discord.Embed(
                 title="Fehlende Berechtigung",
