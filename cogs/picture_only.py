@@ -71,7 +71,7 @@ class PictureOnly(commands.Cog):
                         # Sende eine ephemere Warnung an den Benutzer
                         embed = discord.Embed(
                             title="Nur Bilder erlaubt",
-                            description=f"In {message.channel.mention} sind nur Bilder erlaubt. Bilder mit Text sind erlaubt.",
+                            description=f"In {message.channel.mention} sind nur Bilder erlaubt. Bilder mit Text sind erlaubt.\n\nFür Diskussionen bitte die Threads verwenden.",
                             color=discord.Color.red(),
                         )
 
@@ -87,7 +87,7 @@ class PictureOnly(commands.Cog):
                             )
 
                         logger.info(
-                            f"Nachricht von {message.author} in Nur-Bild-Kanal {message.channel.name} gelöscht"
+                            f"Nachricht von {message.author.display_name} ({message.author}) in Nur-Bild-Kanal {message.channel.name} gelöscht"
                         )
 
                     except discord.Forbidden:
@@ -106,3 +106,4 @@ class PictureOnly(commands.Cog):
 async def setup(bot: "LorettaBot"):
     """Setup-Funktion für das Cog"""
     await bot.add_cog(PictureOnly(bot))
+    logger.info("Picture Only Cog geladen")

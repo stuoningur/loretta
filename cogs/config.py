@@ -12,6 +12,205 @@ from discord.ext import commands
 logger = logging.getLogger(__name__)
 
 
+class ConfigOptionSelect(discord.ui.Select):
+    """Select-Menü für Konfigurationsoptionen"""
+
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label="Konfiguration anzeigen",
+                value="show",
+                description="Zeigt die aktuelle Serverkonfiguration an",
+            ),
+            discord.SelectOption(
+                label="Command-Prefix ändern",
+                value="prefix",
+                description="Ändert den Command-Prefix für den Server",
+            ),
+            discord.SelectOption(
+                label="Log-Kanal setzen",
+                value="logchannel",
+                description="Setzt oder entfernt den Log-Kanal",
+            ),
+            discord.SelectOption(
+                label="Nur-Bild-Kanal hinzufügen",
+                value="add_pic_channel",
+                description="Fügt einen Nur-Bild-Kanal hinzu",
+            ),
+            discord.SelectOption(
+                label="Nur-Bild-Kanal entfernen",
+                value="remove_pic_channel",
+                description="Entfernt einen Nur-Bild-Kanal",
+            ),
+        ]
+
+        super().__init__(
+            placeholder="Wähle eine Konfigurationsoption...",
+            min_values=1,
+            max_values=1,
+            options=options,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        from discord.ext.commands import Bot
+
+        if not isinstance(interaction.client, Bot):
+            return
+        cog = interaction.client.get_cog("ConfigCog")
+        if not cog or not isinstance(cog, ConfigCog):
+            return
+
+        selected_option = self.values[0]
+
+        if selected_option == "show":
+            await cog.handle_show_config(interaction)
+        else:
+            await cog.handle_config_option_selected(interaction, selected_option)
+
+
+class ConfigOptionView(discord.ui.View):
+    """View für Konfigurationsoptionen"""
+
+    def __init__(self):
+        super().__init__(timeout=300)
+        self.add_item(ConfigOptionSelect())
+
+
+class PrefixSelect(discord.ui.Select):
+    """Select-Menü für Prefix-Optionen"""
+
+    def __init__(self):
+        options = [
+            discord.SelectOption(label="!", value="!", description="Standard Prefix"),
+            discord.SelectOption(label="?", value="?", description="Frage-Prefix"),
+            discord.SelectOption(label=".", value=".", description="Punkt-Prefix"),
+            discord.SelectOption(label=">", value=">", description="Pfeil-Prefix"),
+            discord.SelectOption(
+                label="Benutzerdefinierten Prefix eingeben",
+                value="custom",
+                description="Gib einen eigenen Prefix ein",
+            ),
+        ]
+
+        super().__init__(
+            placeholder="Wähle einen neuen Prefix...",
+            min_values=1,
+            max_values=1,
+            options=options,
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        from discord.ext.commands import Bot
+
+        if not isinstance(interaction.client, Bot):
+            return
+        cog = interaction.client.get_cog("ConfigCog")
+        if not cog or not isinstance(cog, ConfigCog):
+            return
+
+        selected_prefix = self.values[0]
+
+        if selected_prefix == "custom":
+            await cog.show_custom_prefix_modal(interaction)
+        else:
+            await cog.set_prefix_value(interaction, selected_prefix)
+
+
+class PrefixView(discord.ui.View):
+    """View für Prefix-Auswahl"""
+
+    def __init__(self):
+        super().__init__(timeout=300)
+        self.add_item(PrefixSelect())
+
+
+class ChannelSelect(discord.ui.Select):
+    """Select-Menü für Kanal-Auswahl"""
+
+    def __init__(self, channels, config_type, allow_none=False):
+        options = []
+
+        if allow_none:
+            options.append(
+                discord.SelectOption(
+                    label="Entfernen/Deaktivieren",
+                    value="none",
+                    description="Entfernt die aktuelle Einstellung",
+                )
+            )
+
+        for channel in channels[:24]:  # Discord limit is 25 options
+            options.append(
+                discord.SelectOption(
+                    label=f"#{channel.name}",
+                    value=str(channel.id),
+                    description=f"Kanal: {channel.name}",
+                )
+            )
+
+        super().__init__(
+            placeholder="Wähle einen Kanal...",
+            min_values=1,
+            max_values=1,
+            options=options,
+        )
+
+        self.config_type = config_type
+
+    async def callback(self, interaction: discord.Interaction):
+        from discord.ext.commands import Bot
+
+        if not isinstance(interaction.client, Bot):
+            return
+        cog = interaction.client.get_cog("ConfigCog")
+        if not cog or not isinstance(cog, ConfigCog):
+            return
+
+        selected_value = self.values[0]
+
+        if selected_value == "none":
+            channel_id = None
+        else:
+            channel_id = int(selected_value)
+
+        await cog.set_channel_value(interaction, self.config_type, channel_id)
+
+
+class ChannelView(discord.ui.View):
+    """View für Kanal-Auswahl"""
+
+    def __init__(self, channels, config_type, allow_none=False):
+        super().__init__(timeout=300)
+        self.add_item(ChannelSelect(channels, config_type, allow_none))
+
+
+class CustomPrefixModal(discord.ui.Modal):
+    """Modal für benutzerdefinierten Prefix"""
+
+    def __init__(self):
+        super().__init__(title="Benutzerdefinierten Prefix eingeben")
+
+        self.prefix_input = discord.ui.TextInput(
+            label="Neuer Prefix",
+            placeholder="Gib deinen gewünschten Prefix ein...",
+            max_length=5,
+            min_length=1,
+        )
+        self.add_item(self.prefix_input)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        from discord.ext.commands import Bot
+
+        if not isinstance(interaction.client, Bot):
+            return
+        cog = interaction.client.get_cog("ConfigCog")
+        if not cog or not isinstance(cog, ConfigCog):
+            return
+
+        new_prefix = self.prefix_input.value.strip()
+        await cog.set_prefix_value(interaction, new_prefix)
+
+
 class ConfigCog(commands.Cog):
     """Cog für Serverkonfiguration"""
 
@@ -21,29 +220,7 @@ class ConfigCog(commands.Cog):
     @app_commands.command(
         name="config", description="Zeigt oder ändert die Serverkonfiguration"
     )
-    @app_commands.describe(
-        aktion="Die gewünschte Aktion (anzeigen, prefix, logkanal, bild-channel)",
-        wert="Der neue Wert für die Konfiguration",
-    )
-    @app_commands.choices(
-        aktion=[
-            app_commands.Choice(name="anzeigen", value="show"),
-            app_commands.Choice(name="prefix", value="prefix"),
-            app_commands.Choice(name="logkanal", value="logchannel"),
-            app_commands.Choice(
-                name="bild-channel-hinzufügen", value="add_pic_channel"
-            ),
-            app_commands.Choice(
-                name="bild-channel-entfernen", value="remove_pic_channel"
-            ),
-        ]
-    )
-    async def config(
-        self,
-        interaction: discord.Interaction,
-        aktion: app_commands.Choice[str],
-        wert: Optional[str] = None,
-    ):
+    async def config(self, interaction: discord.Interaction):
         """Haupt-Konfigurationskommando"""
 
         # Überprüfe Administrator-Berechtigung
@@ -67,30 +244,377 @@ class ConfigCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        guild_id = interaction.guild.id
+        embed = discord.Embed(
+            title="Serverkonfiguration",
+            description="Wähle eine Konfigurationsoption aus dem Menü unten:",
+            color=discord.Color.blurple(),
+        )
+
+        view = ConfigOptionView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
+
+    async def handle_show_config(self, interaction: discord.Interaction):
+        """Behandelt die Anzeige der Konfiguration"""
+        if not interaction.guild:
+            return
 
         try:
+            guild_id = interaction.guild.id
             config = await self.bot.db.get_server_config(guild_id)
+            await self._show_config(interaction, config)
+        except Exception as e:
+            logger.error(f"Fehler beim Anzeigen der Konfiguration: {e}")
+            embed = discord.Embed(
+                title="Fehler",
+                description="Es ist ein Fehler beim Laden der Konfiguration aufgetreten.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
-            if aktion.value == "show":
-                await self._show_config(interaction, config)
-            elif aktion.value == "prefix":
-                await self._set_prefix(interaction, config, wert)
-            elif aktion.value == "logchannel":
-                await self._set_log_channel(interaction, config, wert)
-            elif aktion.value == "add_pic_channel":
-                await self._add_picture_channel(interaction, config, wert)
-            elif aktion.value == "remove_pic_channel":
-                await self._remove_picture_channel(interaction, config, wert)
+    async def handle_config_option_selected(
+        self, interaction: discord.Interaction, option: str
+    ):
+        """Behandelt die Auswahl einer Konfigurationsoption"""
+        if not interaction.guild:
+            return
+
+        try:
+            if option == "prefix":
+                embed = discord.Embed(
+                    title="Prefix ändern",
+                    description="Wähle einen neuen Command-Prefix:",
+                    color=discord.Color.blurple(),
+                )
+                view = PrefixView()
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
+
+            elif option == "logchannel":
+                channels = [
+                    ch
+                    for ch in interaction.guild.text_channels
+                    if ch.permissions_for(interaction.guild.me).send_messages
+                ]
+                if not channels:
+                    embed = discord.Embed(
+                        title="Keine Kanäle verfügbar",
+                        description="Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+
+                embed = discord.Embed(
+                    title="Log-Kanal setzen",
+                    description="Wähle einen Kanal für die Log-Nachrichten:",
+                    color=discord.Color.blurple(),
+                )
+                view = ChannelView(channels, "logchannel", allow_none=True)
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
+
+            elif option == "add_pic_channel":
+                channels = interaction.guild.text_channels
+                if not channels:
+                    embed = discord.Embed(
+                        title="Keine Kanäle verfügbar",
+                        description="Es wurden keine Textkanäle gefunden.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+
+                embed = discord.Embed(
+                    title="Nur-Bild-Kanal hinzufügen",
+                    description="Wähle einen Kanal, der als Nur-Bild-Kanal konfiguriert werden soll:",
+                    color=discord.Color.blurple(),
+                )
+                view = ChannelView(channels, "add_pic_channel")
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
+
+            elif option == "remove_pic_channel":
+                guild_id = interaction.guild.id
+                config = await self.bot.db.get_server_config(guild_id)
+
+                if not config.picture_only_channels:
+                    embed = discord.Embed(
+                        title="Keine Nur-Bild-Kanäle",
+                        description="Es sind keine Nur-Bild-Kanäle konfiguriert.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+
+                # Nur die konfigurierten Kanäle anzeigen
+                configured_channels = []
+                for channel_id in config.picture_only_channels:
+                    channel = interaction.guild.get_channel(channel_id)
+                    if channel:
+                        configured_channels.append(channel)
+
+                if not configured_channels:
+                    embed = discord.Embed(
+                        title="Keine gültigen Kanäle",
+                        description="Alle konfigurierten Nur-Bild-Kanäle sind nicht mehr verfügbar.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+
+                embed = discord.Embed(
+                    title="Nur-Bild-Kanal entfernen",
+                    description="Wähle einen Kanal, der aus den Nur-Bild-Kanälen entfernt werden soll:",
+                    color=discord.Color.blurple(),
+                )
+                view = ChannelView(configured_channels, "remove_pic_channel")
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
 
         except Exception as e:
-            logger.error(f"Fehler bei Konfigurationskommando: {e}")
+            logger.error(f"Fehler bei Konfigurationsoption {option}: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Verarbeiten der Konfiguration aufgetreten.",
                 color=discord.Color.red(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def show_custom_prefix_modal(self, interaction: discord.Interaction):
+        """Zeigt das Modal für benutzerdefinierten Prefix"""
+        modal = CustomPrefixModal()
+        await interaction.response.send_modal(modal)
+
+    async def set_prefix_value(self, interaction: discord.Interaction, new_prefix: str):
+        """Setzt einen neuen Prefix-Wert"""
+        if not interaction.guild:
+            return
+
+        try:
+            guild_id = interaction.guild.id
+            config = await self.bot.db.get_server_config(guild_id)
+            await self._set_prefix_direct(interaction, config, new_prefix)
+        except Exception as e:
+            logger.error(f"Fehler beim Setzen des Prefix: {e}")
+            embed = discord.Embed(
+                title="Fehler",
+                description="Es ist ein Fehler beim Setzen des Prefix aufgetreten.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def set_channel_value(
+        self,
+        interaction: discord.Interaction,
+        config_type: str,
+        channel_id: Optional[int],
+    ):
+        """Setzt einen Kanal-Wert"""
+        if not interaction.guild:
+            return
+
+        try:
+            guild_id = interaction.guild.id
+            config = await self.bot.db.get_server_config(guild_id)
+
+            if config_type == "logchannel":
+                await self._set_log_channel_direct(interaction, config, channel_id)
+            elif config_type == "add_pic_channel" and channel_id is not None:
+                await self._add_picture_channel_direct(interaction, config, channel_id)
+            elif config_type == "remove_pic_channel" and channel_id is not None:
+                await self._remove_picture_channel_direct(
+                    interaction, config, channel_id
+                )
+
+        except Exception as e:
+            logger.error(f"Fehler beim Setzen des Kanals ({config_type}): {e}")
+            embed = discord.Embed(
+                title="Fehler",
+                description="Es ist ein Fehler beim Setzen des Kanals aufgetreten.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def _set_prefix_direct(
+        self, interaction: discord.Interaction, config, new_prefix: str
+    ):
+        """Setzt einen neuen Command-Prefix direkt"""
+        if len(new_prefix) > 5:
+            embed = discord.Embed(
+                title="Prefix zu lang",
+                description="Der Prefix darf maximal 5 Zeichen lang sein.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        old_prefix = config.command_prefix
+        success = await self.bot.db.set_command_prefix(config.guild_id, new_prefix)
+
+        if success:
+            embed = discord.Embed(
+                title="Prefix geändert",
+                description=f"Command-Prefix wurde von `{old_prefix}` zu `{new_prefix}` geändert.",
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title="Fehler",
+                description="Der Prefix konnte nicht geändert werden.",
+                color=discord.Color.red(),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def _set_log_channel_direct(
+        self, interaction: discord.Interaction, config, channel_id: Optional[int]
+    ):
+        """Setzt den Log-Kanal direkt"""
+        if not interaction.guild:
+            return
+
+        if channel_id is None:
+            # Entferne Log-Kanal
+            success = await self.bot.db.set_log_channel(config.guild_id, None)
+
+            if success:
+                embed = discord.Embed(
+                    title="Log-Kanal entfernt",
+                    description="Der Log-Kanal wurde deaktiviert.",
+                    color=discord.Color.green(),
+                )
+            else:
+                embed = discord.Embed(
+                    title="Fehler",
+                    description="Der Log-Kanal konnte nicht entfernt werden.",
+                    color=discord.Color.red(),
+                )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        channel = interaction.guild.get_channel(channel_id)
+        if not channel:
+            embed = discord.Embed(
+                title="Kanal nicht gefunden",
+                description="Der angegebene Kanal konnte nicht gefunden werden.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        success = await self.bot.db.set_log_channel(config.guild_id, channel.id)
+
+        if success:
+            embed = discord.Embed(
+                title="Log-Kanal gesetzt",
+                description=f"Log-Kanal wurde auf {channel.mention} gesetzt.",
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title="Fehler",
+                description="Der Log-Kanal konnte nicht gesetzt werden.",
+                color=discord.Color.red(),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def _add_picture_channel_direct(
+        self, interaction: discord.Interaction, config, channel_id: int
+    ):
+        """Fügt einen Nur-Bild-Kanal direkt hinzu"""
+        if not interaction.guild:
+            return
+
+        channel = interaction.guild.get_channel(channel_id)
+        if not channel:
+            embed = discord.Embed(
+                title="Kanal nicht gefunden",
+                description="Der angegebene Kanal konnte nicht gefunden werden.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # Prüfe ob Kanal bereits konfiguriert ist
+        if channel.id in config.picture_only_channels:
+            embed = discord.Embed(
+                title="Bereits konfiguriert",
+                description=f"{channel.mention} ist bereits als Nur-Bild-Kanal konfiguriert.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        success = await self.bot.db.add_picture_only_channel(
+            config.guild_id, channel.id
+        )
+
+        if success:
+            embed = discord.Embed(
+                title="Nur-Bild-Kanal hinzugefügt",
+                description=f"{channel.mention} wurde als Nur-Bild-Kanal konfiguriert.",
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title="Fehler",
+                description="Der Nur-Bild-Kanal konnte nicht hinzugefügt werden.",
+                color=discord.Color.red(),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def _remove_picture_channel_direct(
+        self, interaction: discord.Interaction, config, channel_id: int
+    ):
+        """Entfernt einen Nur-Bild-Kanal direkt"""
+        if not interaction.guild:
+            return
+
+        channel = interaction.guild.get_channel(channel_id)
+        if not channel:
+            embed = discord.Embed(
+                title="Kanal nicht gefunden",
+                description="Der angegebene Kanal konnte nicht gefunden werden.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        # Prüfe ob Kanal konfiguriert ist
+        if channel.id not in config.picture_only_channels:
+            embed = discord.Embed(
+                title="Nicht konfiguriert",
+                description=f"{channel.mention} ist nicht als Nur-Bild-Kanal konfiguriert.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        success = await self.bot.db.remove_picture_only_channel(
+            config.guild_id, channel.id
+        )
+
+        if success:
+            embed = discord.Embed(
+                title="Nur-Bild-Kanal entfernt",
+                description=f"{channel.mention} wurde aus den Nur-Bild-Kanälen entfernt.",
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title="Fehler",
+                description="Der Nur-Bild-Kanal konnte nicht entfernt werden.",
+                color=discord.Color.red(),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def _show_config(self, interaction: discord.Interaction, config):
         """Zeigt die aktuelle Konfiguration an"""
@@ -130,261 +654,6 @@ class ConfigCog(commands.Cog):
         embed.add_field(name="Log-Kanal", value=log_channel_text, inline=True)
         embed.add_field(name="Nur-Bild-Kanäle", value=pic_channels_text, inline=False)
         embed.set_footer(text="Verwende /config um Einstellungen zu ändern")
-
-        await interaction.response.send_message(embed=embed)
-
-    async def _set_prefix(
-        self, interaction: discord.Interaction, config, new_prefix: Optional[str]
-    ):
-        """Setzt einen neuen Command-Prefix"""
-
-        if not new_prefix:
-            embed = discord.Embed(
-                title="Ungültiger Prefix",
-                description="Bitte gib einen gültigen Prefix an.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        if len(new_prefix) > 5:
-            embed = discord.Embed(
-                title="Prefix zu lang",
-                description="Der Prefix darf maximal 5 Zeichen lang sein.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        old_prefix = config.command_prefix
-        success = await self.bot.db.set_command_prefix(config.guild_id, new_prefix)
-
-        if success:
-            embed = discord.Embed(
-                title="Prefix geändert",
-                description=f"Command-Prefix wurde von `{old_prefix}` zu `{new_prefix}` geändert.",
-                color=discord.Color.green(),
-            )
-        else:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Der Prefix konnte nicht geändert werden.",
-                color=discord.Color.red(),
-            )
-
-        await interaction.response.send_message(embed=embed)
-
-    async def _set_log_channel(
-        self, interaction: discord.Interaction, config, channel_mention: Optional[str]
-    ):
-        """Setzt den Log-Kanal"""
-
-        if not interaction.guild:
-            return
-
-        if not channel_mention:
-            # Entferne Log-Kanal
-            success = await self.bot.db.set_log_channel(config.guild_id, None)
-
-            if success:
-                embed = discord.Embed(
-                    title="Log-Kanal entfernt",
-                    description="Der Log-Kanal wurde deaktiviert.",
-                    color=discord.Color.green(),
-                )
-            else:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Der Log-Kanal konnte nicht entfernt werden.",
-                    color=discord.Color.red(),
-                )
-
-            await interaction.response.send_message(embed=embed)
-            return
-
-        # Versuche Channel-ID zu extrahieren
-        channel = None
-
-        # Prüfe ob es eine Channel-Mention ist
-        if channel_mention.startswith("<#") and channel_mention.endswith(">"):
-            try:
-                channel_id = int(channel_mention[2:-1])
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-        # Prüfe ob es eine reine ID ist
-        elif channel_mention.isdigit():
-            try:
-                channel_id = int(channel_mention)
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-
-        if not channel:
-            embed = discord.Embed(
-                title="Kanal nicht gefunden",
-                description="Der angegebene Kanal konnte nicht gefunden werden. Verwende eine Channel-Mention (#kanal) oder eine Kanal-ID.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        success = await self.bot.db.set_log_channel(config.guild_id, channel.id)
-
-        if success:
-            embed = discord.Embed(
-                title="Log-Kanal gesetzt",
-                description=f"Log-Kanal wurde auf {channel.mention} gesetzt.",
-                color=discord.Color.green(),
-            )
-        else:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Der Log-Kanal konnte nicht gesetzt werden.",
-                color=discord.Color.red(),
-            )
-
-        await interaction.response.send_message(embed=embed)
-
-    async def _add_picture_channel(
-        self, interaction: discord.Interaction, config, channel_mention: Optional[str]
-    ):
-        """Fügt einen Nur-Bild-Kanal hinzu"""
-
-        if not interaction.guild:
-            return
-
-        if not channel_mention:
-            embed = discord.Embed(
-                title="Kanal erforderlich",
-                description="Bitte gib einen Kanal an, der als Nur-Bild-Kanal konfiguriert werden soll.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Versuche Channel-ID zu extrahieren
-        channel = None
-
-        if channel_mention.startswith("<#") and channel_mention.endswith(">"):
-            try:
-                channel_id = int(channel_mention[2:-1])
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-        elif channel_mention.isdigit():
-            try:
-                channel_id = int(channel_mention)
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-
-        if not channel:
-            embed = discord.Embed(
-                title="Kanal nicht gefunden",
-                description="Der angegebene Kanal konnte nicht gefunden werden.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Prüfe ob Kanal bereits konfiguriert ist
-        if channel.id in config.picture_only_channels:
-            embed = discord.Embed(
-                title="Bereits konfiguriert",
-                description=f"{channel.mention} ist bereits als Nur-Bild-Kanal konfiguriert.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        success = await self.bot.db.add_picture_only_channel(
-            config.guild_id, channel.id
-        )
-
-        if success:
-            embed = discord.Embed(
-                title="Nur-Bild-Kanal hinzugefügt",
-                description=f"{channel.mention} wurde als Nur-Bild-Kanal konfiguriert.",
-                color=discord.Color.green(),
-            )
-        else:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Der Nur-Bild-Kanal konnte nicht hinzugefügt werden.",
-                color=discord.Color.red(),
-            )
-
-        await interaction.response.send_message(embed=embed)
-
-    async def _remove_picture_channel(
-        self, interaction: discord.Interaction, config, channel_mention: Optional[str]
-    ):
-        """Entfernt einen Nur-Bild-Kanal"""
-
-        if not interaction.guild:
-            return
-
-        if not channel_mention:
-            embed = discord.Embed(
-                title="Kanal erforderlich",
-                description="Bitte gib einen Kanal an, der aus den Nur-Bild-Kanälen entfernt werden soll.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Versuche Channel-ID zu extrahieren
-        channel = None
-
-        if channel_mention.startswith("<#") and channel_mention.endswith(">"):
-            try:
-                channel_id = int(channel_mention[2:-1])
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-        elif channel_mention.isdigit():
-            try:
-                channel_id = int(channel_mention)
-                channel = interaction.guild.get_channel(channel_id)
-            except ValueError:
-                pass
-
-        if not channel:
-            embed = discord.Embed(
-                title="Kanal nicht gefunden",
-                description="Der angegebene Kanal konnte nicht gefunden werden.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        # Prüfe ob Kanal konfiguriert ist
-        if channel.id not in config.picture_only_channels:
-            embed = discord.Embed(
-                title="Nicht konfiguriert",
-                description=f"{channel.mention} ist nicht als Nur-Bild-Kanal konfiguriert.",
-                color=discord.Color.red(),
-            )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        success = await self.bot.db.remove_picture_only_channel(
-            config.guild_id, channel.id
-        )
-
-        if success:
-            embed = discord.Embed(
-                title="Nur-Bild-Kanal entfernt",
-                description=f"{channel.mention} wurde aus den Nur-Bild-Kanälen entfernt.",
-                color=discord.Color.green(),
-            )
-        else:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Der Nur-Bild-Kanal konnte nicht entfernt werden.",
-                color=discord.Color.red(),
-            )
 
         await interaction.response.send_message(embed=embed)
 
