@@ -112,6 +112,9 @@ class BotInfo(commands.Cog):
             inline=False,
         )
 
+        # Bot Avatar
+        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+
         # Footer
         embed.set_footer(
             text=f"Angefordert von {ctx.author.display_name}",
