@@ -18,6 +18,7 @@ class ServerConfig:
     guild_id: int
     command_prefix: str = "!"
     log_channel_id: Optional[int] = None
+    news_channel_id: Optional[int] = None
     picture_only_channels: List[int] = field(default_factory=list)
 
 
@@ -40,18 +41,19 @@ class DatabaseManager:
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 cursor = await db.execute(
-                    "SELECT guild_id, command_prefix, log_channel_id, picture_only_channels "
+                    "SELECT guild_id, command_prefix, log_channel_id, news_channel_id, picture_only_channels "
                     "FROM server_config WHERE guild_id = ?",
                     (guild_id,),
                 )
                 row = await cursor.fetchone()
 
                 if row:
-                    picture_only_channels = json.loads(row[3]) if row[3] else []
+                    picture_only_channels = json.loads(row[4]) if row[4] else []
                     return ServerConfig(
                         guild_id=row[0],
                         command_prefix=row[1],
                         log_channel_id=row[2],
+                        news_channel_id=row[3],
                         picture_only_channels=picture_only_channels,
                     )
                 else:
@@ -79,12 +81,13 @@ class DatabaseManager:
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute(
                     """INSERT OR REPLACE INTO server_config 
-                       (guild_id, command_prefix, log_channel_id, picture_only_channels)
-                       VALUES (?, ?, ?, ?)""",
+                       (guild_id, command_prefix, log_channel_id, news_channel_id, picture_only_channels)
+                       VALUES (?, ?, ?, ?, ?)""",
                     (
                         config.guild_id,
                         config.command_prefix,
                         config.log_channel_id,
+                        config.news_channel_id,
                         picture_only_json,
                     ),
                 )
@@ -137,6 +140,26 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Error setting log channel for guild {guild_id}: {e}")
+            return False
+
+    async def set_news_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
+        """
+        Set news channel for a guild.
+
+        Args:
+            guild_id: Discord guild ID
+            channel_id: Channel ID for news, None to disable
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            config = await self.get_server_config(guild_id)
+            config.news_channel_id = channel_id
+            return await self.set_server_config(config)
+
+        except Exception as e:
+            logger.error(f"Error setting news channel for guild {guild_id}: {e}")
             return False
 
     async def add_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
@@ -217,18 +240,19 @@ class DatabaseManager:
             configs = []
             async with aiosqlite.connect(self.db_path) as db:
                 cursor = await db.execute(
-                    "SELECT guild_id, command_prefix, log_channel_id, picture_only_channels "
+                    "SELECT guild_id, command_prefix, log_channel_id, news_channel_id, picture_only_channels "
                     "FROM server_config"
                 )
                 rows = await cursor.fetchall()
 
                 for row in rows:
-                    picture_only_channels = json.loads(row[3]) if row[3] else []
+                    picture_only_channels = json.loads(row[4]) if row[4] else []
                     configs.append(
                         ServerConfig(
                             guild_id=row[0],
                             command_prefix=row[1],
                             log_channel_id=row[2],
+                            news_channel_id=row[3],
                             picture_only_channels=picture_only_channels,
                         )
                     )
@@ -237,4 +261,76 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Error getting all server configs: {e}")
+            return []
+
+    # Software Check methods
+
+    async def is_rss_entry_posted(self, entry_guid: str) -> bool:
+        """
+        Check if an RSS entry has already been posted.
+
+        Args:
+            entry_guid: Unique identifier for the RSS entry
+
+        Returns:
+            True if entry has been posted, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT 1 FROM posted_rss_entries WHERE entry_guid = ?",
+                    (entry_guid,),
+                )
+                result = await cursor.fetchone()
+                return result is not None
+
+        except Exception as e:
+            logger.error(f"Error checking RSS entry: {e}")
+            return True  # Return True on error to prevent spam
+
+    async def mark_rss_entry_as_posted(
+        self, entry_guid: str, title: str, link: str
+    ) -> bool:
+        """
+        Mark an RSS entry as posted.
+
+        Args:
+            entry_guid: Unique identifier for the RSS entry
+            title: Entry title
+            link: Entry link
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "INSERT OR IGNORE INTO posted_rss_entries (entry_guid, title, link) VALUES (?, ?, ?)",
+                    (entry_guid, title, link),
+                )
+                await db.commit()
+                logger.debug(f"RSS entry marked as posted: {title}")
+                return True
+
+        except Exception as e:
+            logger.error(f"Error marking RSS entry as posted: {e}")
+            return False
+
+    async def get_news_channels(self) -> List[int]:
+        """
+        Get all configured news channels.
+
+        Returns:
+            List of channel IDs that have news channels configured
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT news_channel_id FROM server_config WHERE news_channel_id IS NOT NULL"
+                )
+                results = await cursor.fetchall()
+                return [row[0] for row in results]
+
+        except Exception as e:
+            logger.error(f"Error getting news channels: {e}")
             return []

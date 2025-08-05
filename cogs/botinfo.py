@@ -30,7 +30,7 @@ class BotInfo(commands.Cog):
         embed = discord.Embed(
             title="Bot-Informationen",
             description="Lade Bot- und Systeminformationen...",
-            color=discord.Color.green(),
+            color=discord.Color.blurple(),
             timestamp=datetime.now(timezone.utc),
         )
 
@@ -62,7 +62,7 @@ class BotInfo(commands.Cog):
         # Erstelle detailliertes Embed
         embed = discord.Embed(
             title="Bot-Informationen",
-            color=discord.Color.green(),
+            color=discord.Color.blurple(),
             timestamp=datetime.now(timezone.utc),
         )
 

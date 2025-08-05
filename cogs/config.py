@@ -33,6 +33,11 @@ class ConfigOptionSelect(discord.ui.Select):
                 description="Setzt oder entfernt den Log-Kanal",
             ),
             discord.SelectOption(
+                label="News-Kanal setzen",
+                value="newschannel",
+                description="Setzt oder entfernt den News-Kanal",
+            ),
+            discord.SelectOption(
                 label="Nur-Bild-Kanal hinzufügen",
                 value="add_pic_channel",
                 description="Fügt einen Nur-Bild-Kanal hinzu",
@@ -315,6 +320,31 @@ class ConfigCog(commands.Cog):
                     embed=embed, view=view, ephemeral=True
                 )
 
+            elif option == "newschannel":
+                channels = [
+                    ch
+                    for ch in interaction.guild.text_channels
+                    if ch.permissions_for(interaction.guild.me).send_messages
+                ]
+                if not channels:
+                    embed = discord.Embed(
+                        title="Keine Kanäle verfügbar",
+                        description="Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
+
+                embed = discord.Embed(
+                    title="News-Kanal setzen",
+                    description="Wähle einen Kanal für die News-Nachrichten:",
+                    color=discord.Color.blurple(),
+                )
+                view = ChannelView(channels, "newschannel", allow_none=True)
+                await interaction.response.send_message(
+                    embed=embed, view=view, ephemeral=True
+                )
+
             elif option == "add_pic_channel":
                 channels = interaction.guild.text_channels
                 if not channels:
@@ -423,6 +453,8 @@ class ConfigCog(commands.Cog):
 
             if config_type == "logchannel":
                 await self._set_log_channel_direct(interaction, config, channel_id)
+            elif config_type == "newschannel":
+                await self._set_news_channel_direct(interaction, config, channel_id)
             elif config_type == "add_pic_channel" and channel_id is not None:
                 await self._add_picture_channel_direct(interaction, config, channel_id)
             elif config_type == "remove_pic_channel" and channel_id is not None:
@@ -519,6 +551,60 @@ class ConfigCog(commands.Cog):
             embed = discord.Embed(
                 title="Fehler",
                 description="Der Log-Kanal konnte nicht gesetzt werden.",
+                color=discord.Color.red(),
+            )
+
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    async def _set_news_channel_direct(
+        self, interaction: discord.Interaction, config, channel_id: Optional[int]
+    ):
+        """Setzt den News-Kanal direkt"""
+        if not interaction.guild:
+            return
+
+        if channel_id is None:
+            # Entferne News-Kanal
+            success = await self.bot.db.set_news_channel(config.guild_id, None)
+
+            if success:
+                embed = discord.Embed(
+                    title="News-Kanal entfernt",
+                    description="Der News-Kanal wurde deaktiviert.",
+                    color=discord.Color.green(),
+                )
+            else:
+                embed = discord.Embed(
+                    title="Fehler",
+                    description="Der News-Kanal konnte nicht entfernt werden.",
+                    color=discord.Color.red(),
+                )
+
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        channel = interaction.guild.get_channel(channel_id)
+        if not channel:
+            embed = discord.Embed(
+                title="Kanal nicht gefunden",
+                description="Der angegebene Kanal konnte nicht gefunden werden.",
+                color=discord.Color.red(),
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
+            return
+
+        success = await self.bot.db.set_news_channel(config.guild_id, channel.id)
+
+        if success:
+            embed = discord.Embed(
+                title="News-Kanal gesetzt",
+                description=f"News-Kanal wurde auf {channel.mention} gesetzt.",
+                color=discord.Color.green(),
+            )
+        else:
+            embed = discord.Embed(
+                title="Fehler",
+                description="Der News-Kanal konnte nicht gesetzt werden.",
                 color=discord.Color.red(),
             )
 
@@ -631,6 +717,17 @@ class ConfigCog(commands.Cog):
             else:
                 log_channel_text = f"Kanal nicht gefunden (ID: {config.log_channel_id})"
 
+        # News-Kanal anzeigen
+        news_channel_text = "Nicht konfiguriert"
+        if config.news_channel_id:
+            news_channel = interaction.guild.get_channel(config.news_channel_id)
+            if news_channel:
+                news_channel_text = f"#{news_channel.name}"
+            else:
+                news_channel_text = (
+                    f"Kanal nicht gefunden (ID: {config.news_channel_id})"
+                )
+
         # Bild-Kanäle anzeigen
         pic_channels_text = "Keine konfiguriert"
         if config.picture_only_channels:
@@ -652,6 +749,7 @@ class ConfigCog(commands.Cog):
             name="Command-Prefix", value=f"`{config.command_prefix}`", inline=True
         )
         embed.add_field(name="Log-Kanal", value=log_channel_text, inline=True)
+        embed.add_field(name="News-Kanal", value=news_channel_text, inline=True)
         embed.add_field(name="Nur-Bild-Kanäle", value=pic_channels_text, inline=False)
         embed.set_footer(text="Verwende /config um Einstellungen zu ändern")
 

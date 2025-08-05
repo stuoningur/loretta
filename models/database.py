@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS server_config (
     guild_id INTEGER PRIMARY KEY,
     command_prefix TEXT NOT NULL DEFAULT '!',
     log_channel_id INTEGER,
+    news_channel_id INTEGER,
     picture_only_channels TEXT,  -- JSON array of channel IDs
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -29,6 +30,18 @@ BEGIN
 END;
 """
 
+# SQL schema for RSS entries tracking
+RSS_ENTRIES_SCHEMA = """
+CREATE TABLE IF NOT EXISTS posted_rss_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entry_guid TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    link TEXT NOT NULL,
+    posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
+
 
 async def initialize_database(db_path: str) -> None:
     """
@@ -44,6 +57,9 @@ async def initialize_database(db_path: str) -> None:
 
             # Create timestamp update trigger
             await db.execute(UPDATE_TIMESTAMP_TRIGGER)
+
+            # Create RSS entries table
+            await db.execute(RSS_ENTRIES_SCHEMA)
 
             # Commit changes
             await db.commit()
