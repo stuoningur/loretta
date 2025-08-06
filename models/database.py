@@ -92,13 +92,10 @@ END;
 SPECIFICATIONS_INDEXES = [
     # Index for guild-based queries (most common)
     "CREATE INDEX IF NOT EXISTS idx_specifications_guild_id ON specifications(guild_id);",
-    
     # Composite index for search queries (guild_id + text search)
     "CREATE INDEX IF NOT EXISTS idx_specifications_guild_search ON specifications(guild_id, specs_text);",
-    
     # Index for user lookups
     "CREATE INDEX IF NOT EXISTS idx_specifications_user_id ON specifications(user_id);",
-    
     # Index for updated_at ordering
     "CREATE INDEX IF NOT EXISTS idx_specifications_updated_at ON specifications(updated_at DESC);",
 ]

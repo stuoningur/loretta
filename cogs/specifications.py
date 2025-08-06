@@ -294,6 +294,7 @@ class SpecificationsCog(commands.Cog):
             if not ctx.guild:
                 return
             guild_id = ctx.guild.id
+
             # Create search function for pagination
             async def search_function(limit: int, offset: int):
                 return await self._get_cached_search_results(

@@ -98,3 +98,75 @@ class EmbedFactory:
             "Unerwarteter Fehler",
             f"Es ist ein unerwarteter Fehler bei der {operation} aufgetreten.",
         )
+
+    @staticmethod
+    def missing_permissions_embed(permissions: str) -> discord.Embed:
+        """Create a missing permissions error embed"""
+        return EmbedFactory.error_embed(
+            "Fehlende Berechtigung",
+            f"Du hast nicht die erforderliche Berechtigung: **{permissions}**",
+        )
+
+    @staticmethod
+    def command_not_found_embed(command_name: str) -> discord.Embed:
+        """Create a command not found error embed"""
+        return EmbedFactory.error_embed(
+            "Befehl nicht gefunden",
+            f"Der Befehl `{command_name}` existiert nicht.\nVerwende `/help` für eine Liste aller verfügbaren Befehle.",
+        )
+
+    @staticmethod
+    def missing_argument_embed(argument: str) -> discord.Embed:
+        """Create a missing argument error embed"""
+        return EmbedFactory.error_embed(
+            "Fehlender Parameter",
+            f"Der erforderliche Parameter `{argument}` fehlt.\nÜberprüfe die Befehlsyntax mit `/help`.",
+        )
+
+    @staticmethod
+    def bad_argument_embed(argument: str, expected_type: str) -> discord.Embed:
+        """Create a bad argument error embed"""
+        return EmbedFactory.error_embed(
+            "Ungültiger Parameter",
+            f"Der Parameter `{argument}` hat einen ungültigen Wert.\nErwartet wird: **{expected_type}**",
+        )
+
+    @staticmethod
+    def too_many_arguments_embed() -> discord.Embed:
+        """Create a too many arguments error embed"""
+        return EmbedFactory.error_embed(
+            "Zu viele Parameter",
+            "Du hast zu viele Parameter angegeben.\nÜberprüfe die Befehlsyntax mit `/help`.",
+        )
+
+    @staticmethod
+    def cooldown_embed(retry_after: float) -> discord.Embed:
+        """Create a cooldown error embed"""
+        return EmbedFactory.error_embed(
+            "Abklingzeit aktiv",
+            f"Du musst noch {retry_after:.1f} Sekunden warten, bevor du diesen Befehl erneut verwenden kannst.",
+        )
+
+    @staticmethod
+    def bot_missing_permissions_embed(permissions: str) -> discord.Embed:
+        """Create a bot missing permissions error embed"""
+        return EmbedFactory.error_embed(
+            "Bot-Berechtigung fehlt",
+            f"Mir fehlt die erforderliche Berechtigung: **{permissions}**\nBitte kontaktiere einen Administrator.",
+        )
+
+    @staticmethod
+    def dm_only_embed() -> discord.Embed:
+        """Create a DM only error embed"""
+        return EmbedFactory.error_embed(
+            "Nur in Direktnachrichten",
+            "Dieser Befehl kann nur in Direktnachrichten verwendet werden.",
+        )
+
+    @staticmethod
+    def guild_only_embed() -> discord.Embed:
+        """Create a guild only error embed"""
+        return EmbedFactory.error_embed(
+            "Nur auf Servern verfügbar",
+            "Dieser Befehl kann nur auf Servern verwendet werden, nicht in Direktnachrichten.",
+        )

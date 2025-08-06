@@ -4,7 +4,7 @@ Reusable pagination utilities for Discord bots
 
 import discord
 import logging
-from typing import Optional, Union, Callable, Any, Tuple, List
+from typing import Optional, Union, Callable, Any
 from abc import ABC, abstractmethod
 
 logger = logging.getLogger(__name__)

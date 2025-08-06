@@ -2,7 +2,6 @@
 Decorators for Discord commands
 """
 
-import discord
 from discord.ext import commands
 from functools import wraps
 

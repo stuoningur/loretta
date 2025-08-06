@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 
 from models.database import initialize_database
 from utils.database import DatabaseManager
+from utils.embeds import EmbedFactory
 
 load_dotenv()
 
@@ -159,6 +160,259 @@ class LorettaBot(commands.Bot):
         # Verarbeite Commands normal
         await self.process_commands(message)
 
+    async def on_command_error(self, ctx, error):
+        """Globaler Error Handler für alle Commands"""
+        # Verhindere Mehrfachbehandlung von Fehlern wenn Cogs eigene Handler haben
+        if hasattr(ctx.command, "on_error"):
+            return
+
+        # Original Exception extrahieren falls vorhanden
+        error = getattr(error, "original", error)
+
+        # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
+        if isinstance(error, (
+            commands.CommandNotFound,
+            commands.MissingRequiredArgument,
+            commands.BadArgument,
+            commands.TooManyArguments,
+            commands.MissingPermissions,
+            commands.BotMissingPermissions,
+            commands.CommandOnCooldown,
+            commands.NoPrivateMessage,
+            commands.PrivateMessageOnly,
+            commands.DisabledCommand,
+            commands.NotOwner,
+            commands.CheckFailure,
+        )):
+            # Für bekannte Fehler nur basic logging ohne traceback
+            pass
+        else:
+            # Für unbekannte Fehler full logging mit traceback
+            logger.error(
+                f"Command error in {ctx.command}: {type(error).__name__}: {error}",
+                exc_info=error,
+            )
+
+        embed = None
+
+        # Spezifische Fehlerbehandlung
+        if isinstance(error, commands.CommandNotFound):
+            # Extrahiere den Befehlsnamen aus der Nachricht
+            prefix = await self.get_prefix(ctx.message)
+            if isinstance(prefix, list):
+                prefix = prefix[0]  # Nimm ersten Prefix
+            command_name = ctx.message.content[len(prefix) :].split()[0]
+            logger.info(
+                f"Command not found: '{command_name}' by {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
+            )
+            embed = EmbedFactory.command_not_found_embed(command_name)
+
+        elif isinstance(error, commands.MissingRequiredArgument):
+            param_name = getattr(getattr(error, "param", None), "name", "unbekannt")
+            logger.warning(
+                f"Missing required argument '{param_name}' in command {ctx.command} by {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.missing_argument_embed(param_name)
+
+        elif isinstance(error, commands.BadArgument):
+            # Versuche den Parameternamen und erwarteten Typ zu extrahieren
+            param_name = getattr(getattr(error, "param", None), "name", "unbekannt")
+            expected_type = "gültiger Wert"
+
+            # Spezifische Typen identifizieren
+            if "int" in str(error).lower():
+                expected_type = "ganze Zahl"
+            elif "float" in str(error).lower():
+                expected_type = "Dezimalzahl"
+            elif "member" in str(error).lower():
+                expected_type = "Benutzername oder Erwähnung"
+            elif "channel" in str(error).lower():
+                expected_type = "Kanalname oder Erwähnung"
+            elif "role" in str(error).lower():
+                expected_type = "Rollenname oder Erwähnung"
+
+            logger.warning(
+                f"Bad argument '{param_name}' (expected: {expected_type}) in command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+            )
+            embed = EmbedFactory.bad_argument_embed(param_name, expected_type)
+
+        elif isinstance(error, commands.TooManyArguments):
+            logger.warning(
+                f"Too many arguments provided for command {ctx.command} by {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.too_many_arguments_embed()
+
+        elif isinstance(error, commands.MissingPermissions):
+            missing_perms = ", ".join(error.missing_permissions)
+            logger.warning(
+                f"Missing permissions ({missing_perms}) for command {ctx.command} by {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
+            )
+            embed = EmbedFactory.missing_permissions_embed(missing_perms)
+
+        elif isinstance(error, commands.BotMissingPermissions):
+            missing_perms = ", ".join(error.missing_permissions)
+            logger.error(
+                f"Bot missing permissions ({missing_perms}) for command {ctx.command} in {ctx.guild.name if ctx.guild else 'DM'} (Guild ID: {ctx.guild.id if ctx.guild else 'N/A'})"
+            )
+            embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
+
+        elif isinstance(error, commands.CommandOnCooldown):
+            logger.info(
+                f"Command {ctx.command} on cooldown for {ctx.author} ({ctx.author.id}), retry after {error.retry_after:.1f}s"
+            )
+            embed = EmbedFactory.cooldown_embed(error.retry_after)
+
+        elif isinstance(error, commands.NoPrivateMessage):
+            logger.warning(
+                f"Guild-only command {ctx.command} attempted in DM by {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.guild_only_embed()
+
+        elif isinstance(error, commands.PrivateMessageOnly):
+            logger.warning(
+                f"DM-only command {ctx.command} attempted in guild {ctx.guild.name if ctx.guild else 'unknown'} by {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.dm_only_embed()
+
+        elif isinstance(error, commands.DisabledCommand):
+            logger.info(
+                f"Disabled command {ctx.command} attempted by {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.error_embed(
+                "Befehl deaktiviert", "Dieser Befehl ist derzeit deaktiviert."
+            )
+
+        elif isinstance(error, commands.NotOwner):
+            logger.warning(
+                f"Owner-only command {ctx.command} attempted by non-owner {ctx.author} ({ctx.author.id})"
+            )
+            embed = EmbedFactory.error_embed(
+                "Berechtigung verweigert",
+                "Nur der Bot-Besitzer kann diesen Befehl verwenden.",
+            )
+
+        elif isinstance(error, commands.CheckFailure):
+            logger.warning(
+                f"Check failure for command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+            )
+            embed = EmbedFactory.error_embed(
+                "Überprüfung fehlgeschlagen",
+                "Du erfüllst nicht die Voraussetzungen für diesen Befehl.",
+            )
+
+        else:
+            # Unbekannte Fehler
+            embed = EmbedFactory.unexpected_error_embed("Befehlsausführung")
+            logger.error(
+                f"Unbehandelter Fehler: {type(error).__name__}: {error}", exc_info=error
+            )
+
+        # Sende Error-Embed
+        if embed:
+            try:
+                # Versuche ephemeral für Slash Commands
+                if ctx.interaction and not ctx.interaction.response.is_done():
+                    await ctx.interaction.response.send_message(
+                        embed=embed, ephemeral=True
+                    )
+                elif ctx.interaction and ctx.interaction.response.is_done():
+                    await ctx.interaction.followup.send(embed=embed, ephemeral=True)
+                else:
+                    await ctx.send(embed=embed)
+            except Exception as send_error:
+                logger.error(f"Fehler beim Senden der Fehlermeldung: {send_error}")
+
+    async def on_app_command_error(
+        self,
+        interaction: discord.Interaction,
+        error: discord.app_commands.AppCommandError,
+    ):
+        """Globaler Error Handler für Slash Commands"""
+        # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
+        if isinstance(error, (
+            discord.app_commands.CommandNotFound,
+            discord.app_commands.MissingPermissions,
+            discord.app_commands.BotMissingPermissions,
+            discord.app_commands.CommandOnCooldown,
+            discord.app_commands.NoPrivateMessage,
+            discord.app_commands.CheckFailure,
+        )):
+            # Für bekannte Fehler nur basic logging ohne traceback
+            pass
+        else:
+            # Für unbekannte Fehler full logging mit traceback
+            logger.error(
+                f"App command error in {interaction.command}: {type(error).__name__}: {error}",
+                exc_info=error,
+            )
+
+        embed = None
+
+        # Spezifische Fehlerbehandlung für App Commands
+        if isinstance(error, discord.app_commands.CommandNotFound):
+            command_name = "unbekannt"
+            if interaction.data and "name" in interaction.data:
+                command_name = interaction.data["name"]
+            logger.info(
+                f"App command not found: '{command_name}' by {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
+            )
+            embed = EmbedFactory.command_not_found_embed(command_name)
+
+        elif isinstance(error, discord.app_commands.MissingPermissions):
+            missing_perms = ", ".join(error.missing_permissions)
+            logger.warning(
+                f"Missing permissions ({missing_perms}) for app command {interaction.command} by {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
+            )
+            embed = EmbedFactory.missing_permissions_embed(missing_perms)
+
+        elif isinstance(error, discord.app_commands.BotMissingPermissions):
+            missing_perms = ", ".join(error.missing_permissions)
+            logger.error(
+                f"Bot missing permissions ({missing_perms}) for app command {interaction.command} in {interaction.guild.name if interaction.guild else 'DM'} (Guild ID: {interaction.guild.id if interaction.guild else 'N/A'})"
+            )
+            embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
+
+        elif isinstance(error, discord.app_commands.CommandOnCooldown):
+            logger.info(
+                f"App command {interaction.command} on cooldown for {interaction.user} ({interaction.user.id}), retry after {error.retry_after:.1f}s"
+            )
+            embed = EmbedFactory.cooldown_embed(error.retry_after)
+
+        elif isinstance(error, discord.app_commands.NoPrivateMessage):
+            logger.warning(
+                f"Guild-only app command {interaction.command} attempted in DM by {interaction.user} ({interaction.user.id})"
+            )
+            embed = EmbedFactory.guild_only_embed()
+
+        elif isinstance(error, discord.app_commands.CheckFailure):
+            logger.warning(
+                f"Check failure for app command {interaction.command} by {interaction.user} ({interaction.user.id}): {str(error)}"
+            )
+            embed = EmbedFactory.error_embed(
+                "Überprüfung fehlgeschlagen",
+                "Du erfüllst nicht die Voraussetzungen für diesen Befehl.",
+            )
+
+        else:
+            # Unbekannte Fehler
+            embed = EmbedFactory.unexpected_error_embed("Slash-Befehlsausführung")
+            logger.error(
+                f"Unbehandelter App Command Fehler: {type(error).__name__}: {error}",
+                exc_info=error,
+            )
+
+        # Sende Error-Embed
+        if embed:
+            try:
+                if not interaction.response.is_done():
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                else:
+                    await interaction.followup.send(embed=embed, ephemeral=True)
+            except Exception as send_error:
+                logger.error(
+                    f"Fehler beim Senden der App Command Fehlermeldung: {send_error}"
+                )
+
 
 class KeyboardInterruptHandler:
     """Handler für graceful shutdown bei SIGINT/SIGTERM"""
@@ -168,7 +422,7 @@ class KeyboardInterruptHandler:
         self._task = None
         self._shutdown_initiated = False
 
-    def __call__(self, signum=None, _frame=None):
+    def __call__(self, signum=None, frame=None):
         """Signal handler callback"""
         if self._shutdown_initiated:
             logger.warning("Shutdown bereits eingeleitet, warte auf Abschluss...")
