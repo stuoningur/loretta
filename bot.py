@@ -6,6 +6,7 @@ Ein Discord-Bot mit verschiedenen Utility-Funktionen
 
 import asyncio
 import logging
+import logging.handlers
 import os
 import signal
 import sys
@@ -21,11 +22,66 @@ from utils.embeds import EmbedFactory
 
 load_dotenv()
 
-logging.basicConfig(
-    level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper()),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.FileHandler("data/loretta.log"), logging.StreamHandler()],
-)
+
+class ColoredConsoleHandler(logging.StreamHandler):
+    """Custom handler that adds color to console output using ANSI escape codes"""
+
+    COLORS = {
+        logging.DEBUG: "\033[36m",  # Cyan
+        logging.INFO: "\033[32m",  # Green
+        logging.WARNING: "\033[33m",  # Yellow
+        logging.ERROR: "\033[31m",  # Red
+        logging.CRITICAL: "\033[35m",  # Magenta
+    }
+    RESET = "\033[0m"
+
+    def format(self, record):
+        log_color = self.COLORS.get(record.levelno, "")
+        record.levelname = f"{log_color}{record.levelname}{self.RESET}"
+        return super().format(record)
+
+
+def setup_logging():
+    """Setup logging with rotating files and colored console output"""
+    log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper())
+
+    # Ensure data directory exists
+    Path("data").mkdir(exist_ok=True)
+
+    # Create formatters
+    logging_formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    # Root logger setup
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.handlers.clear()  # Remove any existing handlers
+
+    # File handler with rotation (10MB max, keep 5 backup files)
+    file_handler = logging.handlers.RotatingFileHandler(
+        "data/loretta.log",
+        maxBytes=10 * 1024 * 1024,  # 10MB
+        backupCount=5,
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(logging_formatter)
+    file_handler.setLevel(log_level)
+
+    # Colored console handler
+    console_handler = ColoredConsoleHandler()
+    console_handler.setFormatter(logging_formatter)
+    console_handler.setLevel(log_level)
+
+    # Add handlers to root logger
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
+    return root_logger
+
+
+# Setup logging
+setup_logging()
 
 logger = logging.getLogger(__name__)
 
@@ -170,20 +226,23 @@ class LorettaBot(commands.Bot):
         error = getattr(error, "original", error)
 
         # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
-        if isinstance(error, (
-            commands.CommandNotFound,
-            commands.MissingRequiredArgument,
-            commands.BadArgument,
-            commands.TooManyArguments,
-            commands.MissingPermissions,
-            commands.BotMissingPermissions,
-            commands.CommandOnCooldown,
-            commands.NoPrivateMessage,
-            commands.PrivateMessageOnly,
-            commands.DisabledCommand,
-            commands.NotOwner,
-            commands.CheckFailure,
-        )):
+        if isinstance(
+            error,
+            (
+                commands.CommandNotFound,
+                commands.MissingRequiredArgument,
+                commands.BadArgument,
+                commands.TooManyArguments,
+                commands.MissingPermissions,
+                commands.BotMissingPermissions,
+                commands.CommandOnCooldown,
+                commands.NoPrivateMessage,
+                commands.PrivateMessageOnly,
+                commands.DisabledCommand,
+                commands.NotOwner,
+                commands.CheckFailure,
+            ),
+        ):
             # Für bekannte Fehler nur basic logging ohne traceback
             pass
         else:
@@ -329,14 +388,17 @@ class LorettaBot(commands.Bot):
     ):
         """Globaler Error Handler für Slash Commands"""
         # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
-        if isinstance(error, (
-            discord.app_commands.CommandNotFound,
-            discord.app_commands.MissingPermissions,
-            discord.app_commands.BotMissingPermissions,
-            discord.app_commands.CommandOnCooldown,
-            discord.app_commands.NoPrivateMessage,
-            discord.app_commands.CheckFailure,
-        )):
+        if isinstance(
+            error,
+            (
+                discord.app_commands.CommandNotFound,
+                discord.app_commands.MissingPermissions,
+                discord.app_commands.BotMissingPermissions,
+                discord.app_commands.CommandOnCooldown,
+                discord.app_commands.NoPrivateMessage,
+                discord.app_commands.CheckFailure,
+            ),
+        ):
             # Für bekannte Fehler nur basic logging ohne traceback
             pass
         else:
@@ -431,6 +493,9 @@ class KeyboardInterruptHandler:
         self._shutdown_initiated = True
         signal_name = signal.Signals(signum).name if signum else "SIGINT"
         logger.info(f"Signal {signal_name} empfangen, leite graceful shutdown ein...")
+
+        # frame parameter is required for signal handlers but not used
+        _ = frame
 
         if self._task:
             logger.warning("Shutdown-Task läuft bereits")
