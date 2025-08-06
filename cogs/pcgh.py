@@ -84,19 +84,23 @@ class PCGH(commands.Cog):
 
         # Thumbnail-Bild aus RSS-Feed extrahieren
         image_url = None
-        
+
         # Zuerst prüfen, ob ein Enclosure-Tag mit einem Bild vorhanden ist
         if hasattr(entry, "enclosures") and entry.enclosures:
             for enclosure in entry.enclosures:
-                if hasattr(enclosure, "type") and enclosure.type and enclosure.type.startswith("image/"):
+                if (
+                    hasattr(enclosure, "type")
+                    and enclosure.type
+                    and enclosure.type.startswith("image/")
+                ):
                     if hasattr(enclosure, "url") and enclosure.url:
                         image_url = enclosure.url
                         break
-        
+
         # Falls kein Enclosure-Bild gefunden wurde, aus HTML-Summary extrahieren
         if not image_url and hasattr(entry, "summary") and entry.summary:
             image_url = self._extract_image_url(entry.summary)
-        
+
         if image_url:
             embed.set_thumbnail(url=image_url)
 
@@ -127,7 +131,6 @@ class PCGH(commands.Cog):
 
         return embed
 
-
     @tasks.loop(minutes=15)
     async def check_rss_feed(self):
         """Überprüft die RSS-Feeds alle 15 Minuten"""
@@ -144,10 +147,10 @@ class PCGH(commands.Cog):
 
             # Alle Feeds abrufen und kombinieren
             all_entries = []
-            
+
             for i, rss_url in enumerate(self.rss_urls):
                 feed_type = "test" if i == 0 else "main"
-                
+
                 try:
                     # RSS-Feed abrufen
                     async with self.session.get(rss_url) as response:
@@ -168,17 +171,19 @@ class PCGH(commands.Cog):
                         )
                         continue
 
-                    # Entries mit Feed-Typ markieren und zur Liste hinzufügen  
+                    # Entries mit Feed-Typ markieren und zur Liste hinzufügen
                     for idx, entry in enumerate(feed.entries):
                         # Einfache Sortierung basierend auf Feed-Reihenfolge
                         # RSS-Feeds sind normalerweise bereits chronologisch sortiert
                         sort_key = idx
-                        
+
                         # Entry mit zusätzlichen Metadaten als Tuple erweitern
                         all_entries.append((entry, feed_type, sort_key))
 
                 except Exception as e:
-                    logger.error(f"Fehler beim Abrufen des PCGH RSS-Feeds ({feed_type}): {e}")
+                    logger.error(
+                        f"Fehler beim Abrufen des PCGH RSS-Feeds ({feed_type}): {e}"
+                    )
                     continue
 
             if not all_entries:
