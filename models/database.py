@@ -65,6 +65,44 @@ CREATE TABLE IF NOT EXISTS birthday_channels (
 );
 """
 
+# SQL schema for user specifications
+SPECIFICATIONS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS specifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    specs_text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(guild_id, user_id)
+);
+"""
+
+# Trigger to update the updated_at timestamp for specifications
+UPDATE_SPECS_TIMESTAMP_TRIGGER = """
+CREATE TRIGGER IF NOT EXISTS update_specifications_timestamp 
+    AFTER UPDATE ON specifications
+    FOR EACH ROW
+BEGIN
+    UPDATE specifications SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+"""
+
+# Indexes for performance optimization
+SPECIFICATIONS_INDEXES = [
+    # Index for guild-based queries (most common)
+    "CREATE INDEX IF NOT EXISTS idx_specifications_guild_id ON specifications(guild_id);",
+    
+    # Composite index for search queries (guild_id + text search)
+    "CREATE INDEX IF NOT EXISTS idx_specifications_guild_search ON specifications(guild_id, specs_text);",
+    
+    # Index for user lookups
+    "CREATE INDEX IF NOT EXISTS idx_specifications_user_id ON specifications(user_id);",
+    
+    # Index for updated_at ordering
+    "CREATE INDEX IF NOT EXISTS idx_specifications_updated_at ON specifications(updated_at DESC);",
+]
+
 
 async def initialize_database(db_path: str) -> None:
     """
@@ -90,9 +128,19 @@ async def initialize_database(db_path: str) -> None:
             # Create birthday channels table
             await db.execute(BIRTHDAY_CHANNELS_SCHEMA)
 
+            # Create specifications table
+            await db.execute(SPECIFICATIONS_SCHEMA)
+
+            # Create specifications timestamp update trigger
+            await db.execute(UPDATE_SPECS_TIMESTAMP_TRIGGER)
+
+            # Create performance indexes
+            for index_sql in SPECIFICATIONS_INDEXES:
+                await db.execute(index_sql)
+
             # Commit changes
             await db.commit()
-            logger.info("Database initialized successfully")
+            logger.info("Database initialized successfully with performance indexes")
 
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")

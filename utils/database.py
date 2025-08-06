@@ -34,6 +34,18 @@ class Birthday:
     birth_month: int
 
 
+@dataclass
+class Specification:
+    """Data class for user specifications."""
+
+    id: Optional[int]
+    guild_id: int
+    user_id: int
+    specs_text: str
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+
+
 class DatabaseManager:
     """Manager class for database operations."""
 
@@ -608,4 +620,211 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Error getting all birthday channels: {e}")
+            return []
+
+    # Specification methods
+
+    async def add_specification(self, specification: Specification) -> bool:
+        """
+        Add or update a user's specifications.
+
+        Args:
+            specification: Specification object with the data
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                # First check if the specification already exists
+                cursor = await db.execute(
+                    "SELECT id FROM specifications WHERE guild_id = ? AND user_id = ?",
+                    (specification.guild_id, specification.user_id),
+                )
+                existing = await cursor.fetchone()
+
+                if existing:
+                    # Update existing record (trigger will update updated_at)
+                    await db.execute(
+                        "UPDATE specifications SET specs_text = ? WHERE guild_id = ? AND user_id = ?",
+                        (
+                            specification.specs_text,
+                            specification.guild_id,
+                            specification.user_id,
+                        ),
+                    )
+                else:
+                    # Insert new record (both created_at and updated_at will be set to current time)
+                    await db.execute(
+                        "INSERT INTO specifications (guild_id, user_id, specs_text) VALUES (?, ?, ?)",
+                        (
+                            specification.guild_id,
+                            specification.user_id,
+                            specification.specs_text,
+                        ),
+                    )
+
+                await db.commit()
+
+            logger.info(
+                f"Added/updated specifications for user {specification.user_id} in guild {specification.guild_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding/updating specifications: {e}")
+            return False
+
+    async def get_specification(
+        self, guild_id: int, user_id: int
+    ) -> Optional[Specification]:
+        """
+        Get a user's specifications.
+
+        Args:
+            guild_id: Discord guild ID
+            user_id: Discord user ID
+
+        Returns:
+            Specification object if found, None otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT id, guild_id, user_id, specs_text, created_at, updated_at "
+                    "FROM specifications WHERE guild_id = ? AND user_id = ?",
+                    (guild_id, user_id),
+                )
+                row = await cursor.fetchone()
+
+                if row:
+                    return Specification(
+                        id=row[0],
+                        guild_id=row[1],
+                        user_id=row[2],
+                        specs_text=row[3],
+                        created_at=row[4],
+                        updated_at=row[5],
+                    )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error getting specification: {e}")
+            return None
+
+    async def remove_specification(self, guild_id: int, user_id: int) -> bool:
+        """
+        Remove a user's specifications.
+
+        Args:
+            guild_id: Discord guild ID
+            user_id: Discord user ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "DELETE FROM specifications WHERE guild_id = ? AND user_id = ?",
+                    (guild_id, user_id),
+                )
+                await db.commit()
+
+            logger.info(
+                f"Removed specifications for user {user_id} in guild {guild_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Error removing specification: {e}")
+            return False
+
+    async def search_specifications(
+        self, guild_id: int, search_term: str, limit: int = 50, offset: int = 0
+    ) -> tuple[List[tuple], int]:
+        """
+        Search for hardware in all specifications within a guild with pagination.
+
+        Args:
+            guild_id: Discord guild ID
+            search_term: Hardware term to search for
+            limit: Maximum number of results to return
+            offset: Number of results to skip (for pagination)
+
+        Returns:
+            Tuple of (results, total_count) where:
+            - results: List of tuples (user_id, specs_text) matching the search term
+            - total_count: Total number of matches without pagination
+        """
+        logger.info(
+            f"Database search: guild_id={guild_id}, search_term='{search_term}', limit={limit}, offset={offset}"
+        )
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                # First get the total count for pagination info
+                count_cursor = await db.execute(
+                    "SELECT COUNT(*) FROM specifications "
+                    "WHERE guild_id = ? AND specs_text LIKE ? COLLATE NOCASE",
+                    (guild_id, f"%{search_term}%"),
+                )
+                count_result = await count_cursor.fetchone()
+                total_count = count_result[0] if count_result else 0
+
+                # Then get the paginated results
+                cursor = await db.execute(
+                    "SELECT user_id, specs_text FROM specifications "
+                    "WHERE guild_id = ? AND specs_text LIKE ? COLLATE NOCASE "
+                    "ORDER BY updated_at DESC "
+                    "LIMIT ? OFFSET ?",
+                    (guild_id, f"%{search_term}%", limit, offset),
+                )
+                rows = await cursor.fetchall()
+                results = [(row[0], row[1]) for row in rows]
+                logger.info(
+                    f"Database search returned {len(results)} results (page {offset // limit + 1}, total: {total_count})"
+                )
+                return results, total_count
+
+        except Exception as e:
+            logger.error(f"Error searching specifications: {e}", exc_info=True)
+            return [], 0
+
+    async def get_all_guild_specifications(self, guild_id: int) -> List[Specification]:
+        """
+        Get all specifications for a guild.
+
+        Args:
+            guild_id: Discord guild ID
+
+        Returns:
+            List of Specification objects for the guild
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT id, guild_id, user_id, specs_text, created_at, updated_at "
+                    "FROM specifications WHERE guild_id = ? "
+                    "ORDER BY updated_at DESC",
+                    (guild_id,),
+                )
+                rows = await cursor.fetchall()
+
+                specifications = []
+                for row in rows:
+                    specifications.append(
+                        Specification(
+                            id=row[0],
+                            guild_id=row[1],
+                            user_id=row[2],
+                            specs_text=row[3],
+                            created_at=row[4],
+                            updated_at=row[5],
+                        )
+                    )
+
+                return specifications
+
+        except Exception as e:
+            logger.error(f"Error getting guild specifications: {e}")
             return []
