@@ -41,6 +41,29 @@ CREATE TABLE IF NOT EXISTS posted_rss_entries (
 );
 """
 
+# SQL schema for birthdays
+BIRTHDAYS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS birthdays (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    birth_day INTEGER NOT NULL CHECK(birth_day >= 1 AND birth_day <= 31),
+    birth_month INTEGER NOT NULL CHECK(birth_month >= 1 AND birth_month <= 12),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(guild_id, user_id)
+);
+"""
+
+# SQL schema for birthday channels
+BIRTHDAY_CHANNELS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS birthday_channels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(guild_id, channel_id)
+);
+"""
 
 
 async def initialize_database(db_path: str) -> None:
@@ -60,6 +83,12 @@ async def initialize_database(db_path: str) -> None:
 
             # Create RSS entries table
             await db.execute(RSS_ENTRIES_SCHEMA)
+
+            # Create birthdays table
+            await db.execute(BIRTHDAYS_SCHEMA)
+
+            # Create birthday channels table
+            await db.execute(BIRTHDAY_CHANNELS_SCHEMA)
 
             # Commit changes
             await db.commit()

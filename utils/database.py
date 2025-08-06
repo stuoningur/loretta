@@ -5,8 +5,9 @@ Database utility functions for server configuration management.
 import aiosqlite
 import json
 import logging
-from typing import Optional, List
+from typing import Optional, List, Tuple
 from dataclasses import dataclass, field
+from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,17 @@ class ServerConfig:
     log_channel_id: Optional[int] = None
     news_channel_id: Optional[int] = None
     picture_only_channels: List[int] = field(default_factory=list)
+
+
+@dataclass
+class Birthday:
+    """Data class for user birthday."""
+
+    id: Optional[int]
+    guild_id: int
+    user_id: int
+    birth_day: int
+    birth_month: int
 
 
 class DatabaseManager:
@@ -333,4 +345,267 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(f"Error getting news channels: {e}")
+            return []
+
+    # Birthday management methods
+
+    async def add_birthday(self, birthday: Birthday) -> bool:
+        """
+        Add or update a user's birthday.
+
+        Args:
+            birthday: Birthday object with user's birthday information
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    """INSERT OR REPLACE INTO birthdays 
+                       (guild_id, user_id, birth_day, birth_month)
+                       VALUES (?, ?, ?, ?)""",
+                    (
+                        birthday.guild_id,
+                        birthday.user_id,
+                        birthday.birth_day,
+                        birthday.birth_month,
+                    ),
+                )
+                await db.commit()
+
+            logger.info(
+                f"Added birthday for user {birthday.user_id} in guild {birthday.guild_id}"
+            )
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding birthday: {e}")
+            return False
+
+    async def remove_birthday(self, guild_id: int, user_id: int) -> bool:
+        """
+        Remove a user's birthday.
+
+        Args:
+            guild_id: Discord guild ID
+            user_id: Discord user ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "DELETE FROM birthdays WHERE guild_id = ? AND user_id = ?",
+                    (guild_id, user_id),
+                )
+                await db.commit()
+
+            logger.info(f"Removed birthday for user {user_id} in guild {guild_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error removing birthday: {e}")
+            return False
+
+    async def get_birthday(self, guild_id: int, user_id: int) -> Optional[Birthday]:
+        """
+        Get a user's birthday.
+
+        Args:
+            guild_id: Discord guild ID
+            user_id: Discord user ID
+
+        Returns:
+            Birthday object if found, None otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT id, guild_id, user_id, birth_day, birth_month "
+                    "FROM birthdays WHERE guild_id = ? AND user_id = ?",
+                    (guild_id, user_id),
+                )
+                row = await cursor.fetchone()
+
+                if row:
+                    return Birthday(
+                        id=row[0],
+                        guild_id=row[1],
+                        user_id=row[2],
+                        birth_day=row[3],
+                        birth_month=row[4],
+                    )
+                return None
+
+        except Exception as e:
+            logger.error(f"Error getting birthday: {e}")
+            return None
+
+    async def get_birthdays_today(self) -> List[Birthday]:
+        """
+        Get all birthdays for today across all guilds.
+
+        Returns:
+            List of Birthday objects for users with birthdays today
+        """
+        try:
+            today = date.today()
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT id, guild_id, user_id, birth_day, birth_month "
+                    "FROM birthdays WHERE birth_day = ? AND birth_month = ?",
+                    (today.day, today.month),
+                )
+                rows = await cursor.fetchall()
+
+                birthdays = []
+                for row in rows:
+                    birthdays.append(
+                        Birthday(
+                            id=row[0],
+                            guild_id=row[1],
+                            user_id=row[2],
+                            birth_day=row[3],
+                            birth_month=row[4],
+                        )
+                    )
+
+                return birthdays
+
+        except Exception as e:
+            logger.error(f"Error getting today's birthdays: {e}")
+            return []
+
+    async def get_guild_birthdays(self, guild_id: int) -> List[Birthday]:
+        """
+        Get all birthdays for a specific guild.
+
+        Args:
+            guild_id: Discord guild ID
+
+        Returns:
+            List of Birthday objects for the guild
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT id, guild_id, user_id, birth_day, birth_month "
+                    "FROM birthdays WHERE guild_id = ? "
+                    "ORDER BY birth_month, birth_day",
+                    (guild_id,),
+                )
+                rows = await cursor.fetchall()
+
+                birthdays = []
+                for row in rows:
+                    birthdays.append(
+                        Birthday(
+                            id=row[0],
+                            guild_id=row[1],
+                            user_id=row[2],
+                            birth_day=row[3],
+                            birth_month=row[4],
+                        )
+                    )
+
+                return birthdays
+
+        except Exception as e:
+            logger.error(f"Error getting guild birthdays: {e}")
+            return []
+
+    async def add_birthday_channel(self, guild_id: int, channel_id: int) -> bool:
+        """
+        Add a birthday announcement channel for a guild.
+
+        Args:
+            guild_id: Discord guild ID
+            channel_id: Discord channel ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "INSERT OR IGNORE INTO birthday_channels (guild_id, channel_id) VALUES (?, ?)",
+                    (guild_id, channel_id),
+                )
+                await db.commit()
+
+            logger.info(f"Added birthday channel {channel_id} for guild {guild_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error adding birthday channel: {e}")
+            return False
+
+    async def remove_birthday_channel(self, guild_id: int, channel_id: int) -> bool:
+        """
+        Remove a birthday announcement channel for a guild.
+
+        Args:
+            guild_id: Discord guild ID
+            channel_id: Discord channel ID
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    "DELETE FROM birthday_channels WHERE guild_id = ? AND channel_id = ?",
+                    (guild_id, channel_id),
+                )
+                await db.commit()
+
+            logger.info(f"Removed birthday channel {channel_id} for guild {guild_id}")
+            return True
+
+        except Exception as e:
+            logger.error(f"Error removing birthday channel: {e}")
+            return False
+
+    async def get_birthday_channels(self, guild_id: int) -> List[int]:
+        """
+        Get all birthday announcement channels for a guild.
+
+        Args:
+            guild_id: Discord guild ID
+
+        Returns:
+            List of channel IDs
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT channel_id FROM birthday_channels WHERE guild_id = ?",
+                    (guild_id,),
+                )
+                rows = await cursor.fetchall()
+                return [row[0] for row in rows]
+
+        except Exception as e:
+            logger.error(f"Error getting birthday channels: {e}")
+            return []
+
+    async def get_all_birthday_channels(self) -> List[Tuple[int, int]]:
+        """
+        Get all birthday announcement channels across all guilds.
+
+        Returns:
+            List of tuples (guild_id, channel_id)
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                cursor = await db.execute(
+                    "SELECT guild_id, channel_id FROM birthday_channels"
+                )
+                rows = await cursor.fetchall()
+                return [(row[0], row[1]) for row in rows]
+
+        except Exception as e:
+            logger.error(f"Error getting all birthday channels: {e}")
             return []

@@ -90,7 +90,7 @@ class SoftwareCheck(commands.Cog):
         # ComputerBase favicon im Footer hinzufügen
         embed.set_footer(
             text="ComputerBase Downloads • Automatische Benachrichtigung",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/computerbase.png?raw=true"
+            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/computerbase.png?raw=true",
         )
 
         return embed
@@ -155,7 +155,9 @@ class SoftwareCheck(commands.Cog):
                         channel = self.bot.get_channel(channel_id)
                         if channel:
                             await channel.send(embed=embed)
-                            guild_name = channel.guild.name if channel.guild else "Unknown Guild"
+                            guild_name = (
+                                channel.guild.name if channel.guild else "Unknown Guild"
+                            )
                             logger.info(
                                 f"Software-Update gesendet an News-Kanal '{channel.name}' in Guild '{guild_name}' ({channel_id}): {entry.title}"
                             )
@@ -164,10 +166,16 @@ class SoftwareCheck(commands.Cog):
                     except Exception as e:
                         channel = self.bot.get_channel(channel_id)
                         if channel:
-                            guild_name = channel.guild.name if channel.guild else "Unknown Guild"
-                            logger.error(f"Fehler beim Senden an Kanal '{channel.name}' in Guild '{guild_name}' ({channel_id}): {e}")
+                            guild_name = (
+                                channel.guild.name if channel.guild else "Unknown Guild"
+                            )
+                            logger.error(
+                                f"Fehler beim Senden an Kanal '{channel.name}' in Guild '{guild_name}' ({channel_id}): {e}"
+                            )
                         else:
-                            logger.error(f"Fehler beim Senden an Kanal {channel_id}: {e}")
+                            logger.error(
+                                f"Fehler beim Senden an Kanal {channel_id}: {e}"
+                            )
 
                 # Als gepostet markieren
                 await self.db_manager.mark_rss_entry_as_posted(
@@ -184,11 +192,13 @@ class SoftwareCheck(commands.Cog):
                 for channel_id in channel_ids:
                     channel = self.bot.get_channel(channel_id)
                     if channel:
-                        guild_name = channel.guild.name if channel.guild else "Unknown Guild"
+                        guild_name = (
+                            channel.guild.name if channel.guild else "Unknown Guild"
+                        )
                         channel_info.append(f"#{channel.name} ({guild_name})")
                     else:
                         channel_info.append(f"ID:{channel_id} (nicht gefunden)")
-                
+
                 logger.info(
                     f"{new_entries_count} neue Software-Updates an {len(channel_ids)} News-Kanäle gesendet: {', '.join(channel_info)}"
                 )
@@ -251,7 +261,9 @@ class SoftwareCheck(commands.Cog):
             )
 
             await ctx.send(embed=embed)
-            logger.info(f"Software-Info angezeigt für Guild '{ctx.guild.name}' ({ctx.guild.id})")
+            logger.info(
+                f"Software-Info angezeigt für Guild '{ctx.guild.name}' ({ctx.guild.id})"
+            )
 
         except Exception as e:
             logger.error(f"Fehler beim Anzeigen der Software-Informationen: {e}")
@@ -377,7 +389,9 @@ class SoftwareCheck(commands.Cog):
                 )
 
             await ctx.send(embed=embed)
-            logger.info(f"Software-Check Test ausgeführt von {ctx.author} in Guild '{ctx.guild.name}' ({ctx.guild.id})")
+            logger.info(
+                f"Software-Check Test ausgeführt von {ctx.author} in Guild '{ctx.guild.name}' ({ctx.guild.id})"
+            )
 
         except Exception as e:
             logger.error(f"Fehler beim Software-Check Test: {e}")
