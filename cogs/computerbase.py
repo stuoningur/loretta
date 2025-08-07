@@ -133,8 +133,8 @@ class ComputerBase(commands.Cog):
                         return
 
                     content = await response.text()
-            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
-                logger.error(f"ComputerBase RSS-Feed Verbindungsfehler: {e}")
+            except (aiohttp.ClientError, asyncio.TimeoutError):
+                logger.error("ComputerBase RSS-Feed Verbindungsfehler")
                 return
             except Exception as e:
                 logger.error(f"ComputerBase RSS-Feed unerwarteter Fehler: {e}")

@@ -69,7 +69,7 @@ class Gif(commands.Cog):
                         
                         response = await api_request.json()
                         
-            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 embed = discord.Embed(
                     title="Verbindungsfehler",
                     description="Konnte keine Verbindung zur Tenor API herstellen. Versuche es später erneut.",

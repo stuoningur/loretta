@@ -108,8 +108,8 @@ class Hardwareluxx(commands.Cog):
                         return
 
                     content = await response.text()
-            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
-                logger.error(f"Hardwareluxx RSS-Feed Verbindungsfehler: {e}")
+            except (aiohttp.ClientError, asyncio.TimeoutError):
+                logger.error("Hardwareluxx RSS-Feed Verbindungsfehler")
                 return
             except Exception as e:
                 logger.error(f"Hardwareluxx RSS-Feed unerwarteter Fehler: {e}")
@@ -327,10 +327,10 @@ class Hardwareluxx(commands.Cog):
                         return
 
                     content = await response.text()
-            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 embed = discord.Embed(
                     title="RSS-Feed Verbindungsfehler",
-                    description=f"Verbindung fehlgeschlagen: {str(e)}",
+                    description="Verbindung fehlgeschlagen",
                     color=discord.Color.red(),
                     timestamp=datetime.now(timezone.utc),
                 )

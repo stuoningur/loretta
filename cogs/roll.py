@@ -41,10 +41,7 @@ class Roll(commands.Cog):
                 )
 
                 try:
-                    try:
-                await ctx.send(embed=embed)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+                    await ctx.send(embed=embed)
                 except (discord.HTTPException, discord.Forbidden) as e:
                     logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
@@ -63,10 +60,7 @@ class Roll(commands.Cog):
                 )
 
                 try:
-                    try:
-                await ctx.send(embed=embed)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+                    await ctx.send(embed=embed)
                 except (discord.HTTPException, discord.Forbidden) as e:
                     logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
