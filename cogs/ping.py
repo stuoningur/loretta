@@ -36,7 +36,11 @@ class Ping(commands.Cog):
         )
 
         # Sende initiale Nachricht
-        message = await ctx.send(embed=embed)
+        try:
+            message = await ctx.send(embed=embed)
+        except (discord.HTTPException, discord.Forbidden) as e:
+            logger.error(f"Fehler beim Senden der Ping Nachricht: {e}")
+            return
 
         # Berechne API-Antwortzeit
         end_time = time.perf_counter()
@@ -90,7 +94,10 @@ class Ping(commands.Cog):
         )
 
         # Bearbeite die ursprüngliche Nachricht
-        await message.edit(embed=embed)
+        try:
+            await message.edit(embed=embed)
+        except (discord.HTTPException, discord.NotFound) as e:
+            logger.error(f"Fehler beim Bearbeiten der Ping Nachricht: {e}")
         logger.info(
             f"Ping-Befehl ausgeführt von {ctx.author} "
             f"(WS: {round(websocket_latency)}ms, API: {round(api_latency)}ms)"

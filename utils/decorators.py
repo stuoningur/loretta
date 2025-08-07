@@ -1,5 +1,5 @@
 """
-Decorators for Discord commands
+Dekoratoren für Discord-Befehle
 """
 
 from discord.ext import commands
@@ -7,7 +7,7 @@ from functools import wraps
 
 
 def guild_only():
-    """Decorator to ensure command is only used in guilds"""
+    """Dekorator um sicherzustellen dass Befehl nur in Guilds verwendet wird"""
 
     def decorator(func):
         @wraps(func)
@@ -30,15 +30,15 @@ def guild_only():
 def validate_input(
     min_length: int = 1, max_length: int = 2000, field_name: str = "Eingabe"
 ):
-    """Decorator for input validation"""
+    """Dekorator für Eingabe-Validierung"""
 
     def decorator(func):
         @wraps(func)
         async def wrapper(self, ctx: commands.Context, *args, **kwargs):
-            # Find the input parameter (usually the last positional arg or in kwargs)
+            # Finde den Eingabe-Parameter (normalerweise das letzte Positions-Argument oder in kwargs)
             input_text = None
             if args:
-                # Get last argument which is usually the input text
+                # Hole letztes Argument welches normalerweise der Eingabe-Text ist
                 input_text = args[-1] if args else None
             elif "input_text" in kwargs:
                 input_text = kwargs["input_text"]

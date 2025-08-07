@@ -24,7 +24,7 @@ load_dotenv()
 
 
 class ColoredConsoleHandler(logging.StreamHandler):
-    """Custom handler that adds color to console output using ANSI escape codes"""
+    """Benutzerdefinierter Handler der Farbe zu Console-Output mit ANSI-Escape-Codes hinzufügt"""
 
     COLORS = {
         logging.DEBUG: "\033[36m",  # Cyan
@@ -42,23 +42,23 @@ class ColoredConsoleHandler(logging.StreamHandler):
 
 
 def setup_logging():
-    """Setup logging with rotating files and colored console output"""
+    """Richtet Logging mit rotierenden Dateien und farbiger Console-Ausgabe ein"""
     log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper())
 
-    # Ensure data directory exists
+    # Stelle sicher dass Daten-Verzeichnis existiert
     Path("data").mkdir(exist_ok=True)
 
-    # Create formatters
+    # Erstelle Formattierer
     logging_formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    # Root logger setup
+    # Root-Logger-Setup
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
-    root_logger.handlers.clear()  # Remove any existing handlers
+    root_logger.handlers.clear()  # Entferne alle existierenden Handler
 
-    # File handler with rotation (10MB max, keep 5 backup files)
+    # Datei-Handler mit Rotation (10MB max, behalte 5 Backup-Dateien)
     file_handler = logging.handlers.RotatingFileHandler(
         "data/loretta.log",
         maxBytes=10 * 1024 * 1024,  # 10MB
@@ -68,19 +68,19 @@ def setup_logging():
     file_handler.setFormatter(logging_formatter)
     file_handler.setLevel(log_level)
 
-    # Colored console handler
+    # Farbiger Console-Handler
     console_handler = ColoredConsoleHandler()
     console_handler.setFormatter(logging_formatter)
     console_handler.setLevel(log_level)
 
-    # Add handlers to root logger
+    # Füge Handler zu Root-Logger hinzu
     root_logger.addHandler(file_handler)
     root_logger.addHandler(console_handler)
 
     return root_logger
 
 
-# Setup logging
+# Richte Logging ein
 setup_logging()
 
 logger = logging.getLogger(__name__)
@@ -103,13 +103,13 @@ class LorettaBot(commands.Bot):
             description="Loretta - Ein vielseitiger Discord-Bot",
         )
 
-        # Database setup
+        # Datenbank-Setup
         self.db_path = os.getenv("DATABASE_PATH", "data/loretta.db")
         self.db = DatabaseManager(self.db_path)
 
     async def get_prefix(self, message):
         """Dynamische Prefix-Funktion die Einstellungen aus der Datenbank lädt"""
-        # Handle edge cases where message might be None or missing guild
+        # Behandle Grenzfälle wo Nachricht None sein könnte oder Guild fehlt
         if not message or not hasattr(message, "guild") or not message.guild:
             return "!"  # Standard-Prefix für DMs oder ungültige Messages
 
@@ -120,7 +120,7 @@ class LorettaBot(commands.Bot):
             logger.error(
                 f"Fehler beim Laden des Prefix für Server {message.guild.id}: {e}"
             )
-            return "!"  # Fallback auf Standard-Prefix
+            return "!"  # Rückfall auf Standard-Prefix
 
     async def setup_hook(self):
         """Wird beim Bot-Start ausgeführt"""
@@ -225,7 +225,7 @@ class LorettaBot(commands.Bot):
         # Original Exception extrahieren falls vorhanden
         error = getattr(error, "original", error)
 
-        # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
+        # Logge den Fehler für Debugging (ohne vollständigen Traceback für bekannte Fehler)
         if isinstance(
             error,
             (
@@ -244,12 +244,12 @@ class LorettaBot(commands.Bot):
                 discord.HTTPException,
             ),
         ):
-            # Für bekannte Fehler nur basic logging ohne traceback
+            # Für bekannte Fehler nur grundlegendes Logging ohne Traceback
             pass
         else:
-            # Für unbekannte Fehler full logging mit traceback
+            # Für unbekannte Fehler vollständiges Logging mit Traceback
             logger.error(
-                f"Command error in {ctx.command}: {type(error).__name__}: {error}",
+                f"Befehlsfehler in {ctx.command}: {type(error).__name__}: {error}",
                 exc_info=error,
             )
 
@@ -263,14 +263,14 @@ class LorettaBot(commands.Bot):
                 prefix = prefix[0]  # Nimm ersten Prefix
             command_name = ctx.message.content[len(prefix) :].split()[0]
             logger.info(
-                f"Command not found: '{command_name}' by {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
+                f"Befehl nicht gefunden: '{command_name}' von {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
             )
             embed = EmbedFactory.command_not_found_embed(command_name)
 
         elif isinstance(error, commands.MissingRequiredArgument):
             param_name = getattr(getattr(error, "param", None), "name", "unbekannt")
             logger.warning(
-                f"Missing required argument '{param_name}' in command {ctx.command} by {ctx.author} ({ctx.author.id})"
+                f"Fehlender erforderlicher Parameter '{param_name}' in Befehl {ctx.command} von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.missing_argument_embed(param_name)
 
@@ -292,51 +292,51 @@ class LorettaBot(commands.Bot):
                 expected_type = "Rollenname oder Erwähnung"
 
             logger.warning(
-                f"Bad argument '{param_name}' (expected: {expected_type}) in command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+                f"Ungültiger Parameter '{param_name}' (erwartet: {expected_type}) in Befehl {ctx.command} von {ctx.author} ({ctx.author.id}): {str(error)}"
             )
             embed = EmbedFactory.bad_argument_embed(param_name, expected_type)
 
         elif isinstance(error, commands.TooManyArguments):
             logger.warning(
-                f"Too many arguments provided for command {ctx.command} by {ctx.author} ({ctx.author.id})"
+                f"Zu viele Parameter für Befehl {ctx.command} von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.too_many_arguments_embed()
 
         elif isinstance(error, commands.MissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
             logger.warning(
-                f"Missing permissions ({missing_perms}) for command {ctx.command} by {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
+                f"Fehlende Berechtigungen ({missing_perms}) für Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {ctx.guild.name if ctx.guild else 'DM'}"
             )
             embed = EmbedFactory.missing_permissions_embed(missing_perms)
 
         elif isinstance(error, commands.BotMissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
             logger.error(
-                f"Bot missing permissions ({missing_perms}) for command {ctx.command} in {ctx.guild.name if ctx.guild else 'DM'} (Guild ID: {ctx.guild.id if ctx.guild else 'N/A'})"
+                f"Bot fehlen Berechtigungen ({missing_perms}) für Befehl {ctx.command} in {ctx.guild.name if ctx.guild else 'DM'} (Guild ID: {ctx.guild.id if ctx.guild else 'N/A'})"
             )
             embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
 
         elif isinstance(error, commands.CommandOnCooldown):
             logger.info(
-                f"Command {ctx.command} on cooldown for {ctx.author} ({ctx.author.id}), retry after {error.retry_after:.1f}s"
+                f"Befehl {ctx.command} auf Abklingzeit für {ctx.author} ({ctx.author.id}), Wiederholen nach {error.retry_after:.1f}s"
             )
             embed = EmbedFactory.cooldown_embed(error.retry_after)
 
         elif isinstance(error, commands.NoPrivateMessage):
             logger.warning(
-                f"Guild-only command {ctx.command} attempted in DM by {ctx.author} ({ctx.author.id})"
+                f"Nur-Guild-Befehl {ctx.command} in DM versucht von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.guild_only_embed()
 
         elif isinstance(error, commands.PrivateMessageOnly):
             logger.warning(
-                f"DM-only command {ctx.command} attempted in guild {ctx.guild.name if ctx.guild else 'unknown'} by {ctx.author} ({ctx.author.id})"
+                f"Nur-DM-Befehl {ctx.command} in Guild {ctx.guild.name if ctx.guild else 'unbekannt'} versucht von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.dm_only_embed()
 
         elif isinstance(error, commands.DisabledCommand):
             logger.info(
-                f"Disabled command {ctx.command} attempted by {ctx.author} ({ctx.author.id})"
+                f"Deaktivierter Befehl {ctx.command} versucht von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.error_embed(
                 "Befehl deaktiviert", "Dieser Befehl ist derzeit deaktiviert."
@@ -344,7 +344,7 @@ class LorettaBot(commands.Bot):
 
         elif isinstance(error, commands.NotOwner):
             logger.warning(
-                f"Owner-only command {ctx.command} attempted by non-owner {ctx.author} ({ctx.author.id})"
+                f"Nur-Owner-Befehl {ctx.command} versucht von Nicht-Owner {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.error_embed(
                 "Berechtigung verweigert",
@@ -353,7 +353,7 @@ class LorettaBot(commands.Bot):
 
         elif isinstance(error, commands.CheckFailure):
             logger.warning(
-                f"Check failure for command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+                f"Überprüfung fehlgeschlagen für Befehl {ctx.command} von {ctx.author} ({ctx.author.id}): {str(error)}"
             )
             embed = EmbedFactory.error_embed(
                 "Überprüfung fehlgeschlagen",
@@ -362,7 +362,7 @@ class LorettaBot(commands.Bot):
 
         elif isinstance(error, discord.HTTPException):
             logger.error(
-                f"HTTP exception in command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+                f"HTTP-Ausnahme in Befehl {ctx.command} von {ctx.author} ({ctx.author.id}): {str(error)}"
             )
             embed = EmbedFactory.error_embed(
                 "Discord API Fehler",
@@ -397,7 +397,7 @@ class LorettaBot(commands.Bot):
         error: discord.app_commands.AppCommandError,
     ):
         """Globaler Error Handler für Slash Commands"""
-        # Log den Fehler für Debugging (ohne full traceback für bekannte Fehler)
+        # Logge den Fehler für Debugging (ohne vollständigen Traceback für bekannte Fehler)
         if isinstance(
             error,
             (
@@ -410,12 +410,12 @@ class LorettaBot(commands.Bot):
                 discord.HTTPException,
             ),
         ):
-            # Für bekannte Fehler nur basic logging ohne traceback
+            # Für bekannte Fehler nur grundlegendes Logging ohne Traceback
             pass
         else:
-            # Für unbekannte Fehler full logging mit traceback
+            # Für unbekannte Fehler vollständiges Logging mit Traceback
             logger.error(
-                f"App command error in {interaction.command}: {type(error).__name__}: {error}",
+                f"App-Command-Fehler in {interaction.command}: {type(error).__name__}: {error}",
                 exc_info=error,
             )
 
@@ -427,39 +427,39 @@ class LorettaBot(commands.Bot):
             if interaction.data and "name" in interaction.data:
                 command_name = interaction.data["name"]
             logger.info(
-                f"App command not found: '{command_name}' by {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
+                f"App-Command nicht gefunden: '{command_name}' von {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
             )
             embed = EmbedFactory.command_not_found_embed(command_name)
 
         elif isinstance(error, discord.app_commands.MissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
             logger.warning(
-                f"Missing permissions ({missing_perms}) for app command {interaction.command} by {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
+                f"Fehlende Berechtigungen ({missing_perms}) für App-Command {interaction.command} von {interaction.user} ({interaction.user.id}) in {interaction.guild.name if interaction.guild else 'DM'}"
             )
             embed = EmbedFactory.missing_permissions_embed(missing_perms)
 
         elif isinstance(error, discord.app_commands.BotMissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
             logger.error(
-                f"Bot missing permissions ({missing_perms}) for app command {interaction.command} in {interaction.guild.name if interaction.guild else 'DM'} (Guild ID: {interaction.guild.id if interaction.guild else 'N/A'})"
+                f"Bot fehlen Berechtigungen ({missing_perms}) für App-Command {interaction.command} in {interaction.guild.name if interaction.guild else 'DM'} (Guild ID: {interaction.guild.id if interaction.guild else 'N/A'})"
             )
             embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
 
         elif isinstance(error, discord.app_commands.CommandOnCooldown):
             logger.info(
-                f"App command {interaction.command} on cooldown for {interaction.user} ({interaction.user.id}), retry after {error.retry_after:.1f}s"
+                f"App-Command {interaction.command} auf Abklingzeit für {interaction.user} ({interaction.user.id}), Wiederholen nach {error.retry_after:.1f}s"
             )
             embed = EmbedFactory.cooldown_embed(error.retry_after)
 
         elif isinstance(error, discord.app_commands.NoPrivateMessage):
             logger.warning(
-                f"Guild-only app command {interaction.command} attempted in DM by {interaction.user} ({interaction.user.id})"
+                f"Nur-Guild-App-Command {interaction.command} in DM versucht von {interaction.user} ({interaction.user.id})"
             )
             embed = EmbedFactory.guild_only_embed()
 
         elif isinstance(error, discord.app_commands.CheckFailure):
             logger.warning(
-                f"Check failure for app command {interaction.command} by {interaction.user} ({interaction.user.id}): {str(error)}"
+                f"Überprüfung fehlgeschlagen für App-Command {interaction.command} von {interaction.user} ({interaction.user.id}): {str(error)}"
             )
             embed = EmbedFactory.error_embed(
                 "Überprüfung fehlgeschlagen",
@@ -468,7 +468,7 @@ class LorettaBot(commands.Bot):
 
         elif isinstance(error, discord.HTTPException):
             logger.error(
-                f"HTTP exception in app command {interaction.command} by {interaction.user} ({interaction.user.id}): {str(error)}"
+                f"HTTP-Ausnahme in App-Command {interaction.command} von {interaction.user} ({interaction.user.id}): {str(error)}"
             )
             embed = EmbedFactory.error_embed(
                 "Discord API Fehler",
@@ -479,7 +479,7 @@ class LorettaBot(commands.Bot):
             # Unbekannte Fehler
             embed = EmbedFactory.unexpected_error_embed("Slash-Befehlsausführung")
             logger.error(
-                f"Unbehandelter App Command Fehler: {type(error).__name__}: {error}",
+                f"Unbehandelter App-Command-Fehler: {type(error).__name__}: {error}",
                 exc_info=error,
             )
 
@@ -505,20 +505,20 @@ class KeyboardInterruptHandler:
         self._shutdown_initiated = False
 
     def __call__(self, signum=None, frame=None):
-        """Signal handler callback"""
+        """Signal-Handler-Rückruf"""
         if self._shutdown_initiated:
             logger.warning("Shutdown bereits eingeleitet, warte auf Abschluss...")
             return
 
         self._shutdown_initiated = True
         signal_name = signal.Signals(signum).name if signum else "SIGINT"
-        logger.info(f"Signal {signal_name} empfangen, leite graceful shutdown ein...")
+        logger.info(f"Signal {signal_name} empfangen, leite elegantes Herunterfahren ein...")
 
-        # frame parameter is required for signal handlers but not used
+        # frame Parameter ist für Signal-Handler erforderlich aber nicht verwendet
         _ = frame
 
         if self._task:
-            logger.warning("Shutdown-Task läuft bereits")
+            logger.warning("Herunterfahren-Task läuft bereits")
             return
 
         self._task = asyncio.create_task(self._shutdown())
@@ -542,11 +542,11 @@ async def main():
 
     bot = LorettaBot()
 
-    # Setup graceful shutdown
+    # Richte elegantes Herunterfahren ein
     shutdown_handler = KeyboardInterruptHandler(bot)
 
     # Registriere Signal-Handler für graceful shutdown
-    if sys.platform != "win32":  # Unix-like systems
+    if sys.platform != "win32":  # Unix-ähnliche Systeme
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, shutdown_handler, sig, None)

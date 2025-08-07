@@ -38,7 +38,10 @@ class CpuGuidesCog(commands.Cog):
             icon_url="https://i.imgur.com/mu0em6U.png",
         )
 
-        await ctx.send(embed=embed)
+        try:
+            await ctx.send(embed=embed)
+        except (discord.HTTPException, discord.Forbidden) as e:
+            logger.error(f"Fehler beim Senden der CPU Guide Nachricht: {e}")
 
     @commands.hybrid_command(
         name="curve",
@@ -68,7 +71,10 @@ class CpuGuidesCog(commands.Cog):
             icon_url="https://i.imgur.com/mu0em6U.png",
         )
 
-        await ctx.send(embed=embed)
+        try:
+            await ctx.send(embed=embed)
+        except (discord.HTTPException, discord.Forbidden) as e:
+            logger.error(f"Fehler beim Senden der CPU Guide Nachricht: {e}")
 
 
 async def setup(bot: commands.Bot) -> None:

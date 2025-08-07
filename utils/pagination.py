@@ -1,5 +1,5 @@
 """
-Reusable pagination utilities for Discord bots
+Wiederverwendbare Paginierungs-Utilities für Discord-Bots
 """
 
 import discord
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class PaginationView(discord.ui.View, ABC):
-    """Abstract base class for pagination views"""
+    """Abstrakte Basis-Klasse für Paginierungs-Views"""
 
     def __init__(
         self, requester: Union[discord.Member, discord.User], timeout: float = 180
@@ -24,11 +24,11 @@ class PaginationView(discord.ui.View, ABC):
 
     @abstractmethod
     async def get_page_embed(self, page: int) -> discord.Embed:
-        """Get embed for a specific page - must be implemented by subclasses"""
+        """Holt Embed für eine bestimmte Seite - muss von Unterklassen implementiert werden"""
         pass
 
     async def update_buttons(self):
-        """Update button states based on current page"""
+        """Aktualisiert Button-Zustände basierend auf aktueller Seite"""
         self.previous_button.disabled = self.current_page == 0
         self.next_button.disabled = self.current_page >= self.total_pages - 1
 
@@ -60,7 +60,7 @@ class PaginationView(discord.ui.View, ABC):
     async def delete_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        # Only allow the requester to delete
+        # Erlaube nur dem Anforderer zu löschen
         if interaction.user.id != self.requester.id:
             await interaction.response.send_message(
                 "Nur die Person, die die Suche gestartet hat, kann diese löschen.",
@@ -73,28 +73,28 @@ class PaginationView(discord.ui.View, ABC):
         )
 
     async def on_timeout(self):
-        """Called when the view times out"""
-        # Disable all buttons
+        """Wird aufgerufen wenn der View abgeläuft ist"""
+        # Deaktiviere alle Buttons
         for item in self.children:
             if isinstance(item, discord.ui.Button):
                 item.disabled = True
 
-        # Try to edit the message to show disabled buttons
+        # Versuche die Nachricht zu bearbeiten um deaktivierte Buttons anzuzeigen
         try:
             embed = await self.get_page_embed(self.current_page)
             embed.set_footer(text="Diese Funktion ist abgelaufen.")
             if hasattr(self, "message") and self.message:
                 await self.message.edit(embed=embed, view=self)
         except discord.NotFound:
-            # Message was deleted, nothing to do
+            # Nachricht wurde gelöscht, nichts zu tun
             pass
         except discord.HTTPException:
-            # Failed to edit, but that's okay
+            # Bearbeitung fehlgeschlagen, aber das ist okay
             pass
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        """Check if the interaction is valid and handle errors gracefully"""
-        # Only allow the requester to use buttons
+        """Prüft ob die Interaktion gültig ist und behandelt Fehler elegant"""
+        # Erlaube nur dem Anforderer die Buttons zu verwenden
         if interaction.user.id != self.requester.id:
             await interaction.response.send_message(
                 "Du kannst nur deine eigenen Funktionen verwenden.", ephemeral=True
@@ -103,10 +103,10 @@ class PaginationView(discord.ui.View, ABC):
         return True
 
     async def on_error(self, interaction: discord.Interaction, error: Exception, item):
-        """Handle interaction errors gracefully"""
-        logger.error(f"View interaction error: {error}")
+        """Behandelt Interaktionsfehler elegant"""
+        logger.error(f"View-Interaktions-Fehler: {error}")
 
-        # Check if this is an "unknown interaction" error (bot restart)
+        # Prüfe ob dies ein "unbekannte Interaktion"-Fehler ist (Bot-Neustart)
         if "unknown interaction" in str(error).lower():
             try:
                 from utils.embeds import EmbedFactory
@@ -117,7 +117,7 @@ class PaginationView(discord.ui.View, ABC):
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
             except discord.HTTPException:
-                pass  # If we can't respond, just ignore
+                pass  # Falls wir nicht antworten können, ignoriere einfach
         else:
             try:
                 await interaction.response.send_message(
@@ -129,13 +129,13 @@ class PaginationView(discord.ui.View, ABC):
 
 
 class SearchPaginationView(PaginationView):
-    """Pagination view for search results"""
+    """Paginierungs-View für Suchergebnisse"""
 
     def __init__(
         self,
         search_function: Callable[
             [int, int], Any
-        ],  # Function to get results (limit, offset)
+        ],  # Funktion um Ergebnisse zu holen (Limit, Offset)
         guild: discord.Guild,
         search_term: str,
         requester: Union[discord.Member, discord.User],
@@ -151,7 +151,7 @@ class SearchPaginationView(PaginationView):
         self.total_results = 0
 
     async def get_page_embed(self, page: int) -> discord.Embed:
-        """Get embed for a specific page"""
+        """Holt Embed für eine bestimmte Seite"""
         from utils.embeds import EmbedFactory
 
         offset = page * self.results_per_page
@@ -167,7 +167,7 @@ class SearchPaginationView(PaginationView):
                 "Keine Ergebnisse", f"Keine Einträge mit '{self.search_term}' gefunden."
             )
 
-        # Collect active guild members
+        # Sammle aktive Guild-Mitglieder
         guild_members = []
         for user_id, _ in results:
             member = self.guild.get_member(user_id)
@@ -180,7 +180,7 @@ class SearchPaginationView(PaginationView):
                 f"Alle gefundenen Benutzer mit '{self.search_term}' sind nicht mehr im Server.",
             )
 
-        # Create paginated description
+        # Erstelle paginierte Beschreibung
         description = "\n".join(guild_members)
         if len(description) > 4000:
             description = description[:4000] + "\n..."

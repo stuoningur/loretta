@@ -1,5 +1,5 @@
 """
-Database utility functions for server configuration management.
+Datenbank-Utility-Funktionen für Server-Konfigurationsverwaltung.
 """
 
 import aiosqlite
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class ServerConfig:
-    """Data class for server configuration."""
+    """Datenklasse für Server-Konfiguration."""
 
     guild_id: int
     command_prefix: str = "!"
@@ -25,7 +25,7 @@ class ServerConfig:
 
 @dataclass
 class Birthday:
-    """Data class for user birthday."""
+    """Datenklasse für Benutzer-Geburtstag."""
 
     id: Optional[int]
     guild_id: int
@@ -36,7 +36,7 @@ class Birthday:
 
 @dataclass
 class Specification:
-    """Data class for user specifications."""
+    """Datenklasse für Benutzer-Spezifikationen."""
 
     id: Optional[int]
     guild_id: int
@@ -47,20 +47,20 @@ class Specification:
 
 
 class DatabaseManager:
-    """Manager class for database operations."""
+    """Manager-Klasse für Datenbankoperationen."""
 
     def __init__(self, db_path: str):
         self.db_path = db_path
 
     async def get_server_config(self, guild_id: int) -> ServerConfig:
         """
-        Get server configuration for a guild.
+        Holt die Server-Konfiguration für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
+            guild_id: Discord Guild-ID
 
         Returns:
-            ServerConfig object with the guild's configuration
+            ServerConfig-Objekt mit der Guild-Konfiguration
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -81,23 +81,23 @@ class DatabaseManager:
                         picture_only_channels=picture_only_channels,
                     )
                 else:
-                    # Return default configuration for new guilds
+                    # Gib Standard-Konfiguration für neue Guilds zurück
                     return ServerConfig(guild_id=guild_id)
 
         except Exception as e:
-            logger.error(f"Error getting server config for guild {guild_id}: {e}")
-            # Return default configuration on error
+            logger.error(f"Fehler beim Abrufen der Server-Konfiguration für Guild {guild_id}: {e}")
+            # Gib Standard-Konfiguration bei Fehler zurück
             return ServerConfig(guild_id=guild_id)
 
     async def set_server_config(self, config: ServerConfig) -> bool:
         """
-        Set server configuration for a guild.
+        Setzt die Server-Konfiguration für eine Guild.
 
         Args:
-            config: ServerConfig object with the new configuration
+            config: ServerConfig-Objekt mit der neuen Konfiguration
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             picture_only_json = json.dumps(config.picture_only_channels)
@@ -117,25 +117,25 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Updated server config for guild {config.guild_id}")
+            logger.info(f"Server-Konfiguration für Guild {config.guild_id} aktualisiert")
             return True
 
         except Exception as e:
             logger.error(
-                f"Error setting server config for guild {config.guild_id}: {e}"
+                f"Fehler beim Setzen der Server-Konfiguration für Guild {config.guild_id}: {e}"
             )
             return False
 
     async def set_command_prefix(self, guild_id: int, prefix: str) -> bool:
         """
-        Set command prefix for a guild.
+        Setzt das Command-Prefix für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
-            prefix: New command prefix
+            guild_id: Discord Guild-ID
+            prefix: Neues Command-Prefix
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -143,19 +143,19 @@ class DatabaseManager:
             return await self.set_server_config(config)
 
         except Exception as e:
-            logger.error(f"Error setting command prefix for guild {guild_id}: {e}")
+            logger.error(f"Fehler beim Setzen des Command-Prefix für Guild {guild_id}: {e}")
             return False
 
     async def set_log_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
         """
-        Set log channel for a guild.
+        Setzt den Log-Kanal für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Channel ID for logging, None to disable
+            guild_id: Discord Guild-ID
+            channel_id: Kanal-ID für Logging, None zum Deaktivieren
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -163,19 +163,19 @@ class DatabaseManager:
             return await self.set_server_config(config)
 
         except Exception as e:
-            logger.error(f"Error setting log channel for guild {guild_id}: {e}")
+            logger.error(f"Fehler beim Setzen des Log-Kanals für Guild {guild_id}: {e}")
             return False
 
     async def set_news_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
         """
-        Set news channel for a guild.
+        Setzt den News-Kanal für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Channel ID for news, None to disable
+            guild_id: Discord Guild-ID
+            channel_id: Kanal-ID für News, None zum Deaktivieren
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -183,19 +183,19 @@ class DatabaseManager:
             return await self.set_server_config(config)
 
         except Exception as e:
-            logger.error(f"Error setting news channel for guild {guild_id}: {e}")
+            logger.error(f"Fehler beim Setzen des News-Kanals für Guild {guild_id}: {e}")
             return False
 
     async def add_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
         """
-        Add a channel to the picture-only channels list.
+        Fügt einen Kanal zur Liste der Nur-Bild-Kanäle hinzu.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Channel ID to add
+            guild_id: Discord Guild-ID
+            channel_id: Kanal-ID zum Hinzufügen
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -205,19 +205,19 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(f"Error adding picture-only channel for guild {guild_id}: {e}")
+            logger.error(f"Fehler beim Hinzufügen des Nur-Bild-Kanals für Guild {guild_id}: {e}")
             return False
 
     async def remove_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
         """
-        Remove a channel from the picture-only channels list.
+        Entfernt einen Kanal aus der Liste der Nur-Bild-Kanäle.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Channel ID to remove
+            guild_id: Discord Guild-ID
+            channel_id: Kanal-ID zum Entfernen
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -228,20 +228,20 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(
-                f"Error removing picture-only channel for guild {guild_id}: {e}"
+                f"Fehler beim Entfernen des Nur-Bild-Kanals für Guild {guild_id}: {e}"
             )
             return False
 
     async def is_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
         """
-        Check if a channel is configured as picture-only.
+        Überprüft ob ein Kanal als Nur-Bild-Kanal konfiguriert ist.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Channel ID to check
+            guild_id: Discord Guild-ID
+            channel_id: Kanal-ID zum Überprüfen
 
         Returns:
-            True if channel is picture-only, False otherwise
+            True wenn Kanal Nur-Bild-Kanal ist, False andernfalls
         """
         try:
             config = await self.get_server_config(guild_id)
@@ -249,16 +249,16 @@ class DatabaseManager:
 
         except Exception as e:
             logger.error(
-                f"Error checking picture-only channel for guild {guild_id}: {e}"
+                f"Fehler beim Überprüfen des Nur-Bild-Kanals für Guild {guild_id}: {e}"
             )
             return False
 
     async def get_all_server_configs(self) -> List[ServerConfig]:
         """
-        Get all server configurations.
+        Holt alle Server-Konfigurationen.
 
         Returns:
-            List of ServerConfig objects
+            Liste von ServerConfig-Objekten
         """
         try:
             configs = []
@@ -284,20 +284,20 @@ class DatabaseManager:
             return configs
 
         except Exception as e:
-            logger.error(f"Error getting all server configs: {e}")
+            logger.error(f"Fehler beim Abrufen aller Server-Konfigurationen: {e}")
             return []
 
-    # Software Check methods
+    # Software Check Methoden
 
     async def is_rss_entry_posted(self, entry_guid: str) -> bool:
         """
-        Check if an RSS entry has already been posted.
+        Überprüft ob ein RSS-Eintrag bereits gepostet wurde.
 
         Args:
-            entry_guid: Unique identifier for the RSS entry
+            entry_guid: Eindeutige Kennung für den RSS-Eintrag
 
         Returns:
-            True if entry has been posted, False otherwise
+            True wenn Eintrag bereits gepostet, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -309,22 +309,22 @@ class DatabaseManager:
                 return result is not None
 
         except Exception as e:
-            logger.error(f"Error checking RSS entry: {e}")
-            return True  # Return True on error to prevent spam
+            logger.error(f"Fehler beim Überprüfen des RSS-Eintrags: {e}")
+            return True  # Gib True bei Fehler zurück um Spam zu vermeiden
 
     async def mark_rss_entry_as_posted(
         self, entry_guid: str, title: str, link: str
     ) -> bool:
         """
-        Mark an RSS entry as posted.
+        Markiert einen RSS-Eintrag als gepostet.
 
         Args:
-            entry_guid: Unique identifier for the RSS entry
-            title: Entry title
-            link: Entry link
+            entry_guid: Eindeutige Kennung für den RSS-Eintrag
+            title: Eintrag-Titel
+            link: Eintrag-Link
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -333,19 +333,19 @@ class DatabaseManager:
                     (entry_guid, title, link),
                 )
                 await db.commit()
-                logger.debug(f"RSS entry marked as posted: {title}")
+                logger.debug(f"RSS-Eintrag als gepostet markiert: {title}")
                 return True
 
         except Exception as e:
-            logger.error(f"Error marking RSS entry as posted: {e}")
+            logger.error(f"Fehler beim Markieren des RSS-Eintrags als gepostet: {e}")
             return False
 
     async def get_news_channels(self) -> List[int]:
         """
-        Get all configured news channels.
+        Holt alle konfigurierten News-Kanäle.
 
         Returns:
-            List of channel IDs that have news channels configured
+            Liste von Kanal-IDs mit konfigurierten News-Kanälen
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -356,20 +356,20 @@ class DatabaseManager:
                 return [row[0] for row in results]
 
         except Exception as e:
-            logger.error(f"Error getting news channels: {e}")
+            logger.error(f"Fehler beim Abrufen der News-Kanäle: {e}")
             return []
 
-    # Birthday management methods
+    # Geburtstags-Verwaltungs-Methoden
 
     async def add_birthday(self, birthday: Birthday) -> bool:
         """
-        Add or update a user's birthday.
+        Fügt einen Benutzer-Geburtstag hinzu oder aktualisiert ihn.
 
         Args:
-            birthday: Birthday object with user's birthday information
+            birthday: Birthday-Objekt mit Benutzer-Geburtstagsinformationen
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -387,24 +387,24 @@ class DatabaseManager:
                 await db.commit()
 
             logger.info(
-                f"Added birthday for user {birthday.user_id} in guild {birthday.guild_id}"
+                f"Geburtstag für Benutzer {birthday.user_id} in Guild {birthday.guild_id} hinzugefügt"
             )
             return True
 
         except Exception as e:
-            logger.error(f"Error adding birthday: {e}")
+            logger.error(f"Fehler beim Hinzufügen des Geburtstags: {e}")
             return False
 
     async def remove_birthday(self, guild_id: int, user_id: int) -> bool:
         """
-        Remove a user's birthday.
+        Entfernt einen Benutzer-Geburtstag.
 
         Args:
-            guild_id: Discord guild ID
-            user_id: Discord user ID
+            guild_id: Discord Guild-ID
+            user_id: Discord Benutzer-ID
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -414,23 +414,23 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Removed birthday for user {user_id} in guild {guild_id}")
+            logger.info(f"Geburtstag für Benutzer {user_id} in Guild {guild_id} entfernt")
             return True
 
         except Exception as e:
-            logger.error(f"Error removing birthday: {e}")
+            logger.error(f"Fehler beim Entfernen des Geburtstags: {e}")
             return False
 
     async def get_birthday(self, guild_id: int, user_id: int) -> Optional[Birthday]:
         """
-        Get a user's birthday.
+        Holt einen Benutzer-Geburtstag.
 
         Args:
-            guild_id: Discord guild ID
-            user_id: Discord user ID
+            guild_id: Discord Guild-ID
+            user_id: Discord Benutzer-ID
 
         Returns:
-            Birthday object if found, None otherwise
+            Birthday-Objekt falls gefunden, None andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -452,15 +452,15 @@ class DatabaseManager:
                 return None
 
         except Exception as e:
-            logger.error(f"Error getting birthday: {e}")
+            logger.error(f"Fehler beim Abrufen des Geburtstags: {e}")
             return None
 
     async def get_birthdays_today(self) -> List[Birthday]:
         """
-        Get all birthdays for today across all guilds.
+        Holt alle Geburtstage für heute über alle Guilds hinweg.
 
         Returns:
-            List of Birthday objects for users with birthdays today
+            Liste von Birthday-Objekten für Benutzer mit Geburtstag heute
         """
         try:
             today = date.today()
@@ -487,18 +487,18 @@ class DatabaseManager:
                 return birthdays
 
         except Exception as e:
-            logger.error(f"Error getting today's birthdays: {e}")
+            logger.error(f"Fehler beim Abrufen der heutigen Geburtstage: {e}")
             return []
 
     async def get_guild_birthdays(self, guild_id: int) -> List[Birthday]:
         """
-        Get all birthdays for a specific guild.
+        Holt alle Geburtstage für eine bestimmte Guild.
 
         Args:
-            guild_id: Discord guild ID
+            guild_id: Discord Guild-ID
 
         Returns:
-            List of Birthday objects for the guild
+            Liste von Birthday-Objekten für die Guild
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -525,19 +525,19 @@ class DatabaseManager:
                 return birthdays
 
         except Exception as e:
-            logger.error(f"Error getting guild birthdays: {e}")
+            logger.error(f"Fehler beim Abrufen der Guild-Geburtstage: {e}")
             return []
 
     async def add_birthday_channel(self, guild_id: int, channel_id: int) -> bool:
         """
-        Add a birthday announcement channel for a guild.
+        Fügt einen Geburtstags-Ankündigungs-Kanal für eine Guild hinzu.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Discord channel ID
+            guild_id: Discord Guild-ID
+            channel_id: Discord Kanal-ID
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -547,23 +547,23 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Added birthday channel {channel_id} for guild {guild_id}")
+            logger.info(f"Geburtstags-Kanal {channel_id} für Guild {guild_id} hinzugefügt")
             return True
 
         except Exception as e:
-            logger.error(f"Error adding birthday channel: {e}")
+            logger.error(f"Fehler beim Hinzufügen des Geburtstags-Kanals: {e}")
             return False
 
     async def remove_birthday_channel(self, guild_id: int, channel_id: int) -> bool:
         """
-        Remove a birthday announcement channel for a guild.
+        Entfernt einen Geburtstags-Ankündigungs-Kanal für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
-            channel_id: Discord channel ID
+            guild_id: Discord Guild-ID
+            channel_id: Discord Kanal-ID
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -573,22 +573,22 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Removed birthday channel {channel_id} for guild {guild_id}")
+            logger.info(f"Geburtstags-Kanal {channel_id} für Guild {guild_id} entfernt")
             return True
 
         except Exception as e:
-            logger.error(f"Error removing birthday channel: {e}")
+            logger.error(f"Fehler beim Entfernen des Geburtstags-Kanals: {e}")
             return False
 
     async def get_birthday_channels(self, guild_id: int) -> List[int]:
         """
-        Get all birthday announcement channels for a guild.
+        Holt alle Geburtstags-Ankündigungs-Kanäle für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
+            guild_id: Discord Guild-ID
 
         Returns:
-            List of channel IDs
+            Liste von Kanal-IDs
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -600,15 +600,15 @@ class DatabaseManager:
                 return [row[0] for row in rows]
 
         except Exception as e:
-            logger.error(f"Error getting birthday channels: {e}")
+            logger.error(f"Fehler beim Abrufen der Geburtstags-Kanäle: {e}")
             return []
 
     async def get_all_birthday_channels(self) -> List[Tuple[int, int]]:
         """
-        Get all birthday announcement channels across all guilds.
+        Holt alle Geburtstags-Ankündigungs-Kanäle über alle Guilds hinweg.
 
         Returns:
-            List of tuples (guild_id, channel_id)
+            Liste von Tupeln (guild_id, channel_id)
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -619,24 +619,24 @@ class DatabaseManager:
                 return [(row[0], row[1]) for row in rows]
 
         except Exception as e:
-            logger.error(f"Error getting all birthday channels: {e}")
+            logger.error(f"Fehler beim Abrufen aller Geburtstags-Kanäle: {e}")
             return []
 
-    # Specification methods
+    # Spezifikations-Methoden
 
     async def add_specification(self, specification: Specification) -> bool:
         """
-        Add or update a user's specifications.
+        Fügt Benutzer-Spezifikationen hinzu oder aktualisiert sie.
 
         Args:
-            specification: Specification object with the data
+            specification: Specification-Objekt mit den Daten
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
-                # First check if the specification already exists
+                # Prüfe zuerst ob die Spezifikation bereits existiert
                 cursor = await db.execute(
                     "SELECT id FROM specifications WHERE guild_id = ? AND user_id = ?",
                     (specification.guild_id, specification.user_id),
@@ -644,7 +644,7 @@ class DatabaseManager:
                 existing = await cursor.fetchone()
 
                 if existing:
-                    # Update existing record (trigger will update updated_at)
+                    # Aktualisiere existierenden Eintrag (Trigger wird updated_at aktualisieren)
                     await db.execute(
                         "UPDATE specifications SET specs_text = ? WHERE guild_id = ? AND user_id = ?",
                         (
@@ -654,7 +654,7 @@ class DatabaseManager:
                         ),
                     )
                 else:
-                    # Insert new record (both created_at and updated_at will be set to current time)
+                    # Füge neuen Eintrag ein (sowohl created_at als auch updated_at werden auf aktuelle Zeit gesetzt)
                     await db.execute(
                         "INSERT INTO specifications (guild_id, user_id, specs_text) VALUES (?, ?, ?)",
                         (
@@ -667,26 +667,26 @@ class DatabaseManager:
                 await db.commit()
 
             logger.info(
-                f"Added/updated specifications for user {specification.user_id} in guild {specification.guild_id}"
+                f"Spezifikationen für Benutzer {specification.user_id} in Guild {specification.guild_id} hinzugefügt/aktualisiert"
             )
             return True
 
         except Exception as e:
-            logger.error(f"Error adding/updating specifications: {e}")
+            logger.error(f"Fehler beim Hinzufügen/Aktualisieren der Spezifikationen: {e}")
             return False
 
     async def get_specification(
         self, guild_id: int, user_id: int
     ) -> Optional[Specification]:
         """
-        Get a user's specifications.
+        Holt die Spezifikationen eines Benutzers.
 
         Args:
-            guild_id: Discord guild ID
-            user_id: Discord user ID
+            guild_id: Discord Guild-ID
+            user_id: Discord Benutzer-ID
 
         Returns:
-            Specification object if found, None otherwise
+            Specification-Objekt falls gefunden, None andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -709,19 +709,19 @@ class DatabaseManager:
                 return None
 
         except Exception as e:
-            logger.error(f"Error getting specification: {e}")
+            logger.error(f"Fehler beim Abrufen der Spezifikation: {e}")
             return None
 
     async def remove_specification(self, guild_id: int, user_id: int) -> bool:
         """
-        Remove a user's specifications.
+        Entfernt die Spezifikationen eines Benutzers.
 
         Args:
-            guild_id: Discord guild ID
-            user_id: Discord user ID
+            guild_id: Discord Guild-ID
+            user_id: Discord Benutzer-ID
 
         Returns:
-            True if successful, False otherwise
+            True wenn erfolgreich, False andernfalls
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -732,37 +732,37 @@ class DatabaseManager:
                 await db.commit()
 
             logger.info(
-                f"Removed specifications for user {user_id} in guild {guild_id}"
+                f"Spezifikationen für Benutzer {user_id} in Guild {guild_id} entfernt"
             )
             return True
 
         except Exception as e:
-            logger.error(f"Error removing specification: {e}")
+            logger.error(f"Fehler beim Entfernen der Spezifikation: {e}")
             return False
 
     async def search_specifications(
         self, guild_id: int, search_term: str, limit: int = 50, offset: int = 0
     ) -> tuple[List[tuple], int]:
         """
-        Search for hardware in all specifications within a guild with pagination.
+        Sucht nach Hardware in allen Spezifikationen einer Guild mit Paginierung.
 
         Args:
-            guild_id: Discord guild ID
-            search_term: Hardware term to search for
-            limit: Maximum number of results to return
-            offset: Number of results to skip (for pagination)
+            guild_id: Discord Guild-ID
+            search_term: Hardware-Begriff nach dem gesucht werden soll
+            limit: Maximale Anzahl von Rückgabe-Ergebnissen
+            offset: Anzahl der zu überspringenden Ergebnisse (für Paginierung)
 
         Returns:
-            Tuple of (results, total_count) where:
-            - results: List of tuples (user_id, specs_text) matching the search term
-            - total_count: Total number of matches without pagination
+            Tupel aus (results, total_count) wobei:
+            - results: Liste von Tupeln (user_id, specs_text) die dem Suchbegriff entsprechen
+            - total_count: Gesamtanzahl der Übereinstimmungen ohne Paginierung
         """
         logger.info(
-            f"Database search: guild_id={guild_id}, search_term='{search_term}', limit={limit}, offset={offset}"
+            f"Datenbanksuche: guild_id={guild_id}, search_term='{search_term}', limit={limit}, offset={offset}"
         )
         try:
             async with aiosqlite.connect(self.db_path) as db:
-                # First get the total count for pagination info
+                # Hole zuerst die Gesamtanzahl für Paginierungs-Informationen
                 count_cursor = await db.execute(
                     "SELECT COUNT(*) FROM specifications "
                     "WHERE guild_id = ? AND specs_text LIKE ? COLLATE NOCASE",
@@ -771,7 +771,7 @@ class DatabaseManager:
                 count_result = await count_cursor.fetchone()
                 total_count = count_result[0] if count_result else 0
 
-                # Then get the paginated results
+                # Hole dann die paginierten Ergebnisse
                 cursor = await db.execute(
                     "SELECT user_id, specs_text FROM specifications "
                     "WHERE guild_id = ? AND specs_text LIKE ? COLLATE NOCASE "
@@ -782,23 +782,23 @@ class DatabaseManager:
                 rows = await cursor.fetchall()
                 results = [(row[0], row[1]) for row in rows]
                 logger.info(
-                    f"Database search returned {len(results)} results (page {offset // limit + 1}, total: {total_count})"
+                    f"Datenbanksuche gab {len(results)} Ergebnisse zurück (Seite {offset // limit + 1}, insgesamt: {total_count})"
                 )
                 return results, total_count
 
         except Exception as e:
-            logger.error(f"Error searching specifications: {e}", exc_info=True)
+            logger.error(f"Fehler beim Durchsuchen der Spezifikationen: {e}", exc_info=True)
             return [], 0
 
     async def get_all_guild_specifications(self, guild_id: int) -> List[Specification]:
         """
-        Get all specifications for a guild.
+        Holt alle Spezifikationen für eine Guild.
 
         Args:
-            guild_id: Discord guild ID
+            guild_id: Discord Guild-ID
 
         Returns:
-            List of Specification objects for the guild
+            Liste von Specification-Objekten für die Guild
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
@@ -826,5 +826,5 @@ class DatabaseManager:
                 return specifications
 
         except Exception as e:
-            logger.error(f"Error getting guild specifications: {e}")
+            logger.error(f"Fehler beim Abrufen der Guild-Spezifikationen: {e}")
             return []

@@ -37,7 +37,10 @@ class BiosCog(commands.Cog):
             icon_url="https://i.imgur.com/ArBeYmq.png",
         )
 
-        await ctx.send(embed=embed)
+        try:
+            await ctx.send(embed=embed)
+        except (discord.HTTPException, discord.Forbidden) as e:
+            logger.error(f"Fehler beim Senden der BIOS Guide Nachricht: {e}")
 
 
 async def setup(bot: commands.Bot) -> None:

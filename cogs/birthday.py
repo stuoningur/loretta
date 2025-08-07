@@ -361,7 +361,7 @@ class BirthdayCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.error(f"Error removing birthday: {e}")
+            logger.error(f"Fehler beim Entfernen des Geburtstags: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Entfernen des Geburtstags aufgetreten.",
@@ -404,7 +404,7 @@ class BirthdayCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.error(f"Error showing birthday: {e}")
+            logger.error(f"Fehler beim Anzeigen des Geburtstags: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Laden des Geburtstags aufgetreten.",
@@ -478,7 +478,7 @@ class BirthdayCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.error(f"Error listing birthdays: {e}")
+            logger.error(f"Fehler beim Auflisten der Geburtstage: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Laden der Geburtstage aufgetreten.",
@@ -603,7 +603,7 @@ class BirthdayCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
-            logger.error(f"Error saving birthday: {e}")
+            logger.error(f"Fehler beim Speichern des Geburtstags: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Speichern des Geburtstags aufgetreten.",

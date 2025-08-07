@@ -1,5 +1,5 @@
 """
-Embed factory for consistent Discord embed creation
+Embed-Factory für konsistente Discord-Embed-Erstellung
 """
 
 import discord
@@ -7,32 +7,32 @@ from typing import Optional, Union
 
 
 class EmbedFactory:
-    """Factory class for creating consistent Discord embeds"""
+    """Factory-Klasse für die Erstellung konsistenter Discord-Embeds"""
 
     @staticmethod
     def error_embed(title: str, description: str) -> discord.Embed:
-        """Create a red error embed"""
+        """Erstellt ein rotes Fehler-Embed"""
         return discord.Embed(
             title=title, description=description, color=discord.Color.red()
         )
 
     @staticmethod
     def success_embed(title: str, description: str) -> discord.Embed:
-        """Create a green success embed"""
+        """Erstellt ein grünes Erfolgs-Embed"""
         return discord.Embed(
             title=title, description=description, color=discord.Color.green()
         )
 
     @staticmethod
     def info_embed(title: str, description: str) -> discord.Embed:
-        """Create a blurple info embed"""
+        """Erstellt ein blurples Info-Embed"""
         return discord.Embed(
             title=title, description=description, color=discord.Color.blurple()
         )
 
     @staticmethod
     def warning_embed(title: str, description: str) -> discord.Embed:
-        """Create a yellow warning embed"""
+        """Erstellt ein gelbes Warn-Embed"""
         return discord.Embed(
             title=title, description=description, color=discord.Color.yellow()
         )
@@ -44,7 +44,7 @@ class EmbedFactory:
         requester: Union[discord.Member, discord.User],
         updated_at: Optional[str] = None,
     ) -> discord.Embed:
-        """Create a specifications display embed"""
+        """Erstellt ein Spezifikations-Anzeige-Embed"""
         embed = discord.Embed(
             title=f"PC von: {user.display_name}",
             description=specs_text,
@@ -52,7 +52,7 @@ class EmbedFactory:
         )
 
         if updated_at:
-            # Parse timestamp if provided
+            # Parse Zeitstempel falls bereitgestellt
             try:
                 from datetime import datetime, timezone
 
@@ -66,7 +66,7 @@ class EmbedFactory:
                     inline=False,
                 )
             except Exception:
-                pass  # If timestamp parsing fails, just skip the field
+                pass  # Falls Zeitstempel-Parsing fehlschlägt, überspringe das Feld
 
         embed.set_footer(
             text=f"Angefordert von {requester.display_name}",
@@ -77,7 +77,7 @@ class EmbedFactory:
 
     @staticmethod
     def no_specs_embed(user: Union[discord.Member, discord.User]) -> discord.Embed:
-        """Create embed for when no specifications are found"""
+        """Erstellt Embed wenn keine Spezifikationen gefunden wurden"""
         return EmbedFactory.error_embed(
             "Keine Spezifikationen gefunden",
             f"{user.display_name} hat keine Spezifikationen registriert.",
@@ -85,7 +85,7 @@ class EmbedFactory:
 
     @staticmethod
     def database_error_embed(operation: str = "Operation") -> discord.Embed:
-        """Create a database error embed"""
+        """Erstellt ein Datenbank-Fehler-Embed"""
         return EmbedFactory.error_embed(
             "Datenbankfehler",
             f"Die {operation} konnte nicht durchgeführt werden. Bitte versuche es später erneut.",
@@ -93,7 +93,7 @@ class EmbedFactory:
 
     @staticmethod
     def unexpected_error_embed(operation: str = "Operation") -> discord.Embed:
-        """Create an unexpected error embed"""
+        """Erstellt ein unerwartetes Fehler-Embed"""
         return EmbedFactory.error_embed(
             "Unerwarteter Fehler",
             f"Es ist ein unerwarteter Fehler bei der {operation} aufgetreten.",
@@ -101,7 +101,7 @@ class EmbedFactory:
 
     @staticmethod
     def missing_permissions_embed(permissions: str) -> discord.Embed:
-        """Create a missing permissions error embed"""
+        """Erstellt ein Embed für fehlende Berechtigungen"""
         return EmbedFactory.error_embed(
             "Fehlende Berechtigung",
             f"Du hast nicht die erforderliche Berechtigung: **{permissions}**",
@@ -109,7 +109,7 @@ class EmbedFactory:
 
     @staticmethod
     def command_not_found_embed(command_name: str) -> discord.Embed:
-        """Create a command not found error embed"""
+        """Erstellt ein Embed für nicht gefundenen Befehl"""
         return EmbedFactory.error_embed(
             "Befehl nicht gefunden",
             f"Der Befehl `{command_name}` existiert nicht.\nVerwende `/help` für eine Liste aller verfügbaren Befehle.",
@@ -117,7 +117,7 @@ class EmbedFactory:
 
     @staticmethod
     def missing_argument_embed(argument: str) -> discord.Embed:
-        """Create a missing argument error embed"""
+        """Erstellt ein Embed für fehlende Argumente"""
         return EmbedFactory.error_embed(
             "Fehlender Parameter",
             f"Der erforderliche Parameter `{argument}` fehlt.\nÜberprüfe die Befehlsyntax mit `/help`.",
@@ -125,7 +125,7 @@ class EmbedFactory:
 
     @staticmethod
     def bad_argument_embed(argument: str, expected_type: str) -> discord.Embed:
-        """Create a bad argument error embed"""
+        """Erstellt ein Embed für ungültige Argumente"""
         return EmbedFactory.error_embed(
             "Ungültiger Parameter",
             f"Der Parameter `{argument}` hat einen ungültigen Wert.\nErwartet wird: **{expected_type}**",
@@ -133,7 +133,7 @@ class EmbedFactory:
 
     @staticmethod
     def too_many_arguments_embed() -> discord.Embed:
-        """Create a too many arguments error embed"""
+        """Erstellt ein Embed für zu viele Argumente"""
         return EmbedFactory.error_embed(
             "Zu viele Parameter",
             "Du hast zu viele Parameter angegeben.\nÜberprüfe die Befehlsyntax mit `/help`.",
@@ -141,7 +141,7 @@ class EmbedFactory:
 
     @staticmethod
     def cooldown_embed(retry_after: float) -> discord.Embed:
-        """Create a cooldown error embed"""
+        """Erstellt ein Abklingzeit-Fehler-Embed"""
         return EmbedFactory.error_embed(
             "Abklingzeit aktiv",
             f"Du musst noch {retry_after:.1f} Sekunden warten, bevor du diesen Befehl erneut verwenden kannst.",
@@ -149,7 +149,7 @@ class EmbedFactory:
 
     @staticmethod
     def bot_missing_permissions_embed(permissions: str) -> discord.Embed:
-        """Create a bot missing permissions error embed"""
+        """Erstellt ein Embed für fehlende Bot-Berechtigungen"""
         return EmbedFactory.error_embed(
             "Bot-Berechtigung fehlt",
             f"Mir fehlt die erforderliche Berechtigung: **{permissions}**\nBitte kontaktiere einen Administrator.",
@@ -157,7 +157,7 @@ class EmbedFactory:
 
     @staticmethod
     def dm_only_embed() -> discord.Embed:
-        """Create a DM only error embed"""
+        """Erstellt ein Embed für Nur-DM-Fehler"""
         return EmbedFactory.error_embed(
             "Nur in Direktnachrichten",
             "Dieser Befehl kann nur in Direktnachrichten verwendet werden.",
@@ -165,7 +165,7 @@ class EmbedFactory:
 
     @staticmethod
     def guild_only_embed() -> discord.Embed:
-        """Create a guild only error embed"""
+        """Erstellt ein Embed für Nur-Guild-Fehler"""
         return EmbedFactory.error_embed(
             "Nur auf Servern verfügbar",
             "Dieser Befehl kann nur auf Servern verwendet werden, nicht in Direktnachrichten.",

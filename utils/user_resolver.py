@@ -1,5 +1,5 @@
 """
-User resolution utilities for Discord bots
+Benutzer-Auflösungs-Utilities für Discord-Bots
 """
 
 import discord
@@ -9,14 +9,14 @@ from utils.embeds import EmbedFactory
 
 
 class UserResolver:
-    """Utility class for resolving Discord users from various input formats"""
+    """Utility-Klasse für das Auflösen von Discord-Benutzern aus verschiedenen Eingabeformaten"""
 
     @staticmethod
     async def resolve_user_by_mention(
         ctx: commands.Context, user_input: str
     ) -> Optional[Union[discord.Member, discord.User]]:
-        """Resolve user from mention format (<@12345> or @12345)"""
-        # Extract digits from mention
+        """Löst Benutzer aus Erwähnungsformat auf (<@12345> oder @12345)"""
+        # Extrahiere Ziffern aus Erwähnung
         user_id_str = "".join(filter(str.isdigit, user_input))
         if not user_id_str:
             return None
@@ -31,13 +31,13 @@ class UserResolver:
             )
             return None
 
-        # Try to get as guild member first (faster)
+        # Versuche zuerst als Guild-Mitglied zu holen (schneller)
         if ctx.guild:
             target_user = ctx.guild.get_member(user_id)
             if target_user:
                 return target_user
 
-        # Fallback to API fetch
+        # Rückfall auf API-Abruf
         try:
             return await ctx.bot.fetch_user(user_id)
         except (discord.NotFound, discord.HTTPException):
@@ -53,7 +53,7 @@ class UserResolver:
     def find_users_by_display_name(
         guild: discord.Guild, search_term: str
     ) -> List[discord.Member]:
-        """Find guild members by display name (case-insensitive partial match)"""
+        """Findet Guild-Mitglieder nach Anzeigename (groß-/kleinschreibungsunabhängige Teilsuche)"""
         search_term = search_term.lower().strip()
         return [
             member
@@ -65,10 +65,10 @@ class UserResolver:
     def find_users_by_username(
         guild: discord.Guild, search_term: str
     ) -> List[discord.Member]:
-        """Find guild members by username or username#discriminator"""
+        """Findet Guild-Mitglieder nach Benutzername oder Benutzername#Diskriminator"""
         search_term = search_term.lower().strip()
 
-        # Check for username#discriminator format
+        # Prüfe auf Benutzername#Diskriminator-Format
         if "#" in search_term:
             parts = search_term.split("#", 1)
             if len(parts) == 2:
@@ -82,7 +82,7 @@ class UserResolver:
                     )
                 ]
 
-        # Partial username match
+        # Teilweise Benutzername-Übereinstimmung
         return [
             member for member in guild.members if search_term in member.name.lower()
         ]
@@ -91,7 +91,7 @@ class UserResolver:
     async def resolve_user_by_name_search(
         ctx: commands.Context, search_term: str
     ) -> Optional[discord.Member]:
-        """Resolve user by searching display name and username"""
+        """Löst Benutzer durch Suche nach Anzeigename und Benutzername auf"""
         if not ctx.guild:
             await ctx.send(
                 embed=EmbedFactory.error_embed(
@@ -100,15 +100,15 @@ class UserResolver:
             )
             return None
 
-        # Try display name search first
+        # Versuche zuerst Anzeigename-Suche
         display_matches = UserResolver.find_users_by_display_name(
             ctx.guild, search_term
         )
 
-        # Try username search if no display name matches
+        # Versuche Benutzername-Suche wenn keine Anzeigename-Übereinstimmungen
         username_matches = UserResolver.find_users_by_username(ctx.guild, search_term)
 
-        # Combine results, prioritizing display name matches
+        # Kombiniere Ergebnisse, priorisiere Anzeigename-Übereinstimmungen
         all_matches = display_matches + [
             m for m in username_matches if m not in display_matches
         ]
@@ -125,11 +125,11 @@ class UserResolver:
         if len(all_matches) == 1:
             return all_matches[0]
 
-        # Multiple matches - show disambiguation
+        # Mehrere Übereinstimmungen - zeige Unterscheidung
         match_list = "\n".join(
             [
                 f"• {member.display_name} (`{member.name}#{member.discriminator}`)"
-                for member in all_matches[:10]  # Limit to first 10 matches
+                for member in all_matches[:10]  # Begrenze auf erste 10 Übereinstimmungen
             ]
         )
 
@@ -148,12 +148,12 @@ class UserResolver:
     async def resolve_user(
         ctx: commands.Context, user_input: str
     ) -> Optional[Union[discord.Member, discord.User]]:
-        """Resolve a user from input string (mention, username, or display name)"""
+        """Löst einen Benutzer aus Eingabestring auf (Erwähnung, Benutzername oder Anzeigename)"""
         user_input = user_input.strip()
 
-        # Try mention format first (most specific)
+        # Versuche zuerst Erwähnungsformat (spezifischste)
         if "@" in user_input or user_input.isdigit():
             return await UserResolver.resolve_user_by_mention(ctx, user_input)
 
-        # Try name-based search
+        # Versuche namensbasierte Suche
         return await UserResolver.resolve_user_by_name_search(ctx, user_input)

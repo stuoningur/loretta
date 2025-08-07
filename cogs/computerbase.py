@@ -29,7 +29,8 @@ class ComputerBase(commands.Cog):
 
     async def cog_load(self):
         """Initialisiert die HTTP-Session und startet den RSS-Check"""
-        self.session = aiohttp.ClientSession()
+        timeout = aiohttp.ClientTimeout(total=30)  # 30 second timeout
+        self.session = aiohttp.ClientSession(timeout=timeout)
         self.check_rss_feed.start()
         logger.info("ComputerBase News Cog geladen und RSS-Überwachung gestartet")
 
@@ -123,17 +124,31 @@ class ComputerBase(commands.Cog):
                 return
 
             # RSS-Feed abrufen
-            async with self.session.get(self.rss_url) as response:
-                if response.status != 200:
-                    logger.error(
-                        f"ComputerBase RSS-Feed Fehler: HTTP {response.status}"
-                    )
-                    return
+            try:
+                async with self.session.get(self.rss_url) as response:
+                    if response.status != 200:
+                        logger.error(
+                            f"ComputerBase RSS-Feed Fehler: HTTP {response.status}"
+                        )
+                        return
 
-                content = await response.text()
+                    content = await response.text()
+            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
+                logger.error(f"ComputerBase RSS-Feed Verbindungsfehler: {e}")
+                return
+            except Exception as e:
+                logger.error(f"ComputerBase RSS-Feed unerwarteter Fehler: {e}")
+                return
 
             # RSS-Feed parsen
-            feed = feedparser.parse(content)
+            try:
+                feed = feedparser.parse(content)
+                if not hasattr(feed, 'entries'):
+                    logger.error("ComputerBase RSS-Feed hat ungültiges Format")
+                    return
+            except Exception as e:
+                logger.error(f"ComputerBase RSS-Feed Parser-Fehler: {e}")
+                return
 
             if not feed.entries:
                 logger.warning("Keine Einträge im ComputerBase RSS-Feed gefunden")

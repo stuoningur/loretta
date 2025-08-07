@@ -40,7 +40,13 @@ class Roll(commands.Cog):
                     icon_url=ctx.author.display_avatar.url,
                 )
 
+                try:
+                    try:
                 await ctx.send(embed=embed)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+                except (discord.HTTPException, discord.Forbidden) as e:
+                    logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
 
             if maximum > 1000000:
@@ -56,7 +62,13 @@ class Roll(commands.Cog):
                     icon_url=ctx.author.display_avatar.url,
                 )
 
+                try:
+                    try:
                 await ctx.send(embed=embed)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+                except (discord.HTTPException, discord.Forbidden) as e:
+                    logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
 
             # Würfle eine Zufallszahl
@@ -75,7 +87,10 @@ class Roll(commands.Cog):
                 icon_url=ctx.author.display_avatar.url,
             )
 
-            await ctx.send(embed=embed)
+            try:
+                await ctx.send(embed=embed)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
 
             logger.info(
                 f"Würfel-Befehl ausgeführt von {ctx.author}: {result} (1-{maximum})"
@@ -94,7 +109,10 @@ class Roll(commands.Cog):
                 icon_url=ctx.author.display_avatar.url,
             )
 
-            await ctx.send(embed=embed)
+            try:
+                await ctx.send(embed=embed)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
 
         except Exception as e:
             logger.error(f"Fehler beim Würfeln: {e}")
@@ -111,7 +129,10 @@ class Roll(commands.Cog):
                 icon_url=ctx.author.display_avatar.url,
             )
 
-            await ctx.send(embed=embed)
+            try:
+                await ctx.send(embed=embed)
+            except (discord.HTTPException, discord.Forbidden) as e:
+                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
 
 
 async def setup(bot):

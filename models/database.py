@@ -1,5 +1,5 @@
 """
-Database schema definitions for the Loretta Discord bot.
+Datenbank-Schema-Definitionen für den Loretta Discord-Bot.
 """
 
 import aiosqlite
@@ -7,20 +7,20 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# SQL schema for server configurations
+# SQL-Schema für Server-Konfigurationen
 SERVER_CONFIG_SCHEMA = """
 CREATE TABLE IF NOT EXISTS server_config (
     guild_id INTEGER PRIMARY KEY,
     command_prefix TEXT NOT NULL DEFAULT '!',
     log_channel_id INTEGER,
     news_channel_id INTEGER,
-    picture_only_channels TEXT,  -- JSON array of channel IDs
+    picture_only_channels TEXT,  -- JSON-Array von Kanal-IDs
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """
 
-# Trigger to update the updated_at timestamp
+# Trigger um den updated_at Zeitstempel zu aktualisieren
 UPDATE_TIMESTAMP_TRIGGER = """
 CREATE TRIGGER IF NOT EXISTS update_server_config_timestamp 
     AFTER UPDATE ON server_config
@@ -30,7 +30,7 @@ BEGIN
 END;
 """
 
-# SQL schema for RSS entries tracking
+# SQL-Schema für RSS-Einträge-Verfolgung
 RSS_ENTRIES_SCHEMA = """
 CREATE TABLE IF NOT EXISTS posted_rss_entries (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS posted_rss_entries (
 );
 """
 
-# SQL schema for birthdays
+# SQL-Schema für Geburtstage
 BIRTHDAYS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS birthdays (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS birthdays (
 );
 """
 
-# SQL schema for birthday channels
+# SQL-Schema für Geburtstags-Kanäle
 BIRTHDAY_CHANNELS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS birthday_channels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS birthday_channels (
 );
 """
 
-# SQL schema for user specifications
+# SQL-Schema für Benutzer-Spezifikationen
 SPECIFICATIONS_SCHEMA = """
 CREATE TABLE IF NOT EXISTS specifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS specifications (
 );
 """
 
-# Trigger to update the updated_at timestamp for specifications
+# Trigger um den updated_at Zeitstempel zu aktualisieren for specifications
 UPDATE_SPECS_TIMESTAMP_TRIGGER = """
 CREATE TRIGGER IF NOT EXISTS update_specifications_timestamp 
     AFTER UPDATE ON specifications
@@ -88,57 +88,57 @@ BEGIN
 END;
 """
 
-# Indexes for performance optimization
+# Indizes für Performance-Optimierung
 SPECIFICATIONS_INDEXES = [
-    # Index for guild-based queries (most common)
+    # Index für Guild-basierte Abfragen (häufigste)
     "CREATE INDEX IF NOT EXISTS idx_specifications_guild_id ON specifications(guild_id);",
-    # Composite index for search queries (guild_id + text search)
+    # Zusammengesetzter Index für Suchabfragen (guild_id + Textsuche)
     "CREATE INDEX IF NOT EXISTS idx_specifications_guild_search ON specifications(guild_id, specs_text);",
-    # Index for user lookups
+    # Index für Benutzer-Abfragen
     "CREATE INDEX IF NOT EXISTS idx_specifications_user_id ON specifications(user_id);",
-    # Index for updated_at ordering
+    # Index für updated_at Sortierung
     "CREATE INDEX IF NOT EXISTS idx_specifications_updated_at ON specifications(updated_at DESC);",
 ]
 
 
 async def initialize_database(db_path: str) -> None:
     """
-    Initialize the database with the required schema.
+    Initialisiert die Datenbank mit dem erforderlichen Schema.
 
     Args:
-        db_path: Path to the SQLite database file
+        db_path: Pfad zur SQLite-Datenbankdatei
     """
     try:
         async with aiosqlite.connect(db_path) as db:
-            # Create server_config table
+            # Erstelle server_config Tabelle
             await db.execute(SERVER_CONFIG_SCHEMA)
 
-            # Create timestamp update trigger
+            # Erstelle Zeitstempel-Update-Trigger
             await db.execute(UPDATE_TIMESTAMP_TRIGGER)
 
-            # Create RSS entries table
+            # Erstelle RSS-Einträge Tabelle
             await db.execute(RSS_ENTRIES_SCHEMA)
 
-            # Create birthdays table
+            # Erstelle Geburtstags-Tabelle
             await db.execute(BIRTHDAYS_SCHEMA)
 
-            # Create birthday channels table
+            # Erstelle Geburtstags-Kanäle Tabelle
             await db.execute(BIRTHDAY_CHANNELS_SCHEMA)
 
-            # Create specifications table
+            # Erstelle Spezifikations-Tabelle
             await db.execute(SPECIFICATIONS_SCHEMA)
 
-            # Create specifications timestamp update trigger
+            # Erstelle Spezifikations-Zeitstempel-Update-Trigger
             await db.execute(UPDATE_SPECS_TIMESTAMP_TRIGGER)
 
-            # Create performance indexes
+            # Erstelle Performance-Indizes
             for index_sql in SPECIFICATIONS_INDEXES:
                 await db.execute(index_sql)
 
-            # Commit changes
+            # Übertrage Änderungen
             await db.commit()
-            logger.info("Database initialized successfully with performance indexes")
+            logger.info("Datenbank erfolgreich mit Performance-Indizes initialisiert")
 
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+        logger.error(f"Datenbankinitialisierung fehlgeschlagen: {e}")
         raise

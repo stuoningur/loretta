@@ -377,8 +377,18 @@ class ConfigCog(commands.Cog):
                 )
 
             elif option == "remove_pic_channel":
-                guild_id = interaction.guild.id
-                config = await self.bot.db.get_server_config(guild_id)
+                try:
+                    guild_id = interaction.guild.id
+                    config = await self.bot.db.get_server_config(guild_id)
+                except Exception as e:
+                    logger.error(f"Fehler beim Laden der Konfiguration für remove_pic_channel: {e}")
+                    embed = discord.Embed(
+                        title="Datenbankfehler",
+                        description="Die Konfiguration konnte nicht geladen werden.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
 
                 if not config.picture_only_channels:
                     embed = discord.Embed(
@@ -441,8 +451,18 @@ class ConfigCog(commands.Cog):
                 )
 
             elif option == "remove_birthday_channel":
-                guild_id = interaction.guild.id
-                birthday_channel_ids = await self.bot.db.get_birthday_channels(guild_id)
+                try:
+                    guild_id = interaction.guild.id
+                    birthday_channel_ids = await self.bot.db.get_birthday_channels(guild_id)
+                except Exception as e:
+                    logger.error(f"Fehler beim Laden der Geburtstags-Kanäle: {e}")
+                    embed = discord.Embed(
+                        title="Datenbankfehler",
+                        description="Die Geburtstags-Kanäle konnten nicht geladen werden.",
+                        color=discord.Color.red(),
+                    )
+                    await interaction.response.send_message(embed=embed, ephemeral=True)
+                    return
 
                 if not birthday_channel_ids:
                     embed = discord.Embed(
@@ -906,7 +926,7 @@ class ConfigCog(commands.Cog):
                         birthday_channel_names.append(f"Unbekannt (ID: {channel_id})")
                 birthday_channels_text = ", ".join(birthday_channel_names)
         except Exception as e:
-            logger.error(f"Error getting birthday channels for display: {e}")
+            logger.error(f"Fehler beim Abrufen der Geburtstags-Kanäle für Anzeige: {e}")
             birthday_channels_text = "Fehler beim Laden"
 
         embed = discord.Embed(

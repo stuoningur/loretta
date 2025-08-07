@@ -29,7 +29,8 @@ class Hardwareluxx(commands.Cog):
 
     async def cog_load(self):
         """Initialisiert die HTTP-Session und startet den RSS-Check"""
-        self.session = aiohttp.ClientSession()
+        timeout = aiohttp.ClientTimeout(total=30)  # 30 second timeout
+        self.session = aiohttp.ClientSession(timeout=timeout)
         self.check_rss_feed.start()
         logger.info("Hardwareluxx News Cog geladen und RSS-Überwachung gestartet")
 
@@ -98,17 +99,31 @@ class Hardwareluxx(commands.Cog):
                 return
 
             # RSS-Feed abrufen
-            async with self.session.get(self.rss_url) as response:
-                if response.status != 200:
-                    logger.error(
-                        f"Hardwareluxx RSS-Feed Fehler: HTTP {response.status}"
-                    )
-                    return
+            try:
+                async with self.session.get(self.rss_url) as response:
+                    if response.status != 200:
+                        logger.error(
+                            f"Hardwareluxx RSS-Feed Fehler: HTTP {response.status}"
+                        )
+                        return
 
-                content = await response.text()
+                    content = await response.text()
+            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
+                logger.error(f"Hardwareluxx RSS-Feed Verbindungsfehler: {e}")
+                return
+            except Exception as e:
+                logger.error(f"Hardwareluxx RSS-Feed unerwarteter Fehler: {e}")
+                return
 
             # RSS-Feed parsen
-            feed = feedparser.parse(content)
+            try:
+                feed = feedparser.parse(content)
+                if not hasattr(feed, 'entries'):
+                    logger.error("Hardwareluxx RSS-Feed hat ungültiges Format")
+                    return
+            except Exception as e:
+                logger.error(f"Hardwareluxx RSS-Feed Parser-Fehler: {e}")
+                return
 
             if not feed.entries:
                 logger.warning("Keine Einträge im Hardwareluxx RSS-Feed gefunden")
@@ -299,21 +314,59 @@ class Hardwareluxx(commands.Cog):
                 return
 
             # RSS-Feed abrufen
-            async with self.session.get(self.rss_url) as response:
-                if response.status != 200:
+            try:
+                async with self.session.get(self.rss_url) as response:
+                    if response.status != 200:
+                        embed = discord.Embed(
+                            title="RSS-Feed Fehler",
+                            description=f"HTTP Status: {response.status}",
+                            color=discord.Color.red(),
+                            timestamp=datetime.now(timezone.utc),
+                        )
+                        await ctx.send(embed=embed)
+                        return
+
+                    content = await response.text()
+            except (aiohttp.ClientConnectionError, aiohttp.ClientTimeout, asyncio.TimeoutError) as e:
+                embed = discord.Embed(
+                    title="RSS-Feed Verbindungsfehler",
+                    description=f"Verbindung fehlgeschlagen: {str(e)}",
+                    color=discord.Color.red(),
+                    timestamp=datetime.now(timezone.utc),
+                )
+                await ctx.send(embed=embed)
+                return
+            except Exception as e:
+                embed = discord.Embed(
+                    title="RSS-Feed Fehler",
+                    description=f"Unerwarteter Fehler: {str(e)}",
+                    color=discord.Color.red(),
+                    timestamp=datetime.now(timezone.utc),
+                )
+                await ctx.send(embed=embed)
+                return
+
+            # RSS-Feed parsen
+            try:
+                feed = feedparser.parse(content)
+                if not hasattr(feed, 'entries'):
                     embed = discord.Embed(
-                        title="RSS-Feed Fehler",
-                        description=f"HTTP Status: {response.status}",
+                        title="RSS-Feed Parser-Fehler",
+                        description="RSS-Feed hat ungültiges Format",
                         color=discord.Color.red(),
                         timestamp=datetime.now(timezone.utc),
                     )
                     await ctx.send(embed=embed)
                     return
-
-                content = await response.text()
-
-            # RSS-Feed parsen
-            feed = feedparser.parse(content)
+            except Exception as e:
+                embed = discord.Embed(
+                    title="RSS-Feed Parser-Fehler",
+                    description=f"Parser-Fehler: {str(e)}",
+                    color=discord.Color.red(),
+                    timestamp=datetime.now(timezone.utc),
+                )
+                await ctx.send(embed=embed)
+                return
 
             if not feed.entries:
                 embed = discord.Embed(

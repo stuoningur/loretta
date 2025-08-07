@@ -205,7 +205,7 @@ class SpecificationsCog(commands.Cog):
                 await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Error saving specifications for user {ctx.author.id}: {e}")
+            logger.error(f"Fehler beim Speichern der Spezifikationen für Benutzer {ctx.author.id}: {e}")
             embed = EmbedFactory.unexpected_error_embed("Speichern der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -244,7 +244,7 @@ class SpecificationsCog(commands.Cog):
                 await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Error deleting specifications for user {ctx.author.id}: {e}")
+            logger.error(f"Fehler beim Löschen der Spezifikationen für Benutzer {ctx.author.id}: {e}")
             embed = EmbedFactory.unexpected_error_embed("Löschen der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -318,7 +318,7 @@ class SpecificationsCog(commands.Cog):
 
         except Exception as e:
             logger.error(
-                f"Error in search command for term '{search_term}': {e}", exc_info=True
+                f"Fehler im Suchbefehl für Begriff '{search_term}': {e}", exc_info=True
             )
             embed = EmbedFactory.error_embed(
                 "Suchfehler",
@@ -414,7 +414,7 @@ class SpecificationsCog(commands.Cog):
             )
 
         except Exception as e:
-            logger.error(f"Error during database cleanup: {e}")
+            logger.error(f"Fehler während Datenbank-Bereinigung: {e}")
             embed = discord.Embed(
                 title="Fehler",
                 description="Es ist ein Fehler beim Bereinigen der Datenbank aufgetreten.",
@@ -454,7 +454,7 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Error showing specifications for user {user.id}: {e}")
+            logger.error(f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}")
             embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -480,7 +480,7 @@ class SpecificationsCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
         except Exception as e:
-            logger.error(f"Error showing specifications for user {user.id}: {e}")
+            logger.error(f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}")
             embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -495,7 +495,7 @@ class SpecificationsCog(commands.Cog):
             dt = dt.replace(tzinfo=timezone.utc)
             return dt.timestamp()
         except Exception as e:
-            logger.error(f"Error parsing timestamp {timestamp_str}: {e}")
+            logger.error(f"Fehler beim Parsen des Zeitstempels {timestamp_str}: {e}")
             return 0
 
 
@@ -543,7 +543,7 @@ async def show_user_specs_context(
         )
 
     except Exception as e:
-        logger.error(f"Error in context menu specs command for user {user.id}: {e}")
+        logger.error(f"Fehler im Kontextmenü-Specs-Befehl für Benutzer {user.id}: {e}")
         embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
         await interaction.response.send_message(embed=embed, ephemeral=True)
 

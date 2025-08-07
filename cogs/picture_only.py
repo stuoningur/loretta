@@ -80,16 +80,24 @@ class PictureOnly(commands.Cog):
                             await message.author.send(embed=embed)
                         except discord.Forbidden:
                             # Falls DM fehlschlägt, sende temporäre Nachricht im Kanal
-                            await message.channel.send(
-                                f"{message.author.mention}",
-                                embed=embed,
-                                delete_after=10,
-                            )
+                            try:
+                                await message.channel.send(
+                                    f"{message.author.mention}",
+                                    embed=embed,
+                                    delete_after=10,
+                                )
+                            except (discord.NotFound, discord.Forbidden) as e:
+                                logger.warning(f"Konnte Warnung nicht senden in {message.channel.name}: {e}")
 
                         logger.info(
                             f"Nachricht von {message.author.display_name} ({message.author}) in Nur-Bild-Kanal {message.channel.name} gelöscht"
                         )
 
+                    except discord.NotFound:
+                        # Nachricht wurde bereits gelöscht, ignoriere
+                        logger.debug(
+                            f"Nachricht in {message.channel.name} bereits gelöscht"
+                        )
                     except discord.Forbidden:
                         logger.warning(
                             f"Keine Berechtigung zum Löschen von Nachrichten in {message.channel.name}"
