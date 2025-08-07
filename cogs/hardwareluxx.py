@@ -118,7 +118,7 @@ class Hardwareluxx(commands.Cog):
             # RSS-Feed parsen
             try:
                 feed = feedparser.parse(content)
-                if not hasattr(feed, 'entries'):
+                if not hasattr(feed, "entries"):
                     logger.error("Hardwareluxx RSS-Feed hat ungültiges Format")
                     return
             except Exception as e:
@@ -349,7 +349,7 @@ class Hardwareluxx(commands.Cog):
             # RSS-Feed parsen
             try:
                 feed = feedparser.parse(content)
-                if not hasattr(feed, 'entries'):
+                if not hasattr(feed, "entries"):
                     embed = discord.Embed(
                         title="RSS-Feed Parser-Fehler",
                         description="RSS-Feed hat ungültiges Format",

@@ -48,7 +48,7 @@ class Gif(commands.Cog):
 
             lmt = 30
             timeout = aiohttp.ClientTimeout(total=10)  # 10 second timeout
-            
+
             try:
                 async with aiohttp.ClientSession(timeout=timeout) as session:
                     url = f"https://api.tenor.com/v1/search?q={arg}&key={self.tenor_api}&limit={lmt}"
@@ -66,9 +66,9 @@ class Gif(commands.Cog):
                             )
                             await ctx.send(embed=embed)
                             return
-                        
+
                         response = await api_request.json()
-                        
+
             except (aiohttp.ClientError, asyncio.TimeoutError):
                 embed = discord.Embed(
                     title="Verbindungsfehler",

@@ -205,7 +205,9 @@ class SpecificationsCog(commands.Cog):
                 await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Fehler beim Speichern der Spezifikationen für Benutzer {ctx.author.id}: {e}")
+            logger.error(
+                f"Fehler beim Speichern der Spezifikationen für Benutzer {ctx.author.id}: {e}"
+            )
             embed = EmbedFactory.unexpected_error_embed("Speichern der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -244,7 +246,9 @@ class SpecificationsCog(commands.Cog):
                 await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Fehler beim Löschen der Spezifikationen für Benutzer {ctx.author.id}: {e}")
+            logger.error(
+                f"Fehler beim Löschen der Spezifikationen für Benutzer {ctx.author.id}: {e}"
+            )
             embed = EmbedFactory.unexpected_error_embed("Löschen der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -454,7 +458,9 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
         except Exception as e:
-            logger.error(f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}")
+            logger.error(
+                f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}"
+            )
             embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await ctx.send(embed=embed)
 
@@ -480,7 +486,9 @@ class SpecificationsCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
         except Exception as e:
-            logger.error(f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}")
+            logger.error(
+                f"Fehler beim Anzeigen der Spezifikationen für Benutzer {user.id}: {e}"
+            )
             embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 

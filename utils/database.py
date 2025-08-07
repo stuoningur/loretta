@@ -85,7 +85,9 @@ class DatabaseManager:
                     return ServerConfig(guild_id=guild_id)
 
         except Exception as e:
-            logger.error(f"Fehler beim Abrufen der Server-Konfiguration für Guild {guild_id}: {e}")
+            logger.error(
+                f"Fehler beim Abrufen der Server-Konfiguration für Guild {guild_id}: {e}"
+            )
             # Gib Standard-Konfiguration bei Fehler zurück
             return ServerConfig(guild_id=guild_id)
 
@@ -117,7 +119,9 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Server-Konfiguration für Guild {config.guild_id} aktualisiert")
+            logger.info(
+                f"Server-Konfiguration für Guild {config.guild_id} aktualisiert"
+            )
             return True
 
         except Exception as e:
@@ -143,7 +147,9 @@ class DatabaseManager:
             return await self.set_server_config(config)
 
         except Exception as e:
-            logger.error(f"Fehler beim Setzen des Command-Prefix für Guild {guild_id}: {e}")
+            logger.error(
+                f"Fehler beim Setzen des Command-Prefix für Guild {guild_id}: {e}"
+            )
             return False
 
     async def set_log_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
@@ -183,7 +189,9 @@ class DatabaseManager:
             return await self.set_server_config(config)
 
         except Exception as e:
-            logger.error(f"Fehler beim Setzen des News-Kanals für Guild {guild_id}: {e}")
+            logger.error(
+                f"Fehler beim Setzen des News-Kanals für Guild {guild_id}: {e}"
+            )
             return False
 
     async def add_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
@@ -205,7 +213,9 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(f"Fehler beim Hinzufügen des Nur-Bild-Kanals für Guild {guild_id}: {e}")
+            logger.error(
+                f"Fehler beim Hinzufügen des Nur-Bild-Kanals für Guild {guild_id}: {e}"
+            )
             return False
 
     async def remove_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
@@ -414,7 +424,9 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Geburtstag für Benutzer {user_id} in Guild {guild_id} entfernt")
+            logger.info(
+                f"Geburtstag für Benutzer {user_id} in Guild {guild_id} entfernt"
+            )
             return True
 
         except Exception as e:
@@ -547,7 +559,9 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Geburtstags-Kanal {channel_id} für Guild {guild_id} hinzugefügt")
+            logger.info(
+                f"Geburtstags-Kanal {channel_id} für Guild {guild_id} hinzugefügt"
+            )
             return True
 
         except Exception as e:
@@ -672,7 +686,9 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            logger.error(f"Fehler beim Hinzufügen/Aktualisieren der Spezifikationen: {e}")
+            logger.error(
+                f"Fehler beim Hinzufügen/Aktualisieren der Spezifikationen: {e}"
+            )
             return False
 
     async def get_specification(
@@ -787,7 +803,9 @@ class DatabaseManager:
                 return results, total_count
 
         except Exception as e:
-            logger.error(f"Fehler beim Durchsuchen der Spezifikationen: {e}", exc_info=True)
+            logger.error(
+                f"Fehler beim Durchsuchen der Spezifikationen: {e}", exc_info=True
+            )
             return [], 0
 
     async def get_all_guild_specifications(self, guild_id: int) -> List[Specification]:

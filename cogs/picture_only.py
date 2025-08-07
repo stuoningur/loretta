@@ -87,7 +87,9 @@ class PictureOnly(commands.Cog):
                                     delete_after=10,
                                 )
                             except (discord.NotFound, discord.Forbidden) as e:
-                                logger.warning(f"Konnte Warnung nicht senden in {message.channel.name}: {e}")
+                                logger.warning(
+                                    f"Konnte Warnung nicht senden in {message.channel.name}: {e}"
+                                )
 
                         logger.info(
                             f"Nachricht von {message.author.display_name} ({message.author}) in Nur-Bild-Kanal {message.channel.name} gelöscht"

@@ -129,7 +129,9 @@ class UserResolver:
         match_list = "\n".join(
             [
                 f"• {member.display_name} (`{member.name}#{member.discriminator}`)"
-                for member in all_matches[:10]  # Begrenze auf erste 10 Übereinstimmungen
+                for member in all_matches[
+                    :10
+                ]  # Begrenze auf erste 10 Übereinstimmungen
             ]
         )
 

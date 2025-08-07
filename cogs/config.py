@@ -381,7 +381,9 @@ class ConfigCog(commands.Cog):
                     guild_id = interaction.guild.id
                     config = await self.bot.db.get_server_config(guild_id)
                 except Exception as e:
-                    logger.error(f"Fehler beim Laden der Konfiguration für remove_pic_channel: {e}")
+                    logger.error(
+                        f"Fehler beim Laden der Konfiguration für remove_pic_channel: {e}"
+                    )
                     embed = discord.Embed(
                         title="Datenbankfehler",
                         description="Die Konfiguration konnte nicht geladen werden.",
@@ -453,7 +455,9 @@ class ConfigCog(commands.Cog):
             elif option == "remove_birthday_channel":
                 try:
                     guild_id = interaction.guild.id
-                    birthday_channel_ids = await self.bot.db.get_birthday_channels(guild_id)
+                    birthday_channel_ids = await self.bot.db.get_birthday_channels(
+                        guild_id
+                    )
                 except Exception as e:
                     logger.error(f"Fehler beim Laden der Geburtstags-Kanäle: {e}")
                     embed = discord.Embed(

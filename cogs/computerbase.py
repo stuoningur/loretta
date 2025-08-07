@@ -143,7 +143,7 @@ class ComputerBase(commands.Cog):
             # RSS-Feed parsen
             try:
                 feed = feedparser.parse(content)
-                if not hasattr(feed, 'entries'):
+                if not hasattr(feed, "entries"):
                     logger.error("ComputerBase RSS-Feed hat ungültiges Format")
                     return
             except Exception as e:
