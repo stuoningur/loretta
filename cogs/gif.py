@@ -124,26 +124,6 @@ class Gif(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @gif.error
-    async def gif_error(self, ctx, error):
-        """Behandelt Fehler für den GIF-Befehl"""
-        if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
-                title="Fehler",
-                description="Bitte gib einen Suchbegriff für das GIF ein.\n\nBeispiel: `/gif katze`",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
-            )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            await ctx.send(embed=embed)
-        else:
-            logger.error(f"Unerwarteter Fehler im GIF-Befehl: {error}")
-
 
 async def setup(bot):
     """Lädt das GIF Cog"""

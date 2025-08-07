@@ -100,41 +100,6 @@ class Purge(commands.Cog):
                 await ctx.send(embed=embed, ephemeral=True)
             logger.error(f"Fehler beim Purge-Befehl: {e}")
 
-    @purge.error
-    async def purge_error(self, ctx, error):
-        """Error handler für den purge command"""
-        if isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(
-                title="Fehlende Berechtigung",
-                description="Du hast keine Berechtigung, Nachrichten zu verwalten!",
-                color=discord.Color.red(),
-            )
-        elif isinstance(error, commands.BadArgument):
-            embed = discord.Embed(
-                title="Ungültige Eingabe",
-                description="Bitte gib eine gültige Zahl ein!",
-                color=discord.Color.red(),
-            )
-        elif isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
-                title="Fehlende Parameter",
-                description="Bitte gib die Anzahl der zu löschenden Nachrichten an!\nBeispiel: `/purge 10`",
-                color=discord.Color.red(),
-            )
-        else:
-            logger.error(f"Unbehandelter Fehler im purge command: {error}")
-            embed = discord.Embed(
-                title="Unerwarteter Fehler",
-                description="Ein unerwarteter Fehler ist aufgetreten.",
-                color=discord.Color.red(),
-            )
-
-        # Sende die Fehlermeldung entsprechend dem Command-Typ
-        if ctx.interaction and ctx.interaction.response.is_done():
-            await ctx.interaction.followup.send(embed=embed)
-        else:
-            await ctx.send(embed=embed, ephemeral=True)
-
 
 @app_commands.context_menu(name="Löschen bis hier")
 @app_commands.default_permissions(manage_messages=True)

@@ -425,29 +425,6 @@ class SpecificationsCog(commands.Cog):
             else:
                 await ctx.send(embed=embed)
 
-    @specs_clean.error
-    async def specs_clean_error(self, ctx, error):
-        """Error handler für den clean command"""
-        if isinstance(error, commands.MissingPermissions):
-            embed = discord.Embed(
-                title="Fehlende Berechtigung",
-                description="Du benötigst Administrator-Rechte, um die Datenbank zu bereinigen!",
-                color=discord.Color.red(),
-            )
-        else:
-            logger.error(f"Unbehandelter Fehler im clean command: {error}")
-            embed = discord.Embed(
-                title="Unerwarteter Fehler",
-                description="Ein unerwarteter Fehler ist aufgetreten.",
-                color=discord.Color.red(),
-            )
-
-        # Sende die Fehlermeldung entsprechend dem Command-Typ
-        if ctx.interaction and ctx.interaction.response.is_done():
-            await ctx.interaction.followup.send(embed=embed)
-        else:
-            await ctx.send(embed=embed, ephemeral=True)
-
     def _create_specifications_embed(
         self,
         specification: Optional[Specification],

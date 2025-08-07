@@ -241,6 +241,7 @@ class LorettaBot(commands.Bot):
                 commands.DisabledCommand,
                 commands.NotOwner,
                 commands.CheckFailure,
+                discord.HTTPException,
             ),
         ):
             # Für bekannte Fehler nur basic logging ohne traceback
@@ -359,6 +360,15 @@ class LorettaBot(commands.Bot):
                 "Du erfüllst nicht die Voraussetzungen für diesen Befehl.",
             )
 
+        elif isinstance(error, discord.HTTPException):
+            logger.error(
+                f"HTTP exception in command {ctx.command} by {ctx.author} ({ctx.author.id}): {str(error)}"
+            )
+            embed = EmbedFactory.error_embed(
+                "Discord API Fehler",
+                "Es gab ein Problem bei der Kommunikation mit Discord. Versuche es später erneut.",
+            )
+
         else:
             # Unbekannte Fehler
             embed = EmbedFactory.unexpected_error_embed("Befehlsausführung")
@@ -397,6 +407,7 @@ class LorettaBot(commands.Bot):
                 discord.app_commands.CommandOnCooldown,
                 discord.app_commands.NoPrivateMessage,
                 discord.app_commands.CheckFailure,
+                discord.HTTPException,
             ),
         ):
             # Für bekannte Fehler nur basic logging ohne traceback
@@ -453,6 +464,15 @@ class LorettaBot(commands.Bot):
             embed = EmbedFactory.error_embed(
                 "Überprüfung fehlgeschlagen",
                 "Du erfüllst nicht die Voraussetzungen für diesen Befehl.",
+            )
+
+        elif isinstance(error, discord.HTTPException):
+            logger.error(
+                f"HTTP exception in app command {interaction.command} by {interaction.user} ({interaction.user.id}): {str(error)}"
+            )
+            embed = EmbedFactory.error_embed(
+                "Discord API Fehler",
+                "Es gab ein Problem bei der Kommunikation mit Discord. Versuche es später erneut.",
             )
 
         else:

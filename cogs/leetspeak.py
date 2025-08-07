@@ -61,16 +61,6 @@ class Leetspeak(commands.Cog):
             logger.error(f"Fehler beim Konvertieren zu Leet Speak: {e}")
             await ctx.send("Fehler beim Konvertieren zu Leet Speak.")
 
-    @leetspeak.error
-    async def leetspeak_error(self, ctx, error):
-        """Behandelt Fehler für den Leetspeak-Befehl"""
-        if isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                "Bitte gib einen Text ein, der zu Leet Speak konvertiert werden soll.\n\nBeispiel: `/leetspeak Hello World`"
-            )
-        else:
-            logger.error(f"Unerwarteter Fehler im Leetspeak-Befehl: {error}")
-
 
 async def setup(bot):
     """Lädt das Leetspeak Cog"""

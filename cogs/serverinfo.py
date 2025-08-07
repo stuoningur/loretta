@@ -145,14 +145,8 @@ class ServerInfo(commands.Cog):
             icon_url=ctx.author.display_avatar.url,
         )
 
-        try:
-            await ctx.send(embed=embed)
-            logger.info(
-                f"Serverinfo-Befehl ausgeführt von {ctx.author} in {guild.name}"
-            )
-        except discord.HTTPException as e:
-            logger.error(f"Fehler beim Senden der Serverinfo: {e}")
-            await ctx.send("Fehler beim Anzeigen der Serverinformationen.")
+        await ctx.send(embed=embed)
+        logger.info(f"Serverinfo-Befehl ausgeführt von {ctx.author} in {guild.name}")
 
 
 async def setup(bot):

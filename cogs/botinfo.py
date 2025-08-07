@@ -121,13 +121,9 @@ class BotInfo(commands.Cog):
             icon_url=ctx.author.display_avatar.url,
         )
 
-        try:
-            # Bearbeite die ursprüngliche Nachricht
-            await message.edit(embed=embed)
-            logger.info(f"BotInfo-Befehl ausgeführt von {ctx.author}")
-        except discord.HTTPException as e:
-            logger.error(f"Fehler beim Bearbeiten der BotInfo-Nachricht: {e}")
-            await ctx.send("Fehler beim Anzeigen der Bot-Informationen.")
+        # Bearbeite die ursprüngliche Nachricht
+        await message.edit(embed=embed)
+        logger.info(f"BotInfo-Befehl ausgeführt von {ctx.author}")
 
 
 async def setup(bot):

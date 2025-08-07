@@ -52,14 +52,10 @@ class UserInfo(commands.Cog):
         # Erstelle Embed mit der Helper-Methode
         embed = await self.create_userinfo_embed(target_user, ctx.author)
 
-        try:
-            await ctx.send(embed=embed)
-            logger.info(
-                f"Userinfo-Befehl ausgeführt von {ctx.author} für Benutzer {target_user.name}"
-            )
-        except discord.HTTPException as e:
-            logger.error(f"Fehler beim Senden der Userinfo: {e}")
-            await ctx.send("Fehler beim Anzeigen der Benutzerinformationen.")
+        await ctx.send(embed=embed)
+        logger.info(
+            f"Userinfo-Befehl ausgeführt von {ctx.author} für Benutzer {target_user.name}"
+        )
 
     async def create_userinfo_embed(self, user, requester):
         """Erstellt ein Userinfo-Embed für die gegebenen Benutzer"""
@@ -216,7 +212,7 @@ async def userinfo_context_menu(interaction: discord.Interaction, user: discord.
         logger.info(
             f"Userinfo-Kontextmenü verwendet von {interaction.user} für Benutzer {user.name}"
         )
-    except discord.HTTPException as e:
+    except Exception as e:
         logger.error(f"Fehler beim Senden der Userinfo über Kontextmenü: {e}")
         await interaction.response.send_message(
             "Fehler beim Anzeigen der Benutzerinformationen.", ephemeral=True

@@ -55,26 +55,6 @@ class Random(commands.Cog):
 
             await ctx.send(embed=embed)
 
-    @random.error
-    async def random_error(self, ctx, error):
-        """Behandelt Fehler für den Random-Befehl"""
-        if isinstance(error, commands.MissingRequiredArgument):
-            embed = discord.Embed(
-                title="Fehler",
-                description="Bitte gib einen Text ein, der randomisiert werden soll.\n\nBeispiel: `/random Hallo Welt`",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
-            )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            await ctx.send(embed=embed)
-        else:
-            logger.error(f"Unerwarteter Fehler im Random-Befehl: {error}")
-
 
 async def setup(bot):
     """Lädt das Random Cog"""

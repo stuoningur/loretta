@@ -89,16 +89,12 @@ class Ping(commands.Cog):
             icon_url=ctx.author.display_avatar.url,
         )
 
-        try:
-            # Bearbeite die ursprüngliche Nachricht
-            await message.edit(embed=embed)
-            logger.info(
-                f"Ping-Befehl ausgeführt von {ctx.author} "
-                f"(WS: {round(websocket_latency)}ms, API: {round(api_latency)}ms)"
-            )
-        except discord.HTTPException as e:
-            logger.error(f"Fehler beim Bearbeiten der Ping-Nachricht: {e}")
-            await ctx.send("Fehler beim Anzeigen der Ping-Informationen.")
+        # Bearbeite die ursprüngliche Nachricht
+        await message.edit(embed=embed)
+        logger.info(
+            f"Ping-Befehl ausgeführt von {ctx.author} "
+            f"(WS: {round(websocket_latency)}ms, API: {round(api_latency)}ms)"
+        )
 
 
 async def setup(bot):
