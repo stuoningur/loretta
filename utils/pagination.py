@@ -7,6 +7,13 @@ import logging
 from typing import Optional, Union, Callable, Any
 from abc import ABC, abstractmethod
 
+# Constants
+DEFAULT_TIMEOUT = 180
+FIRST_PAGE = 0
+DEFAULT_RESULTS_PER_PAGE = 2
+MAX_EMBED_DESCRIPTION_LENGTH = 4000
+TRUNCATION_SUFFIX = "\n..."
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,12 +21,14 @@ class PaginationView(discord.ui.View, ABC):
     """Abstrakte Basis-Klasse für Paginierungs-Views"""
 
     def __init__(
-        self, requester: Union[discord.Member, discord.User], timeout: float = 180
+        self,
+        requester: Union[discord.Member, discord.User],
+        timeout: float = DEFAULT_TIMEOUT,
     ):
         super().__init__(timeout=timeout)
         self.requester = requester
-        self.current_page = 0
-        self.total_pages = 0
+        self.current_page = FIRST_PAGE
+        self.total_pages = FIRST_PAGE
         self.message: Optional[discord.Message] = None
 
     @abstractmethod
@@ -29,14 +38,14 @@ class PaginationView(discord.ui.View, ABC):
 
     async def update_buttons(self):
         """Aktualisiert Button-Zustände basierend auf aktueller Seite"""
-        self.previous_button.disabled = self.current_page == 0
+        self.previous_button.disabled = self.current_page == FIRST_PAGE
         self.next_button.disabled = self.current_page >= self.total_pages - 1
 
     @discord.ui.button(label="← Vorherige", style=discord.ButtonStyle.secondary)
     async def previous_button(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if self.current_page > 0:
+        if self.current_page > FIRST_PAGE:
             self.current_page -= 1
             embed = await self.get_page_embed(self.current_page)
             await self.update_buttons()
@@ -139,8 +148,8 @@ class SearchPaginationView(PaginationView):
         guild: discord.Guild,
         search_term: str,
         requester: Union[discord.Member, discord.User],
-        results_per_page: int = 2,
-        current_page: int = 0,
+        results_per_page: int = DEFAULT_RESULTS_PER_PAGE,
+        current_page: int = FIRST_PAGE,
     ):
         super().__init__(requester)
         self.search_function = search_function
@@ -148,7 +157,7 @@ class SearchPaginationView(PaginationView):
         self.search_term = search_term
         self.results_per_page = results_per_page
         self.current_page = current_page
-        self.total_results = 0
+        self.total_results = FIRST_PAGE
 
     async def get_page_embed(self, page: int) -> discord.Embed:
         """Holt Embed für eine bestimmte Seite"""
@@ -182,8 +191,8 @@ class SearchPaginationView(PaginationView):
 
         # Erstelle paginierte Beschreibung
         description = "\n".join(guild_members)
-        if len(description) > 4000:
-            description = description[:4000] + "\n..."
+        if len(description) > MAX_EMBED_DESCRIPTION_LENGTH:
+            description = description[:MAX_EMBED_DESCRIPTION_LENGTH] + TRUNCATION_SUFFIX
 
         embed = EmbedFactory.info_embed(f"Suche nach: {self.search_term}", description)
 

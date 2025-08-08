@@ -7,6 +7,11 @@ from discord.ext import commands
 from typing import Optional, Union, List
 from utils.embeds import EmbedFactory
 
+# Constants
+MAX_SEARCH_MATCHES = 10
+DISCRIMINATOR_PARTS = 2
+FIRST_MATCH = 0
+
 
 class UserResolver:
     """Utility-Klasse für das Auflösen von Discord-Benutzern aus verschiedenen Eingabeformaten"""
@@ -71,7 +76,7 @@ class UserResolver:
         # Prüfe auf Benutzername#Diskriminator-Format
         if "#" in search_term:
             parts = search_term.split("#", 1)
-            if len(parts) == 2:
+            if len(parts) == DISCRIMINATOR_PARTS:
                 username, discriminator = parts
                 return [
                     member
@@ -123,20 +128,20 @@ class UserResolver:
             return None
 
         if len(all_matches) == 1:
-            return all_matches[0]
+            return all_matches[FIRST_MATCH]
 
         # Mehrere Übereinstimmungen - zeige Unterscheidung
         match_list = "\n".join(
             [
                 f"• {member.display_name} (`{member.name}#{member.discriminator}`)"
                 for member in all_matches[
-                    :10
-                ]  # Begrenze auf erste 10 Übereinstimmungen
+                    :MAX_SEARCH_MATCHES
+                ]  # Begrenze auf erste Übereinstimmungen
             ]
         )
 
-        if len(all_matches) > 10:
-            match_list += f"\n... und {len(all_matches) - 10} weitere"
+        if len(all_matches) > MAX_SEARCH_MATCHES:
+            match_list += f"\n... und {len(all_matches) - MAX_SEARCH_MATCHES} weitere"
 
         await ctx.send(
             embed=EmbedFactory.error_embed(

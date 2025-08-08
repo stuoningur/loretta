@@ -10,6 +10,11 @@ from pathlib import Path
 import discord
 from typing import Optional, Union
 
+# Constants
+MAX_LOG_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+LOG_BACKUP_COUNT = 5
+BYTES_TO_GB_DIVISOR = 1024**3
+
 
 class ColoredConsoleHandler(logging.StreamHandler):
     """Benutzerdefinierter Handler der Farbe zu Console-Output mit ANSI-Escape-Codes hinzufügt"""
@@ -46,11 +51,11 @@ def setup_logging():
     root_logger.setLevel(log_level)
     root_logger.handlers.clear()  # Entferne alle existierenden Handler
 
-    # Datei-Handler mit Rotation (10MB max, behalte 5 Backup-Dateien)
+    # Datei-Handler mit Rotation
     file_handler = logging.handlers.RotatingFileHandler(
         "data/loretta.log",
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=5,
+        maxBytes=MAX_LOG_FILE_SIZE,
+        backupCount=LOG_BACKUP_COUNT,
         encoding="utf-8",
     )
     file_handler.setFormatter(logging_formatter)

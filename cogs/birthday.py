@@ -17,6 +17,21 @@ from utils.responses import send_error_response
 from utils.embeds import EmbedFactory
 from utils.user_resolver import UserResolver
 
+# Constants
+BIRTHDAY_INPUT_MAX_LENGTH = 6
+BIRTHDAY_INPUT_MIN_LENGTH = 5
+BIRTHDAY_NOTIFICATION_HOUR = 9
+BIRTHDAY_NOTIFICATION_MINUTE = 0
+BIRTHDAY_NOTIFICATION_SECOND = 0
+MIN_MONTH = 1
+MAX_MONTH = 12
+MIN_DAY = 1
+MAX_DAY = 31
+DOT_COUNT_IN_DATE = 2
+DATE_PARTS = 2
+SINGLE_BIRTHDAY_COUNT = 1
+MAX_EMBED_DESCRIPTION_LENGTH = 4000
+
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +45,8 @@ class BirthdayModal(discord.ui.Modal):
         self.birthday_input = discord.ui.TextInput(
             label="Geburtsdatum",
             placeholder="Format: DD.MM. (z.B. 25.12.)",
-            max_length=6,
-            min_length=5,
+            max_length=BIRTHDAY_INPUT_MAX_LENGTH,
+            min_length=BIRTHDAY_INPUT_MIN_LENGTH,
         )
         self.add_item(self.birthday_input)
 
@@ -72,7 +87,13 @@ class BirthdayCog(commands.Cog):
         self.daily_birthday_check.cancel()
         logger.info("Tägliche Geburtstagsüberprüfung gestoppt")
 
-    @tasks.loop(time=time(hour=9, minute=0, second=0))  # 9:00 Uhr täglich
+    @tasks.loop(
+        time=time(
+            hour=BIRTHDAY_NOTIFICATION_HOUR,
+            minute=BIRTHDAY_NOTIFICATION_MINUTE,
+            second=BIRTHDAY_NOTIFICATION_SECOND,
+        )
+    )  # 9:00 Uhr täglich
     async def daily_birthday_check(self):
         """Überprüft täglich auf Geburtstage und sendet Benachrichtigungen"""
         try:
@@ -177,7 +198,7 @@ class BirthdayCog(commands.Cog):
     ):
         """Sendet eine Geburtstags-Nachricht in einen Kanal"""
         try:
-            if len(birthday_users) == 1:
+            if len(birthday_users) == SINGLE_BIRTHDAY_COUNT:
                 # Einzelner Geburtstag
                 member, _ = birthday_users[0]
 
@@ -406,8 +427,8 @@ class BirthdayCog(commands.Cog):
 
             # Teile die Liste auf, wenn sie zu lang ist
             description = "\n".join(birthday_list)
-            if len(description) > 4000:
-                description = description[:4000] + "\n..."
+            if len(description) > MAX_EMBED_DESCRIPTION_LENGTH:
+                description = description[:MAX_EMBED_DESCRIPTION_LENGTH] + "\n..."
 
             embed = EmbedFactory.info_embed(
                 "Geburtstage in diesem Server",
@@ -436,7 +457,7 @@ class BirthdayCog(commands.Cog):
             if not birthday_str.endswith("."):
                 birthday_str += "."
 
-            if birthday_str.count(".") != 2:
+            if birthday_str.count(".") != DOT_COUNT_IN_DATE:
                 embed = EmbedFactory.error_embed(
                     "Ungültiges Format",
                     "Bitte verwende das Format DD.MM. (z.B. 25.12.)",
@@ -445,7 +466,7 @@ class BirthdayCog(commands.Cog):
                 return
 
             parts = birthday_str.strip(".").split(".")
-            if len(parts) != 2:
+            if len(parts) != DATE_PARTS:
                 embed = EmbedFactory.error_embed(
                     "Ungültiges Format",
                     "Bitte verwende das Format DD.MM. (z.B. 25.12.)",
@@ -465,18 +486,18 @@ class BirthdayCog(commands.Cog):
                 return
 
             # Validiere Tag und Monat
-            if not (1 <= month <= 12):
+            if not (MIN_MONTH <= month <= MAX_MONTH):
                 embed = EmbedFactory.error_embed(
                     "Ungültiger Monat",
-                    "Der Monat muss zwischen 1 und 12 liegen.",
+                    f"Der Monat muss zwischen {MIN_MONTH} und {MAX_MONTH} liegen.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
-            if not (1 <= day <= 31):
+            if not (MIN_DAY <= day <= MAX_DAY):
                 embed = EmbedFactory.error_embed(
                     "Ungültiger Tag",
-                    "Der Tag muss zwischen 1 und 31 liegen.",
+                    f"Der Tag muss zwischen {MIN_DAY} und {MAX_DAY} liegen.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return

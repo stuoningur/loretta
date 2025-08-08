@@ -9,7 +9,11 @@ import time
 import psutil
 import platform
 from utils.embeds import EmbedFactory
-from utils.logging import log_command_success
+from utils.logging import log_command_success, BYTES_TO_GB_DIVISOR
+
+# Constants
+CPU_INTERVAL = 0.1
+SECONDS_PER_DAY = 86400
 
 logger = logging.getLogger(__name__)
 
@@ -40,12 +44,12 @@ class BotInfo(commands.Cog):
         # Systeminformationen sammeln
         try:
             # CPU und Memory
-            cpu_percent = psutil.cpu_percent(interval=0.1)
+            cpu_percent = psutil.cpu_percent(interval=CPU_INTERVAL)
             memory = psutil.virtual_memory()
 
             # System uptime berechnen
             system_uptime_seconds = time.time() - psutil.boot_time()
-            system_uptime_days = int(system_uptime_seconds // 86400)
+            system_uptime_days = int(system_uptime_seconds // SECONDS_PER_DAY)
 
             # Discord.py Version
             discord_version = discord.__version__
@@ -82,8 +86,8 @@ class BotInfo(commands.Cog):
 
         # System-Informationen
         if memory:
-            memory_used = memory.used / 1024**3  # GB
-            memory_total = memory.total / 1024**3  # GB
+            memory_used = memory.used / BYTES_TO_GB_DIVISOR  # GB
+            memory_total = memory.total / BYTES_TO_GB_DIVISOR  # GB
             memory_percent = memory.percent
 
             system_info_text = (

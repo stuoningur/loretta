@@ -9,6 +9,9 @@ from pathlib import Path
 import discord
 from discord.ext import commands
 
+# Constants
+MAX_ERROR_MESSAGE_LENGTH = 50
+MAX_DISCORD_FIELD_LENGTH = 1024
 
 logger = logging.getLogger(__name__)
 
@@ -267,11 +270,13 @@ class CogManagement(commands.Cog):
             failed_text = ""
             for cog_name, error in failed_cogs:
                 cog_display = cog_name.replace("cogs.", "")
-                failed_text += f"FEHLER `{cog_display}`: {error[:50]}...\n"
+                failed_text += (
+                    f"FEHLER `{cog_display}`: {error[:MAX_ERROR_MESSAGE_LENGTH]}...\n"
+                )
 
             embed.add_field(
                 name="Fehlgeschlagen",
-                value=failed_text[:1024],  # Discord-Limit
+                value=failed_text[:MAX_DISCORD_FIELD_LENGTH],  # Discord-Limit
                 inline=False,
             )
         else:

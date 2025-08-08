@@ -12,6 +12,13 @@ from utils.embeds import EmbedFactory
 from utils.responses import send_error_response
 from utils.logging import log_command_error
 
+# Constants
+CONFIG_TIMEOUT = 300
+MIN_VALUES = 1
+MAX_VALUES = 1
+MAX_SELECT_OPTIONS = 24  # Discord limit is 25 options
+MAX_PREFIX_LENGTH = 5
+
 logger = logging.getLogger(__name__)
 
 
@@ -64,8 +71,8 @@ class ConfigOptionSelect(discord.ui.Select):
 
         super().__init__(
             placeholder="Wähle eine Konfigurationsoption...",
-            min_values=1,
-            max_values=1,
+            min_values=MIN_VALUES,
+            max_values=MAX_VALUES,
             options=options,
         )
 
@@ -90,7 +97,7 @@ class ConfigOptionView(discord.ui.View):
     """View für Konfigurationsoptionen"""
 
     def __init__(self):
-        super().__init__(timeout=300)
+        super().__init__(timeout=CONFIG_TIMEOUT)
         self.add_item(ConfigOptionSelect())
 
 
@@ -112,8 +119,8 @@ class PrefixSelect(discord.ui.Select):
 
         super().__init__(
             placeholder="Wähle einen neuen Prefix...",
-            min_values=1,
-            max_values=1,
+            min_values=MIN_VALUES,
+            max_values=MAX_VALUES,
             options=options,
         )
 
@@ -138,7 +145,7 @@ class PrefixView(discord.ui.View):
     """View für Prefix-Auswahl"""
 
     def __init__(self):
-        super().__init__(timeout=300)
+        super().__init__(timeout=CONFIG_TIMEOUT)
         self.add_item(PrefixSelect())
 
 
@@ -157,7 +164,7 @@ class ChannelSelect(discord.ui.Select):
                 )
             )
 
-        for channel in channels[:24]:  # Discord limit is 25 options
+        for channel in channels[:MAX_SELECT_OPTIONS]:  # Discord limit is 25 options
             options.append(
                 discord.SelectOption(
                     label=f"#{channel.name}",
@@ -168,8 +175,8 @@ class ChannelSelect(discord.ui.Select):
 
         super().__init__(
             placeholder="Wähle einen Kanal...",
-            min_values=1,
-            max_values=1,
+            min_values=MIN_VALUES,
+            max_values=MAX_VALUES,
             options=options,
         )
 
@@ -198,7 +205,7 @@ class ChannelView(discord.ui.View):
     """View für Kanal-Auswahl"""
 
     def __init__(self, channels, config_type, allow_none=False):
-        super().__init__(timeout=300)
+        super().__init__(timeout=CONFIG_TIMEOUT)
         self.add_item(ChannelSelect(channels, config_type, allow_none))
 
 
@@ -211,8 +218,8 @@ class CustomPrefixModal(discord.ui.Modal):
         self.prefix_input = discord.ui.TextInput(
             label="Neuer Prefix",
             placeholder="Gib deinen gewünschten Prefix ein...",
-            max_length=5,
-            min_length=1,
+            max_length=MAX_PREFIX_LENGTH,
+            min_length=MIN_VALUES,
         )
         self.add_item(self.prefix_input)
 
@@ -559,10 +566,10 @@ class ConfigCog(commands.Cog):
         self, interaction: discord.Interaction, config, new_prefix: str
     ):
         """Setzt einen neuen Command-Prefix direkt"""
-        if len(new_prefix) > 5:
+        if len(new_prefix) > MAX_PREFIX_LENGTH:
             embed = discord.Embed(
                 title="Prefix zu lang",
-                description="Der Prefix darf maximal 5 Zeichen lang sein.",
+                description=f"Der Prefix darf maximal {MAX_PREFIX_LENGTH} Zeichen lang sein.",
                 color=discord.Color.red(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)

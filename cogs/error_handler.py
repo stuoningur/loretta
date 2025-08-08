@@ -67,7 +67,22 @@ class ErrorHandler(commands.Cog):
             prefix = await self.bot.get_prefix(ctx.message)
             if isinstance(prefix, list):
                 prefix = prefix[0]  # Nimm ersten Prefix
-            command_name = ctx.message.content[len(prefix) :].split()[0]
+
+            # Prüfe ob es sich um mehrfache Prefixes handelt (z.B. !!!!, ????)
+            content_after_prefix = ctx.message.content[len(prefix) :]
+
+            # Wenn nach dem Prefix nur weitere Prefixe kommen, ignoriere es
+            if all(char == prefix for char in content_after_prefix.strip()):
+                return  # Ignoriere mehrfache Prefixes ohne Fehlermeldung
+
+            command_name = (
+                content_after_prefix.split()[0] if content_after_prefix.strip() else ""
+            )
+
+            # Wenn der "Befehl" nur aus Prefix-Zeichen besteht, ignoriere es
+            if not command_name or all(char == prefix for char in command_name):
+                return
+
             context_info = format_command_context(
                 command_name, ctx.author, ctx.guild, status="nicht gefunden"
             )
