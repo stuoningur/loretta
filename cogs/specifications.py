@@ -11,7 +11,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from utils.database import Specification
-from utils.decorators import guild_only, validate_input
+from utils.decorators import validate_input
 from utils.embeds import EmbedFactory
 from utils.user_resolver import UserResolver
 from utils.pagination import SearchPaginationView
@@ -98,7 +98,7 @@ class SpecificationsCog(commands.Cog):
             del self._search_cache[key]
 
     @commands.hybrid_group(name="specs", aliases=["s"], invoke_without_command=True)
-    @guild_only()
+    @commands.guild_only()
     async def specs(self, ctx: commands.Context, *, user: Optional[str] = None):
         """Hardware-Spezifikationen verwalten und anzeigen"""
         # Zeige Spezifikationen für den angegebenen Benutzer oder den Autor
@@ -111,7 +111,7 @@ class SpecificationsCog(commands.Cog):
         await self.show_specifications_ctx(ctx, target_user)
 
     @specs.command(name="show")
-    @guild_only()
+    @commands.guild_only()
     async def specs_show(self, ctx: commands.Context, *, user: Optional[str] = None):
         """Zeige Spezifikationen eines Benutzers an"""
         target_user = ctx.author
@@ -150,7 +150,7 @@ class SpecificationsCog(commands.Cog):
         return None
 
     @specs.command(name="set")
-    @guild_only()
+    @commands.guild_only()
     @validate_input(
         min_length=10, max_length=MAX_SPECS_LENGTH, field_name="Spezifikationen"
     )
@@ -216,7 +216,7 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @specs.command(name="delete")
-    @guild_only()
+    @commands.guild_only()
     async def specs_delete(self, ctx: commands.Context):
         """Lösche deine Hardware-Spezifikationen"""
         try:
@@ -257,7 +257,7 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @specs.command(name="raw")
-    @guild_only()
+    @commands.guild_only()
     async def specs_raw(self, ctx: commands.Context):
         """Zeige deine Spezifikationen als Raw-Text an"""
         try:
@@ -294,7 +294,7 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @specs.command(name="search")
-    @guild_only()
+    @commands.guild_only()
     @validate_input(min_length=2, max_length=100, field_name="Suchbegriff")
     async def specs_search(self, ctx: commands.Context, *, search_term: str):
         """Suche nach Hardware in allen Spezifikationen"""
@@ -335,7 +335,7 @@ class SpecificationsCog(commands.Cog):
             await ctx.send(embed=embed)
 
     @specs.command(name="clean")
-    @guild_only()
+    @commands.guild_only()
     @commands.has_permissions(administrator=True)
     async def specs_clean(self, ctx: commands.Context):
         """Bereinige die Spezifikations-Datenbank von Benutzern, die nicht mehr im Server sind"""
@@ -506,6 +506,7 @@ class SpecificationsCog(commands.Cog):
             return 0
 
 
+@app_commands.guild_only()
 @app_commands.context_menu(name="Spezifikationen anzeigen")
 async def show_user_specs_context(
     interaction: discord.Interaction, user: discord.Member

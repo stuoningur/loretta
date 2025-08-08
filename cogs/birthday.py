@@ -210,7 +210,9 @@ class BirthdayCog(commands.Cog):
             )
 
     # Slash Commands
-
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
     @app_commands.command(
         name="geburtstag",
         description="Verwalte Geburtstage - hinzufügen, entfernen oder anzeigen",
@@ -245,7 +247,6 @@ class BirthdayCog(commands.Cog):
 
         # Bestimme den Zielbenutzer
         target_user = interaction.user
-        is_admin_action = False
 
         if user:
             # Verwende UserResolver für bessere Benutzersuche
@@ -255,15 +256,6 @@ class BirthdayCog(commands.Cog):
             ctx = await commands.Context.from_interaction(interaction)
             target_user = await UserResolver.resolve_user(ctx, user)
             if not target_user:
-                return
-            is_admin_action = target_user != interaction.user
-
-        # Nur Administratoren können Geburtstage für andere Benutzer verwalten
-        if is_admin_action:
-            member = interaction.guild.get_member(interaction.user.id)
-            if not member or not member.guild_permissions.administrator:
-                embed = EmbedFactory.missing_permissions_embed("Administrator-Rechte")
-                await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
         if aktion.value == "add":
@@ -627,26 +619,12 @@ class BirthdayCog(commands.Cog):
 
 @app_commands.context_menu(name="Geburtstag setzen")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.guild_only()
 async def set_birthday_context_menu(
     interaction: discord.Interaction, user: discord.Member
 ):
-    """Kontextmenü-Befehl zum Setzen des Geburtstags eines Benutzers (nur für Admins)"""
-    if not interaction.guild:
-        await send_error_response(
-            interaction,
-            "Fehler",
-            "Dieser Befehl kann nur in einem Server verwendet werden.",
-            ephemeral=True,
-        )
-        return
-
-    # Überprüfe Administrator-Berechtigung
-    member = interaction.guild.get_member(interaction.user.id)
-    if not member or not member.guild_permissions.administrator:
-        embed = EmbedFactory.missing_permissions_embed("Administrator-Rechte")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
+    """Kontextmenü-Befehl zum Setzen des Geburtstags eines Benutzers"""
 
     # Öffne das Modal für die Geburtstags-Eingabe
     modal = BirthdayModal(user)

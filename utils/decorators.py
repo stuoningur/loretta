@@ -6,27 +6,6 @@ from discord.ext import commands
 from functools import wraps
 
 
-def guild_only():
-    """Dekorator um sicherzustellen dass Befehl nur in Guilds verwendet wird"""
-
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(self, ctx: commands.Context, *args, **kwargs):
-            if not ctx.guild:
-                from utils.embeds import EmbedFactory
-
-                embed = EmbedFactory.error_embed(
-                    "Fehler", "Dieser Befehl kann nur in einem Server verwendet werden."
-                )
-                await ctx.send(embed=embed)
-                return
-            return await func(self, ctx, *args, **kwargs)
-
-        return wrapper
-
-    return decorator
-
-
 def validate_input(
     min_length: int = 1, max_length: int = 2000, field_name: str = "Eingabe"
 ):

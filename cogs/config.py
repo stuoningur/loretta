@@ -235,32 +235,14 @@ class ConfigCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.default_permissions(administrator=True)
+    @app_commands.guild_only()
     @app_commands.command(
         name="config", description="Zeigt oder ändert die Serverkonfiguration"
     )
     async def config(self, interaction: discord.Interaction):
         """Haupt-Konfigurationskommando"""
-
-        # Überprüfe Administrator-Berechtigung
-        if not interaction.guild:
-            await send_error_response(
-                interaction,
-                "Fehler",
-                "Dieser Befehl kann nur in einem Server verwendet werden.",
-                ephemeral=True,
-            )
-            return
-
-        # Hole Member Objekt für Berechtigungen
-        member = interaction.guild.get_member(interaction.user.id)
-        if not member or not member.guild_permissions.administrator:
-            await send_error_response(
-                interaction,
-                "Keine Berechtigung",
-                "Du benötigst Administrator-Rechte, um die Serverkonfiguration zu ändern.",
-                ephemeral=True,
-            )
-            return
 
         embed = EmbedFactory.info_embed(
             title="Serverkonfiguration",

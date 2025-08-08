@@ -19,14 +19,11 @@ class Shutdown(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def cog_check(self, ctx):
-        """Überprüft ob der Benutzer Berechtigung für den Shutdown-Befehl hat"""
-        return await self.bot.is_owner(ctx.author)
-
     @commands.hybrid_command(
         name="shutdown",
         description="Fährt den Bot kontrolliert herunter",
     )
+    @commands.is_owner()
     async def shutdown_bot(self, ctx):
         """Fährt den Bot kontrolliert herunter"""
 

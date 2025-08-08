@@ -118,12 +118,14 @@ class LorettaBot(commands.Bot):
             # Sync für jeden Server einzeln (sofort verfügbar)
             total_synced = 0
             for guild in self.guilds:
+                # Server Command-Tree löschen
+                self.tree.clear_commands(guild=guild)
                 # Kopiere globale Commands zu jeden Server für sofortige Verfügbarkeit
                 self.tree.copy_global_to(guild=guild)
                 synced = await self.tree.sync(guild=guild)
                 total_synced += len(synced)
                 logger.info(
-                    f"Slash-Commands für Server '{guild.name}' synchronisiert: {len(synced)} Commands"
+                    f"Command-Tree geleert und Slash-Commands für Server '{guild.name}' synchronisiert: {len(synced)} Commands"
                 )
 
             logger.info(f"Gesamt synchronisierte Commands: {total_synced}")

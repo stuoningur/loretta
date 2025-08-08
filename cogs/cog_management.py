@@ -19,14 +19,11 @@ class CogManagement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def cog_check(self, ctx):
-        """Überprüft ob der Benutzer Berechtigung für Admin-Befehle hat"""
-        return await self.bot.is_owner(ctx.author)
-
     @commands.hybrid_command(
         name="reload",
         description="Lädt ein Cog neu",
     )
+    @commands.is_owner()
     async def reload_cog(self, ctx, *, cog_name: str):
         """Lädt ein spezifisches Cog neu"""
 

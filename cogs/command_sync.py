@@ -21,22 +21,24 @@ class CommandSync(commands.Cog):
     @commands.is_owner()
     async def sync_commands(self, ctx, scope: str = "server"):
         """
-        Synchronisiert die Slash-Commands manuell (nur Bot-Besitzer)
+        Löscht den Command-Tree und synchronisiert die Slash-Commands manuell (nur Bot-Besitzer)
 
         Args:
             scope: "server" für Serverspezifisch (sofort) oder "global" für global (bis zu 1h)
         """
         try:
             if scope.lower() == "global":
+                # Globalen Command-Tree löschen
+                self.bot.tree.clear_commands()
                 synced = await self.bot.tree.sync()
                 embed = discord.Embed(
                     title="Commands synchronisiert",
-                    description=f"{len(synced)} Slash-Commands wurden global synchronisiert! (Kann bis zu 1 Stunde dauern)",
+                    description=f"Command-Tree wurde geleert und {len(synced)} Slash-Commands wurden global synchronisiert! (Kann bis zu 1 Stunde dauern)",
                     color=discord.Color.green(),
                 )
                 await ctx.send(embed=embed)
                 logger.info(
-                    f"Slash-Commands global synchronisiert von {ctx.author}: {len(synced)} Commands"
+                    f"Command-Tree geleert und Slash-Commands global synchronisiert von {ctx.author}: {len(synced)} Commands"
                 )
             else:
                 # Serverspezifische Synchronisation (sofort verfügbar)
@@ -49,17 +51,19 @@ class CommandSync(commands.Cog):
                     await ctx.send(embed=embed)
                     return
 
+                # Server Command-Tree löschen
+                self.bot.tree.clear_commands(guild=ctx.guild)
                 # Kopiere globale Commands zu diesem Server für sofortige Verfügbarkeit
                 self.bot.tree.copy_global_to(guild=ctx.guild)
                 synced = await self.bot.tree.sync(guild=ctx.guild)
                 embed = discord.Embed(
                     title="Commands synchronisiert",
-                    description=f"{len(synced)} Slash-Commands wurden für diesen Server synchronisiert! (Sofort verfügbar)",
+                    description=f"Command-Tree wurde geleert und {len(synced)} Slash-Commands wurden für diesen Server synchronisiert! (Sofort verfügbar)",
                     color=discord.Color.green(),
                 )
                 await ctx.send(embed=embed)
                 logger.info(
-                    f"Slash-Commands für Server {ctx.guild.name} synchronisiert von {ctx.author}: {len(synced)} Commands"
+                    f"Command-Tree geleert und Slash-Commands für Server {ctx.guild.name} synchronisiert von {ctx.author}: {len(synced)} Commands"
                 )
 
         except Exception as e:
