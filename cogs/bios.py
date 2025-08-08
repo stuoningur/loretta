@@ -23,7 +23,7 @@ class BiosCog(commands.Cog):
         self.bot = bot
 
     @commands.hybrid_command(
-        name="bios", description="Link zu der besten AM4 BIOS Übersicht"
+        name="bios", description="Link zu der besten AM4/AM5 BIOS Übersicht"
     )
     @track_command_usage
     async def bios_guide(self, ctx: commands.Context) -> None:
