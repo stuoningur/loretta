@@ -2,6 +2,8 @@ import logging
 import discord
 from discord.ext import commands
 from utils.embeds import EmbedFactory
+from utils.formatting import format_guild_info
+from utils.responses import send_response
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class ErrorHandler(commands.Cog):
             pass
         else:
             # Für unbekannte Fehler vollständiges Logging mit Traceback
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.error(
                 f"Befehlsfehler in {ctx.command} in {guild_info}: {type(error).__name__}: {error}",
                 exc_info=error,
@@ -60,7 +62,7 @@ class ErrorHandler(commands.Cog):
             if isinstance(prefix, list):
                 prefix = prefix[0]  # Nimm ersten Prefix
             command_name = ctx.message.content[len(prefix) :].split()[0]
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.info(
                 f"Befehl nicht gefunden: '{command_name}' von {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -68,7 +70,7 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.MissingRequiredArgument):
             param_name = getattr(getattr(error, "param", None), "name", "unbekannt")
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Fehlender erforderlicher Parameter '{param_name}' in Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -91,14 +93,14 @@ class ErrorHandler(commands.Cog):
             elif "role" in str(error).lower():
                 expected_type = "Rollenname oder Erwähnung"
 
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Ungültiger Parameter '{param_name}' (erwartet: {expected_type}) in Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}: {str(error)}"
             )
             embed = EmbedFactory.bad_argument_embed(param_name, expected_type)
 
         elif isinstance(error, commands.TooManyArguments):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Zu viele Parameter für Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -106,7 +108,7 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.MissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Fehlende Berechtigungen ({missing_perms}) für Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -114,13 +116,14 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.BotMissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
+            guild_info = format_guild_info(ctx.guild)
             logger.error(
-                f"Bot fehlen Berechtigungen ({missing_perms}) für Befehl {ctx.command} in {ctx.guild.name if ctx.guild else 'DM'} (Guild ID: {ctx.guild.id if ctx.guild else 'N/A'})"
+                f"Bot fehlen Berechtigungen ({missing_perms}) für Befehl {ctx.command} in {guild_info}"
             )
             embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
 
         elif isinstance(error, commands.CommandOnCooldown):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.info(
                 f"Befehl {ctx.command} auf Abklingzeit für {ctx.author} ({ctx.author.id}) in {guild_info}, Wiederholen nach {error.retry_after:.1f}s"
             )
@@ -133,16 +136,14 @@ class ErrorHandler(commands.Cog):
             embed = EmbedFactory.guild_only_embed()
 
         elif isinstance(error, commands.PrivateMessageOnly):
-            guild_info = (
-                f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "unbekannt"
-            )
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Nur-DM-Befehl {ctx.command} in Guild {guild_info} versucht von {ctx.author} ({ctx.author.id})"
             )
             embed = EmbedFactory.dm_only_embed()
 
         elif isinstance(error, commands.DisabledCommand):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.info(
                 f"Deaktivierter Befehl {ctx.command} versucht von {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -151,7 +152,7 @@ class ErrorHandler(commands.Cog):
             )
 
         elif isinstance(error, commands.NotOwner):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Nur-Owner-Befehl {ctx.command} versucht von Nicht-Owner {ctx.author} ({ctx.author.id}) in {guild_info}"
             )
@@ -161,7 +162,7 @@ class ErrorHandler(commands.Cog):
             )
 
         elif isinstance(error, commands.CheckFailure):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.warning(
                 f"Überprüfung fehlgeschlagen für Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}: {str(error)}"
             )
@@ -171,7 +172,7 @@ class ErrorHandler(commands.Cog):
             )
 
         elif isinstance(error, discord.HTTPException):
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.error(
                 f"HTTP-Ausnahme in Befehl {ctx.command} von {ctx.author} ({ctx.author.id}) in {guild_info}: {str(error)}"
             )
@@ -183,7 +184,7 @@ class ErrorHandler(commands.Cog):
         else:
             # Unbekannte Fehler
             embed = EmbedFactory.unexpected_error_embed("Befehlsausführung")
-            guild_info = f"{ctx.guild.name} (ID: {ctx.guild.id})" if ctx.guild else "DM"
+            guild_info = format_guild_info(ctx.guild)
             logger.error(
                 f"Unbehandelter Fehler in {guild_info}: {type(error).__name__}: {error}",
                 exc_info=error,
@@ -192,15 +193,7 @@ class ErrorHandler(commands.Cog):
         # Sende Error-Embed
         if embed:
             try:
-                # Versuche ephemeral für Slash Commands
-                if ctx.interaction and not ctx.interaction.response.is_done():
-                    await ctx.interaction.response.send_message(
-                        embed=embed, ephemeral=True
-                    )
-                elif ctx.interaction and ctx.interaction.response.is_done():
-                    await ctx.interaction.followup.send(embed=embed, ephemeral=True)
-                else:
-                    await ctx.send(embed=embed)
+                await send_response(ctx, embed, ephemeral=True)
             except Exception as send_error:
                 logger.error(f"Fehler beim Senden der Fehlermeldung: {send_error}")
 
@@ -228,11 +221,7 @@ class ErrorHandler(commands.Cog):
             pass
         else:
             # Für unbekannte Fehler vollständiges Logging mit Traceback
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.error(
                 f"App-Command-Fehler in {interaction.command} in {guild_info}: {type(error).__name__}: {error}",
                 exc_info=error,
@@ -245,11 +234,7 @@ class ErrorHandler(commands.Cog):
             command_name = "unbekannt"
             if interaction.data and "name" in interaction.data:
                 command_name = interaction.data["name"]
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.info(
                 f"App-Command nicht gefunden: '{command_name}' von {interaction.user} ({interaction.user.id}) in {guild_info}"
             )
@@ -257,11 +242,7 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, discord.app_commands.MissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.warning(
                 f"Fehlende Berechtigungen ({missing_perms}) für App-Command {interaction.command} von {interaction.user} ({interaction.user.id}) in {guild_info}"
             )
@@ -269,17 +250,14 @@ class ErrorHandler(commands.Cog):
 
         elif isinstance(error, discord.app_commands.BotMissingPermissions):
             missing_perms = ", ".join(error.missing_permissions)
+            guild_info = format_guild_info(interaction.guild)
             logger.error(
-                f"Bot fehlen Berechtigungen ({missing_perms}) für App-Command {interaction.command} in {interaction.guild.name if interaction.guild else 'DM'} (Guild ID: {interaction.guild.id if interaction.guild else 'N/A'})"
+                f"Bot fehlen Berechtigungen ({missing_perms}) für App-Command {interaction.command} in {guild_info}"
             )
             embed = EmbedFactory.bot_missing_permissions_embed(missing_perms)
 
         elif isinstance(error, discord.app_commands.CommandOnCooldown):
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.info(
                 f"App-Command {interaction.command} auf Abklingzeit für {interaction.user} ({interaction.user.id}) in {guild_info}, Wiederholen nach {error.retry_after:.1f}s"
             )
@@ -292,11 +270,7 @@ class ErrorHandler(commands.Cog):
             embed = EmbedFactory.guild_only_embed()
 
         elif isinstance(error, discord.app_commands.CheckFailure):
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.warning(
                 f"Überprüfung fehlgeschlagen für App-Command {interaction.command} von {interaction.user} ({interaction.user.id}) in {guild_info}: {str(error)}"
             )
@@ -306,11 +280,7 @@ class ErrorHandler(commands.Cog):
             )
 
         elif isinstance(error, discord.HTTPException):
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.error(
                 f"HTTP-Ausnahme in App-Command {interaction.command} von {interaction.user} ({interaction.user.id}) in {guild_info}: {str(error)}"
             )
@@ -322,11 +292,7 @@ class ErrorHandler(commands.Cog):
         else:
             # Unbekannte Fehler
             embed = EmbedFactory.unexpected_error_embed("Slash-Befehlsausführung")
-            guild_info = (
-                f"{interaction.guild.name} (ID: {interaction.guild.id})"
-                if interaction.guild
-                else "DM"
-            )
+            guild_info = format_guild_info(interaction.guild)
             logger.error(
                 f"Unbehandelter App-Command-Fehler in {guild_info}: {type(error).__name__}: {error}",
                 exc_info=error,
@@ -335,10 +301,7 @@ class ErrorHandler(commands.Cog):
         # Sende Error-Embed
         if embed:
             try:
-                if not interaction.response.is_done():
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                else:
-                    await interaction.followup.send(embed=embed, ephemeral=True)
+                await send_response(interaction, embed, ephemeral=True)
             except Exception as send_error:
                 logger.error(
                     f"Fehler beim Senden der App Command Fehlermeldung: {send_error}"

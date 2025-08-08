@@ -5,9 +5,10 @@ Datenbank-Utility-Funktionen für Server-Konfigurationsverwaltung.
 import aiosqlite
 import json
 import logging
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Union
 from dataclasses import dataclass, field
 from datetime import date
+import discord
 
 logger = logging.getLogger(__name__)
 
@@ -638,12 +639,19 @@ class DatabaseManager:
 
     # Spezifikations-Methoden
 
-    async def add_specification(self, specification: Specification) -> bool:
+    async def add_specification(
+        self, 
+        specification: Specification, 
+        user: Optional[Union[discord.User, discord.Member]] = None,
+        guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Fügt Benutzer-Spezifikationen hinzu oder aktualisiert sie.
 
         Args:
             specification: Specification-Objekt mit den Daten
+            user: Discord User/Member Objekt für bessere Logs (optional)
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -680,8 +688,12 @@ class DatabaseManager:
 
                 await db.commit()
 
+            # Erstelle aussagekräftige Log-Nachricht
+            user_info = f"{user.name} ({specification.user_id})" if user else str(specification.user_id)
+            guild_info = f"{guild.name} ({specification.guild_id})" if guild else str(specification.guild_id)
+            
             logger.info(
-                f"Spezifikationen für Benutzer {specification.user_id} in Guild {specification.guild_id} hinzugefügt/aktualisiert"
+                f"Spezifikationen für Benutzer {user_info} in Guild {guild_info} hinzugefügt/aktualisiert"
             )
             return True
 
@@ -728,13 +740,21 @@ class DatabaseManager:
             logger.error(f"Fehler beim Abrufen der Spezifikation: {e}")
             return None
 
-    async def remove_specification(self, guild_id: int, user_id: int) -> bool:
+    async def remove_specification(
+        self, 
+        guild_id: int, 
+        user_id: int,
+        user: Optional[Union[discord.User, discord.Member]] = None,
+        guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Entfernt die Spezifikationen eines Benutzers.
 
         Args:
             guild_id: Discord Guild-ID
             user_id: Discord Benutzer-ID
+            user: Discord User/Member Objekt für bessere Logs (optional)
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -747,8 +767,12 @@ class DatabaseManager:
                 )
                 await db.commit()
 
+            # Erstelle aussagekräftige Log-Nachricht
+            user_info = f"{user.name} ({user_id})" if user else str(user_id)
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
+            
             logger.info(
-                f"Spezifikationen für Benutzer {user_id} in Guild {guild_id} entfernt"
+                f"Spezifikationen für Benutzer {user_info} in Guild {guild_info} entfernt"
             )
             return True
 

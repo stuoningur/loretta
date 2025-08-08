@@ -6,6 +6,7 @@ Enthält Kommandos für BIOS/UEFI/AGESA Übersichten
 import logging
 import discord
 from discord.ext import commands
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +29,7 @@ class BiosCog(commands.Cog):
             title="Ultimative AM4 & AM5 UEFI/BIOS/AGESA Übersicht",
             colour=discord.Color.blurple(),
             description="Anbei findet ihr eine UEFI/BIOS Übersicht mit den jeweils aktuellsten Versionen, sortiert nach aktuellem AGESA Stand. Sollte mal eine Version fehlen oder ihr einen Fehler findet, dann dürft ihr das hier gerne mitteilen.\n[AM4](https://www.hardwareluxx.de/community/threads/ultimative-am4-uefi-bios-agesa-%C3%9Cbersicht-17-02-19.1228903/)\n[AM5](https://www.hardwareluxx.de/community/threads/am5-agesa-uefi-bios-info-laberthread.1323294/)\n\nChannel: <#578340164187979796>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/ytFxJ9B.png")
         embed.set_thumbnail(url="https://i.imgur.com/6wqgd4K.png")
@@ -35,6 +37,10 @@ class BiosCog(commands.Cog):
             name="Reous (Mr. AMD)",
             url="https://www.hardwareluxx.de/community/members/reous.55847/",
             icon_url="https://i.imgur.com/ArBeYmq.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         try:
@@ -44,5 +50,5 @@ class BiosCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot) -> None:
-    """Setup function to add the cog to the bot"""
+    """Setup-Funktion zum Hinzufügen des Cogs zum Bot"""
     await bot.add_cog(BiosCog(bot))

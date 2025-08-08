@@ -2,11 +2,12 @@
 Magic 8 Ball Befehl für den Loretta Discord Bot
 """
 
-import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 import random
+from utils.embeds import EmbedFactory
+from utils.responses import send_response, send_error_response
+from utils.logging import log_command_success, log_command_error
 
 logger = logging.getLogger(__name__)
 
@@ -53,44 +54,30 @@ class MagicBall(commands.Cog):
             answer = random.choice(responses)
 
             # Erstelle ein Embed für die Antwort
-            embed = discord.Embed(
+            embed = EmbedFactory.info_command_embed(
                 title="Magic 8 Ball",
-                color=discord.Color.blurple(),
-                timestamp=datetime.now(timezone.utc),
+                description="",
+                requester=ctx.author,
             )
 
             embed.add_field(name="Frage", value=question, inline=False)
-
             embed.add_field(name="Antwort", value=answer, inline=False)
 
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            await ctx.send(embed=embed)
-
-            logger.info(
-                f"8ball-Befehl ausgeführt von {ctx.author} mit Frage: '{question[:50]}...'"
+            await send_response(ctx, embed)
+            log_command_success(
+                logger,
+                "8ball",
+                ctx.author,
+                ctx.guild,
+                question=question[:50] + ("..." if len(question) > 50 else ""),
+                answer=answer,
             )
 
         except Exception as e:
-            logger.error(f"Fehler beim Ausführen des 8ball-Befehls: {e}")
-
-            # Erstelle Error Embed
-            embed = discord.Embed(
-                title="Fehler",
-                description="Die Magic 8 Ball konnte deine Frage nicht beantworten.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx, "Fehler", "Die Magic 8 Ball konnte deine Frage nicht beantworten."
             )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            await ctx.send(embed=embed)
+            log_command_error(logger, "8ball", ctx.author, ctx.guild, e)
 
 
 async def setup(bot):

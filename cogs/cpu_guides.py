@@ -6,6 +6,7 @@ Enthält Kommandos für CPU Optimierung und Curve Optimizer
 import logging
 import discord
 from discord.ext import commands
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class CpuGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.computerbase.de/forum/threads/cpu-und-bios-guide-fuer-ryzen-3000-und-aelter.1911429/",
             description="Erklärungen und Tipps um das beste aus einer AMD Ryzen CPU rauszuholen.\n\nChannel: <#612647199737774104>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/jC0K8W8.png")
         embed.set_thumbnail(url="https://i.imgur.com/vVeSNQS.png")
@@ -36,6 +38,10 @@ class CpuGuidesCog(commands.Cog):
             name="Verangry",
             url="https://www.computerbase.de/forum/members/verangry.798158/",
             icon_url="https://i.imgur.com/mu0em6U.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         try:
@@ -57,6 +63,7 @@ class CpuGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.computerbase.de/forum/threads/curve-optimizer-guide-ryzen-5000.2015251/",
             description="Anleitung und Erklärungen für den Curve Optimizer bei Zen 3.\n\nChannel: <#612647199737774104>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.add_field(
             name="PDF Download",
@@ -69,6 +76,10 @@ class CpuGuidesCog(commands.Cog):
             name="Verangry",
             url="https://www.computerbase.de/forum/members/verangry.798158/",
             icon_url="https://i.imgur.com/mu0em6U.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         try:

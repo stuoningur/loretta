@@ -2,12 +2,14 @@
 Wetter Befehl für den Loretta Discord Bot
 """
 
-import discord
 from discord.ext import commands
 import aiohttp
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, Dict, Any
+from utils.embeds import EmbedFactory
+from utils.responses import send_error_response, defer_response
+from utils.logging import log_command_success, log_api_request
 
 logger = logging.getLogger(__name__)
 
@@ -31,34 +33,34 @@ class Weather(commands.Cog):
     def _get_weather_icon_url(self, weather_code: int) -> Optional[str]:
         """Mappt Wetter-Codes zu entsprechenden Icon-URLs aus dem GitHub Repository"""
         weather_icon_mapping = {
-            0: "clear@4x.png",  # Clear sky
-            1: "mostly-clear@4x.png",  # Mainly clear
-            2: "partly-cloudy@4x.png",  # Partly cloudy
-            3: "overcast@4x.png",  # Overcast
-            45: "fog@4x.png",  # Fog
-            48: "rime-fog@4x.png",  # Depositing rime fog
-            51: "light-drizzle@4x.png",  # Light drizzle
-            53: "moderate-drizzle@4x.png",  # Moderate drizzle
-            55: "dense-drizzle@4x.png",  # Dense drizzle
-            56: "light-freezing-drizzle@4x.png",  # Light freezing drizzle
-            57: "dense-freezing-drizzle@4x.png",  # Dense freezing drizzle
-            61: "light-rain@4x.png",  # Slight rain
-            63: "moderate-rain@4x.png",  # Moderate rain
-            65: "heavy-rain@4x.png",  # Heavy rain
-            66: "light-freezing-rain@4x.png",  # Light freezing rain
-            67: "heavy-freezing-rain@4x.png",  # Heavy freezing rain
-            71: "slight-snowfall@4x.png",  # Slight snow fall
-            73: "moderate-snowfall@4x.png",  # Moderate snow fall
-            75: "heavy-snowfall@4x.png",  # Heavy snow fall
-            77: "snowflake@4x.png",  # Snow grains
-            80: "light-rain@4x.png",  # Slight rain showers
-            81: "moderate-rain@4x.png",  # Moderate rain showers
-            82: "heavy-rain@4x.png",  # Violent rain showers
-            85: "slight-snowfall@4x.png",  # Slight snow showers
-            86: "heavy-snowfall@4x.png",  # Heavy snow showers
-            95: "thunderstorm@4x.png",  # Thunderstorm: Slight or moderate
-            96: "thunderstorm-with-hail@4x.png",  # Thunderstorm with slight hail
-            99: "thunderstorm-with-hail@4x.png",  # Thunderstorm with heavy hail
+            0: "clear@4x.png",  # Klarer Himmel
+            1: "mostly-clear@4x.png",  # Überwiegend klar
+            2: "partly-cloudy@4x.png",  # Teilweise bewölkt
+            3: "overcast@4x.png",  # Bedeckt
+            45: "fog@4x.png",  # Nebel
+            48: "rime-fog@4x.png",  # Reif Nebel
+            51: "light-drizzle@4x.png",  # Leichter Nieselregen
+            53: "moderate-drizzle@4x.png",  # Mäßiger Nieselregen
+            55: "dense-drizzle@4x.png",  # Starker Nieselregen
+            56: "light-freezing-drizzle@4x.png",  # Leichter gefrierender Nieselregen
+            57: "dense-freezing-drizzle@4x.png",  # Starker gefrierender Nieselregen
+            61: "light-rain@4x.png",  # Leichter Regen
+            63: "moderate-rain@4x.png",  # Mäßiger Regen
+            65: "heavy-rain@4x.png",  # Starker Regen
+            66: "light-freezing-rain@4x.png",  # Leichter gefrierender Regen
+            67: "heavy-freezing-rain@4x.png",  # Starker gefrierender Regen
+            71: "slight-snowfall@4x.png",  # Leichter Schneefall
+            73: "moderate-snowfall@4x.png",  # Mäßiger Schneefall
+            75: "heavy-snowfall@4x.png",  # Starker Schneefall
+            77: "snowflake@4x.png",  # Schneekörner
+            80: "light-rain@4x.png",  # Leichte Regenschauer
+            81: "moderate-rain@4x.png",  # Mäßige Regenschauer
+            82: "heavy-rain@4x.png",  # Starke Regenschauer
+            85: "slight-snowfall@4x.png",  # Leichte Schneeschauer
+            86: "heavy-snowfall@4x.png",  # Starke Schneeschauer
+            95: "thunderstorm@4x.png",  # Gewitter: Leicht oder mäßig
+            96: "thunderstorm-with-hail@4x.png",  # Gewitter mit leichtem Hagel
+            99: "thunderstorm-with-hail@4x.png",  # Gewitter mit starkem Hagel
         }
         icon_filename = weather_icon_mapping.get(weather_code, "clear@4x.png")
         return f"https://raw.githubusercontent.com/stuoningur/loretta/master/data/icons/weather/{icon_filename}"
@@ -108,6 +110,7 @@ class Weather(commands.Cog):
             params = {"name": location, "count": 1, "language": "de", "format": "json"}
 
             async with self.session.get(url, params=params) as response:
+                log_api_request(logger, f"geocoding: {location}", response.status)
                 if response.status == 200:
                     data = await response.json()
                     if data and data.get("results"):
@@ -152,6 +155,7 @@ class Weather(commands.Cog):
             }
 
             async with self.session.get(url, params=params) as response:
+                log_api_request(logger, "weather-data", response.status)
                 if response.status == 200:
                     data = await response.json()
                     if data:
@@ -193,52 +197,46 @@ class Weather(commands.Cog):
     async def weather(self, ctx, *, location: str):
         """Zeigt Wetterinformationen für einen angegebenen Ort"""
 
-        # Defer response for longer processing (only for slash commands)
-        if ctx.interaction:
-            await ctx.defer()
-        else:
-            # For prefix commands, send a typing indicator
+        # Antwort verzögern für längere Verarbeitung
+        if not await defer_response(ctx):
+            # Für Präfix-Befehle, Tipp-Indikator senden
             async with ctx.typing():
                 pass
 
-        # Geocode the location
+        # Ort geokodieren
         geo_data = await self._geocode_location(location)
         if not geo_data:
-            embed = discord.Embed(
-                title="Ort nicht gefunden",
-                description=f"Der Ort '{location}' konnte nicht gefunden werden.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx,
+                "Ort nicht gefunden",
+                f"Der Ort '{location}' konnte nicht gefunden werden.",
             )
-            await ctx.send(embed=embed)
             return
 
-        # Get weather data
+        # Wetterdaten abrufen
         weather_data = await self._get_weather_data(
             geo_data["latitude"], geo_data["longitude"]
         )
         if not weather_data:
-            embed = discord.Embed(
-                title="Wetterdaten nicht verfügbar",
-                description="Die Wetterdaten konnten nicht abgerufen werden.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx,
+                "Wetterdaten nicht verfügbar",
+                "Die Wetterdaten konnten nicht abgerufen werden.",
             )
-            await ctx.send(embed=embed)
             return
 
-        # Extract current weather
+        # Aktuelles Wetter extrahieren
         current = weather_data["current"]
         daily = weather_data["daily"]
 
-        # Create main embed
-        embed = discord.Embed(
+        # Haupt-Embed erstellen
+        embed = EmbedFactory.info_command_embed(
             title=f"Wetter für {geo_data['name']}, {geo_data.get('country', '')}",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description="",
+            requester=ctx.author,
         )
 
-        # Current weather info
+        # Aktuelle Wetterinformationen
         current_temp = current["temperature_2m"]
         feels_like = current["apparent_temperature"]
         humidity = current["relative_humidity_2m"]
@@ -250,7 +248,7 @@ class Weather(commands.Cog):
         weather_desc = self._get_weather_description(weather_code)
         wind_dir_text = self._format_wind_direction(wind_direction)
 
-        # Format weather data timestamp using Discord formatting
+        # Wetterdaten-Zeitstempel mit Discord-Formatierung formatieren
         weather_datetime = datetime.fromisoformat(weather_time.replace("Z", "+00:00"))
         weather_timestamp = int(weather_datetime.timestamp())
 
@@ -264,13 +262,13 @@ class Weather(commands.Cog):
 
         embed.add_field(name="Aktuelles Wetter", value=current_info, inline=False)
 
-        # Set weather icon as thumbnail using web URL
+        # Wetter-Icon als Thumbnail mit Web-URL setzen
         icon_url = self._get_weather_icon_url(weather_code)
         if icon_url:
             embed.set_thumbnail(url=icon_url)
 
-        # 6-day forecast - 2 fields per row
-        for i in range(1, 7):  # Skip today, show next 6 days
+        # 6-Tage-Vorhersage - 2 Felder pro Zeile
+        for i in range(1, 7):  # Heute überspringen, nächste 6 Tage anzeigen
             date = daily["time"][i]
             max_temp = daily["temperature_2m_max"][i]
             min_temp = daily["temperature_2m_min"][i]
@@ -280,7 +278,7 @@ class Weather(commands.Cog):
 
             weather_desc = self._get_weather_description(forecast_weather_code)
 
-            # Format date with German day names
+            # Datum mit deutschen Tagesnamen formatieren
             date_obj = datetime.fromisoformat(date)
             german_days = {
                 "Monday": "Montag",
@@ -295,7 +293,7 @@ class Weather(commands.Cog):
             day_name = german_days.get(english_day, english_day)
             date_formatted = date_obj.strftime("%d.%m")
 
-            # Build forecast text for this day
+            # Vorhersage-Text für diesen Tag erstellen
             forecast_info = (
                 f"{weather_desc}\n"
                 f"{str(min_temp).replace('.', ',')}° - {str(max_temp).replace('.', ',')}°C\n"
@@ -308,22 +306,26 @@ class Weather(commands.Cog):
                 inline=True,
             )
 
-            # Add invisible field after every 2nd forecast day to force new row (2 columns, 3 rows)
+            # Unsichtbares Feld nach jedem 2. Vorhersagetag hinzufügen um neue Zeile zu erzwingen (2 Spalten, 3 Zeilen)
             if i % 2 == 0:
                 embed.add_field(name="\u200b", value="\u200b", inline=True)
 
-        # Footer
+        # Fußzeile aktualisieren um Datenquelle einzuschließen
         embed.set_footer(
             text=f"Angefordert von {ctx.author.display_name} • Daten von Open-Meteo",
             icon_url=ctx.author.display_avatar.url,
         )
 
-        # Send embed (icon will be used as thumbnail if file exists)
+        # Embed senden (Icon wird als Thumbnail verwendet falls Datei existiert)
         await ctx.send(embed=embed)
 
-        logger.info(
-            f"Wetter-Befehl ausgeführt von {ctx.author} für '{location}' "
-            f"({geo_data['name']}, {geo_data.get('country', '')})"
+        log_command_success(
+            logger,
+            "wetter",
+            ctx.author,
+            ctx.guild,
+            location=location,
+            resolved_location=f"{geo_data['name']}, {geo_data.get('country', '')}",
         )
 
     @commands.hybrid_command(
@@ -334,72 +336,74 @@ class Weather(commands.Cog):
     async def weather_short(self, ctx, *, location: str):
         """Zeigt kurze Wetterinformationen für einen angegebenen Ort"""
 
-        # Defer response for longer processing (only for slash commands)
-        if ctx.interaction:
-            await ctx.defer()
-        else:
-            # For prefix commands, send a typing indicator
+        # Antwort verzögern für längere Verarbeitung
+        if not await defer_response(ctx):
+            # Für Präfix-Befehle, Tipp-Indikator senden
             async with ctx.typing():
                 pass
 
-        # Geocode the location
+        # Ort geokodieren
         geo_data = await self._geocode_location(location)
         if not geo_data:
-            embed = discord.Embed(
-                title="Ort nicht gefunden",
-                description=f"Der Ort '{location}' konnte nicht gefunden werden.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx,
+                "Ort nicht gefunden",
+                f"Der Ort '{location}' konnte nicht gefunden werden.",
             )
-            await ctx.send(embed=embed)
             return
 
-        # Get weather data
+        # Wetterdaten abrufen
         weather_data = await self._get_weather_data(
             geo_data["latitude"], geo_data["longitude"]
         )
         if not weather_data:
-            embed = discord.Embed(
-                title="Wetterdaten nicht verfügbar",
-                description="Die Wetterdaten konnten nicht abgerufen werden.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx,
+                "Wetterdaten nicht verfügbar",
+                "Die Wetterdaten konnten nicht abgerufen werden.",
             )
-            await ctx.send(embed=embed)
             return
 
-        # Extract current weather
+        # Aktuelles Wetter extrahieren
         current = weather_data["current"]
         current_temp = current["temperature_2m"]
         feels_like = current["apparent_temperature"]
         weather_code = current["weather_code"]
+        weather_time = current["time"]
 
         weather_desc = self._get_weather_description(weather_code)
 
-        # Create compact embed
-        embed = discord.Embed(
+        # Wetterdaten-Zeitstempel mit Discord-Formatierung formatieren
+        weather_datetime = datetime.fromisoformat(weather_time.replace("Z", "+00:00"))
+        weather_timestamp = int(weather_datetime.timestamp())
+
+        # Kompaktes Embed erstellen
+        embed = EmbedFactory.info_command_embed(
             title=f"{geo_data['name']}, {geo_data.get('country', '')}",
-            description=f"**{weather_desc}**\n{str(current_temp).replace('.', ',')}°C (Gefühlt {str(feels_like).replace('.', ',')}°C)",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description=f"**{weather_desc}**\n{str(current_temp).replace('.', ',')}°C (Gefühlt {str(feels_like).replace('.', ',')}°C)\n**Datenstand:** <t:{weather_timestamp}:f>",
+            requester=ctx.author,
         )
 
-        # Set weather icon as thumbnail
+        # Wetter-Icon als Thumbnail setzen
         icon_url = self._get_weather_icon_url(weather_code)
         if icon_url:
             embed.set_thumbnail(url=icon_url)
 
-        # Footer
+        # Fußzeile mit Datenquelle und Zeitstempel aktualisieren
         embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
+            text=f"Angefordert von {ctx.author.display_name} • Daten von Open-Meteo",
             icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)
 
-        logger.info(
-            f"Wetter-Kurz-Befehl ausgeführt von {ctx.author} für '{location}' "
-            f"({geo_data['name']}, {geo_data.get('country', '')})"
+        log_command_success(
+            logger,
+            "weathershort",
+            ctx.author,
+            ctx.guild,
+            location=location,
+            resolved_location=f"{geo_data['name']}, {geo_data.get('country', '')}",
         )
 
 

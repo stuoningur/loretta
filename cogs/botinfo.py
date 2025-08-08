@@ -4,11 +4,12 @@ Bot-Informationen Befehl für den Loretta Discord Bot
 
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 import time
 import psutil
 import platform
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +28,10 @@ class BotInfo(commands.Cog):
         """Zeigt detaillierte Bot-Informationen mit System- und Statusdaten"""
 
         # Erstelle initial Embed
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Bot-Informationen",
             description="Lade Bot- und Systeminformationen...",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            requester=ctx.author,
         )
 
         # Sende initiale Nachricht
@@ -60,10 +60,11 @@ class BotInfo(commands.Cog):
             system_uptime_days = 0
 
         # Erstelle detailliertes Embed
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Bot-Informationen",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description="",
+            requester=ctx.author,
+            thumbnail_url=self.bot.user.display_avatar.url,
         )
 
         # Bot-Informationen
@@ -112,18 +113,11 @@ class BotInfo(commands.Cog):
             inline=False,
         )
 
-        # Bot Avatar
-        embed.set_thumbnail(url=self.bot.user.display_avatar.url)
-
-        # Footer
-        embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
-            icon_url=ctx.author.display_avatar.url,
-        )
+        # Thumbnail und Footer werden bereits durch info_command_embed gesetzt
 
         # Bearbeite die ursprüngliche Nachricht
         await message.edit(embed=embed)
-        logger.info(f"BotInfo-Befehl ausgeführt von {ctx.author}")
+        log_command_success(logger, "botinfo", ctx.author, ctx.guild)
 
 
 async def setup(bot):

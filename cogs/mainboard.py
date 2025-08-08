@@ -6,6 +6,7 @@ Enthält Kommandos für Motherboard und VRM Guides
 import logging
 import discord
 from discord.ext import commands
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class MainboardCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.hardwareluxx.de/community/threads/amd-3rd-gen-am4-mainboards-vrm-liste-x570-p560-b550-a520-a420.1228904/",
             description="Hier dürfen News und Produkte diskutiert, Informationen erfragt und zusammengetragen, technische Fragen gestellt und schließlich auch Erfahrungen mit dem eigenen System ausgetauscht werden. Der Umfang des Threads hängt von eurer Beteiligung ab und eure Unterstützung beim Sammeln von Informationen zur Vervollständigung der Übersicht ist ausdrücklich erbeten.\n\nChannel: <#578340164187979796>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/owYHwzW.jpg")
         embed.set_thumbnail(url="https://i.imgur.com/Motc8J6.png")
@@ -38,6 +40,10 @@ class MainboardCog(commands.Cog):
             name="emissary42",
             url="https://www.hardwareluxx.de/community/members/emissary42.38573/",
             icon_url="https://i.imgur.com/DcfAykw.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)

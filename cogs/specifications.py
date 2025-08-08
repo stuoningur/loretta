@@ -16,11 +16,11 @@ from utils.embeds import EmbedFactory
 from utils.user_resolver import UserResolver
 from utils.pagination import SearchPaginationView
 
-# Constants
+# Konstanten
 MAX_SPECS_LENGTH = 2000
-MAX_SEARCH_RESULTS = 2  # Results per page
-MAX_SEARCH_PAGES = 10  # Maximum pages to prevent abuse
-CACHE_TTL = 300  # Cache time-to-live in seconds (5 minutes)
+MAX_SEARCH_RESULTS = 2  # Ergebnisse pro Seite
+MAX_SEARCH_PAGES = 10  # Maximale Seiten um Missbrauch zu verhindern
+CACHE_TTL = 300  # Cache-Lebensdauer in Sekunden (5 Minuten)
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +30,22 @@ class SpecificationsCog(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        # Simple in-memory cache for search results
+        # Einfacher In-Memory-Cache für Suchergebnisse
         # Format: {(guild_id, search_term, page): (results, total_count, timestamp)}
         self._search_cache: Dict[Tuple[int, str, int], Tuple[list, int, float]] = {}
 
     def _get_cache_key(
         self, guild_id: int, search_term: str, page: int
     ) -> Tuple[int, str, int]:
-        """Generate cache key for search results"""
+        """Generiere Cache-Schlüssel für Suchergebnisse"""
         return (guild_id, search_term.lower().strip(), page)
 
     def _is_cache_valid(self, timestamp: float) -> bool:
-        """Check if cache entry is still valid"""
+        """Prüfe ob Cache-Eintrag noch gültig ist"""
         return time.time() - timestamp < CACHE_TTL
 
     def _cleanup_cache(self):
-        """Remove expired cache entries"""
+        """Entferne abgelaufene Cache-Einträge"""
         current_time = time.time()
         expired_keys = [
             key
@@ -58,37 +58,37 @@ class SpecificationsCog(commands.Cog):
     async def _get_cached_search_results(
         self, guild_id: int, search_term: str, limit: int, offset: int
     ) -> Tuple[list, int]:
-        """Get search results from cache or database"""
+        """Hole Suchergebnisse aus Cache oder Datenbank"""
         page = offset // limit
         cache_key = self._get_cache_key(guild_id, search_term, page)
 
-        # Check cache first
+        # Prüfe zuerst den Cache
         if cache_key in self._search_cache:
             results, total_count, timestamp = self._search_cache[cache_key]
             if self._is_cache_valid(timestamp):
                 logger.debug(f"Cache hit for search: {search_term} (page {page})")
                 return results, total_count
             else:
-                # Remove expired entry
+                # Entferne abgelaufenen Eintrag
                 del self._search_cache[cache_key]
 
-        # Cache miss - fetch from database
+        # Cache-Miss - lade aus Datenbank
         logger.debug(f"Cache miss for search: {search_term} (page {page})")
         results, total_count = await self.bot.db.search_specifications(
             guild_id, search_term, limit, offset
         )
 
-        # Cache the results
+        # Cache die Ergebnisse
         self._search_cache[cache_key] = (results, total_count, time.time())
 
-        # Cleanup old cache entries periodically
-        if len(self._search_cache) > 100:  # Arbitrary limit to prevent memory bloat
+        # Bereinige alte Cache-Einträge periodisch
+        if len(self._search_cache) > 100:  # Willkürliches Limit um Memory-Bloat zu verhindern
             self._cleanup_cache()
 
         return results, total_count
 
     def _invalidate_guild_cache(self, guild_id: int):
-        """Invalidate all cache entries for a specific guild"""
+        """Invalidiere alle Cache-Einträge für eine bestimmte Guild"""
         keys_to_remove = [
             key for key in self._search_cache.keys() if key[0] == guild_id
         ]
@@ -99,7 +99,7 @@ class SpecificationsCog(commands.Cog):
     @guild_only()
     async def specs(self, ctx: commands.Context, *, user: Optional[str] = None):
         """Hardware-Spezifikationen verwalten und anzeigen"""
-        # Show specifications for the specified user or the author
+        # Zeige Spezifikationen für den angegebenen Benutzer oder den Autor
         target_user = ctx.author
         if user:
             target_user = await UserResolver.resolve_user(ctx, user)
@@ -121,13 +121,13 @@ class SpecificationsCog(commands.Cog):
         await self.show_specifications_ctx(ctx, target_user)
 
     def _validate_specs_text(self, specs_text: str) -> Optional[str]:
-        """Validate specifications text input
+        """Validiere Spezifikationstext-Eingabe
 
         Args:
-            specs_text: The specifications text to validate
+            specs_text: Der zu validierende Spezifikationstext
 
         Returns:
-            Error message if validation fails, None if valid
+            Fehlermeldung bei Validierungsfehlern, None wenn gültig
         """
         if not specs_text or not specs_text.strip():
             return "Die Spezifikationen dürfen nicht leer sein."
@@ -140,7 +140,7 @@ class SpecificationsCog(commands.Cog):
         if len(specs_text) < 10:
             return "Die Spezifikationen sollten mindestens 10 Zeichen lang sein."
 
-        # Check for potentially problematic content
+        # Prüfe auf potentiell problematischen Inhalt
         suspicious_patterns = ["<@", "<#", "@everyone", "@here"]
         if any(pattern in specs_text.lower() for pattern in suspicious_patterns):
             return "Die Spezifikationen dürfen keine Mentions oder Channel-Verlinkungen enthalten."
@@ -154,14 +154,14 @@ class SpecificationsCog(commands.Cog):
     )
     async def specs_set(self, ctx: commands.Context, *, specs_text: str):
         """Setze deine Hardware-Spezifikationen"""
-        # Additional validation for specifications
+        # Zusätzliche Validierung für Spezifikationen
         validation_error = self._validate_specs_text(specs_text)
         if validation_error:
             embed = EmbedFactory.error_embed("Ungültige Eingabe", validation_error)
             await ctx.send(embed=embed)
             return
 
-        # Clean the input
+        # Bereinige die Eingabe
         specs_text = specs_text.strip()
 
         try:
@@ -181,10 +181,10 @@ class SpecificationsCog(commands.Cog):
                 specs_text=specs_text,
             )
 
-            success = await self.bot.db.add_specification(specification)
+            success = await self.bot.db.add_specification(specification, ctx.author, ctx.guild)
 
             if success:
-                # Invalidate search cache for this guild since specs changed
+                # Invalidiere Suchcache für diese Guild da sich Spezifikationen geändert haben
                 self._invalidate_guild_cache(ctx.guild.id)
                 embed = EmbedFactory.success_embed(
                     "Erfolgreich gespeichert",
@@ -231,11 +231,11 @@ class SpecificationsCog(commands.Cog):
                 return
 
             success = await self.bot.db.remove_specification(
-                ctx.guild.id, ctx.author.id
+                ctx.guild.id, ctx.author.id, ctx.author, ctx.guild
             )
 
             if success:
-                # Invalidate search cache for this guild since specs changed
+                # Invalidiere Suchcache für diese Guild da sich Spezifikationen geändert haben
                 self._invalidate_guild_cache(ctx.guild.id)
                 embed = EmbedFactory.success_embed(
                     "Erfolgreich gelöscht", "Deine Spezifikationen wurden gelöscht!"
@@ -284,7 +284,7 @@ class SpecificationsCog(commands.Cog):
 
         except Exception as e:
             logger.error(
-                f"Error showing raw specifications for user {ctx.author.id}: {e}"
+                f"Fehler beim Anzeigen der Raw-Spezifikationen für Benutzer {ctx.author.id}: {e}"
             )
             embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await ctx.send(embed=embed)
@@ -299,23 +299,23 @@ class SpecificationsCog(commands.Cog):
                 return
             guild_id = ctx.guild.id
 
-            # Create search function for pagination
+            # Erstelle Suchfunktion für Paginierung
             async def search_function(limit: int, offset: int):
                 return await self._get_cached_search_results(
                     guild_id, search_term, limit, offset
                 )
 
-            # Create pagination view and get first page
+            # Erstelle Paginierungsansicht und hole erste Seite
             view = SearchPaginationView(
                 search_function, ctx.guild, search_term, ctx.author, MAX_SEARCH_RESULTS
             )
             embed = await view.get_page_embed(0)
             await view.update_buttons()
 
-            # Send with pagination if multiple pages, otherwise just the embed
+            # Sende mit Paginierung wenn mehrere Seiten, sonst nur das Embed
             if view.total_pages > 1:
                 message = await ctx.send(embed=embed, view=view)
-                # Store message reference for timeout handling
+                # Speichere Nachrichtenreferenz für Timeout-Behandlung
                 view.message = message
             else:
                 await ctx.send(embed=embed)
@@ -345,10 +345,9 @@ class SpecificationsCog(commands.Cog):
             all_specs = await self.bot.db.get_all_guild_specifications(ctx.guild.id)  # type: ignore
 
             if not all_specs:
-                embed = discord.Embed(
-                    title="Keine Einträge",
-                    description="Es wurden keine Spezifikationseinträge in der Datenbank gefunden.",
-                    color=discord.Color.blurple(),
+                embed = EmbedFactory.info_embed(
+                    "Keine Einträge",
+                    "Es wurden keine Spezifikationseinträge in der Datenbank gefunden.",
                 )
                 if ctx.interaction:
                     await ctx.interaction.followup.send(embed=embed)
@@ -366,10 +365,9 @@ class SpecificationsCog(commands.Cog):
                     users_to_remove.append(spec)
 
             if not users_to_remove:
-                embed = discord.Embed(
-                    title="Datenbank ist sauber",
-                    description="Alle Spezifikationseinträge gehören zu aktiven Servermitgliedern.",
-                    color=discord.Color.green(),
+                embed = EmbedFactory.success_embed(
+                    "Datenbank ist sauber",
+                    "Alle Spezifikationseinträge gehören zu aktiven Servermitgliedern.",
                 )
                 if ctx.interaction:
                     await ctx.interaction.followup.send(embed=embed)
@@ -383,16 +381,15 @@ class SpecificationsCog(commands.Cog):
                 if not ctx.guild:
                     continue
                 success = await self.bot.db.remove_specification(
-                    ctx.guild.id, spec.user_id
+                    ctx.guild.id, spec.user_id, None, ctx.guild
                 )
                 if success:
                     removed_count += 1
 
             # Erstelle Erfolgsmeldung
-            embed = discord.Embed(
-                title="Datenbank bereinigt",
-                description=f"{removed_count} von {len(users_to_remove)} Spezifikationseinträgen wurden erfolgreich entfernt.",
-                color=discord.Color.green(),
+            embed = EmbedFactory.success_embed(
+                "Datenbank bereinigt",
+                f"{removed_count} von {len(users_to_remove)} Spezifikationseinträgen wurden erfolgreich entfernt.",
             )
 
             embed.add_field(
@@ -419,10 +416,8 @@ class SpecificationsCog(commands.Cog):
 
         except Exception as e:
             logger.error(f"Fehler während Datenbank-Bereinigung: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Bereinigen der Datenbank aufgetreten.",
-                color=discord.Color.red(),
+            embed = EmbedFactory.error_embed(
+                "Fehler", "Es ist ein Fehler beim Bereinigen der Datenbank aufgetreten."
             )
             if ctx.interaction and ctx.interaction.response.is_done():
                 await ctx.interaction.followup.send(embed=embed)
@@ -435,7 +430,7 @@ class SpecificationsCog(commands.Cog):
         target_user: Union[discord.Member, discord.User],
         requester: Union[discord.Member, discord.User],
     ) -> discord.Embed:
-        """Create embed for displaying specifications"""
+        """Erstelle Embed für Anzeige von Spezifikationen"""
         if not specification:
             return EmbedFactory.no_specs_embed(target_user)
 
@@ -481,7 +476,7 @@ class SpecificationsCog(commands.Cog):
                 specification, user, interaction.user
             )
 
-            # Send as ephemeral if no specs found, public otherwise
+            # Sende als ephemeral wenn keine Specs gefunden, sonst öffentlich
             ephemeral = specification is None
             await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
 
@@ -493,13 +488,13 @@ class SpecificationsCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     def parse_timestamp(self, timestamp_str: str) -> float:
-        """Parse SQLite timestamp string to Unix timestamp"""
+        """Parse SQLite Zeitstempel-String zu Unix-Zeitstempel"""
         try:
             from datetime import datetime, timezone
 
-            # SQLite CURRENT_TIMESTAMP format: "YYYY-MM-DD HH:MM:SS" in UTC
+            # SQLite CURRENT_TIMESTAMP Format: "YYYY-MM-DD HH:MM:SS" in UTC
             dt = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-            # SQLite timestamps are in UTC, so we need to set the timezone
+            # SQLite Zeitstempel sind in UTC, daher müssen wir die Zeitzone setzen
             dt = dt.replace(tzinfo=timezone.utc)
             return dt.timestamp()
         except Exception as e:
@@ -532,7 +527,7 @@ async def show_user_specs_context(
             interaction.guild.id, user.id
         )
 
-        # Get the cog instance to use the embed creation method
+        # Hole die Cog-Instanz um die Embed-Erstellungsmethode zu verwenden
         cog = interaction.client.get_cog("SpecificationsCog")
         if cog and isinstance(cog, SpecificationsCog):
             embed = cog._create_specifications_embed(

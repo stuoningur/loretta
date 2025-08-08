@@ -13,6 +13,8 @@ from discord.ext import commands, tasks
 
 from utils.database import Birthday
 from utils.constants import GERMAN_MONTH_NAMES
+from utils.responses import send_error_response
+from utils.embeds import EmbedFactory
 
 logger = logging.getLogger(__name__)
 
@@ -185,15 +187,7 @@ class BirthdayCog(commands.Cog):
                 message = message_template.format(user=member.mention)
 
                 # Erstelle Embed
-                embed = discord.Embed(
-                    title="🎉 Geburtstag! 🎂",
-                    description=message,
-                    color=discord.Color.gold(),
-                )
-
-                embed.set_thumbnail(url=member.display_avatar.url)
-                embed.set_footer(text="🎈 Hab einen wunderschönen Tag! 🎈")
-
+                embed = EmbedFactory.single_birthday_embed(member, message)
                 await channel.send(embed=embed)
 
             else:
@@ -201,15 +195,7 @@ class BirthdayCog(commands.Cog):
                 user_mentions = [member.mention for member, _ in birthday_users]
 
                 # Erstelle Embed für mehrere Geburtstage
-                embed = discord.Embed(
-                    title="🎉 Mehrere Geburtstage heute! 🎂",
-                    description="🎈 Herzlichen Glückwunsch an:\n"
-                    + "\n".join(user_mentions),
-                    color=discord.Color.gold(),
-                )
-
-                embed.set_footer(text="🎉 Feiert schön zusammen! 🎉")
-
+                embed = EmbedFactory.multiple_birthdays_embed(user_mentions)
                 await channel.send(embed=embed)
 
             logger.info(
@@ -250,22 +236,22 @@ class BirthdayCog(commands.Cog):
     ):
         """Hauptkommando für Geburtstage"""
         if not interaction.guild:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Dieser Befehl kann nur in einem Server verwendet werden.",
-                color=discord.Color.red(),
+            await send_error_response(
+                interaction,
+                "Fehler",
+                "Dieser Befehl kann nur in einem Server verwendet werden.",
+                ephemeral=True,
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # Validiere Parameter
         if benutzer and benutzer_id:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Du kannst nicht sowohl einen Benutzer als auch eine Benutzer-ID angeben.",
-                color=discord.Color.red(),
+            await send_error_response(
+                interaction,
+                "Fehler",
+                "Du kannst nicht sowohl einen Benutzer als auch eine Benutzer-ID angeben.",
+                ephemeral=True,
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # Bestimme den Zielbenutzer
@@ -279,12 +265,12 @@ class BirthdayCog(commands.Cog):
                 target_user = await self.bot.fetch_user(user_id)
                 is_admin_action = True
             except (ValueError, discord.NotFound, discord.HTTPException):
-                embed = discord.Embed(
-                    title="Ungültige Benutzer-ID",
-                    description="Die angegebene Benutzer-ID ist ungültig oder der Benutzer existiert nicht.",
-                    color=discord.Color.red(),
+                await send_error_response(
+                    interaction,
+                    "Ungültige Benutzer-ID",
+                    "Die angegebene Benutzer-ID ist ungültig oder der Benutzer existiert nicht.",
+                    ephemeral=True,
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
         elif benutzer:
             target_user = benutzer
@@ -296,11 +282,7 @@ class BirthdayCog(commands.Cog):
         if is_admin_action:
             member = interaction.guild.get_member(interaction.user.id)
             if not member or not member.guild_permissions.administrator:
-                embed = discord.Embed(
-                    title="Keine Berechtigung",
-                    description="Du benötigst Administrator-Rechte, um Geburtstage für andere Benutzer zu verwalten.",
-                    color=discord.Color.red(),
-                )
+                embed = EmbedFactory.missing_permissions_embed("Administrator-Rechte")
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
@@ -335,38 +317,32 @@ class BirthdayCog(commands.Cog):
             birthday = await self.bot.db.get_birthday(interaction.guild.id, user.id)
 
             if not birthday:
-                embed = discord.Embed(
-                    title="Kein Geburtstag gefunden",
-                    description=f"Es ist kein Geburtstag für {user.display_name} gespeichert.",
-                    color=discord.Color.red(),
+                await send_error_response(
+                    interaction,
+                    "Kein Geburtstag gefunden",
+                    f"Es ist kein Geburtstag für {user.display_name} gespeichert.",
+                    ephemeral=True,
                 )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
             success = await self.bot.db.remove_birthday(interaction.guild.id, user.id)
 
             if success:
-                embed = discord.Embed(
-                    title="Geburtstag entfernt",
-                    description=f"Der Geburtstag von {user.display_name} wurde erfolgreich entfernt.",
-                    color=discord.Color.green(),
+                embed = EmbedFactory.success_embed(
+                    "Geburtstag entfernt",
+                    f"Der Geburtstag von {user.display_name} wurde erfolgreich entfernt.",
                 )
             else:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Der Geburtstag konnte nicht entfernt werden.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Fehler",
+                    "Der Geburtstag konnte nicht entfernt werden.",
                 )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Fehler beim Entfernen des Geburtstags: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Entfernen des Geburtstags aufgetreten.",
-                color=discord.Color.red(),
-            )
+            embed = EmbedFactory.unexpected_error_embed("Entfernen des Geburtstags")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def _handle_show_birthday(
@@ -382,10 +358,9 @@ class BirthdayCog(commands.Cog):
             birthday = await self.bot.db.get_birthday(interaction.guild.id, user.id)
 
             if not birthday:
-                embed = discord.Embed(
-                    title="Kein Geburtstag gefunden",
-                    description=f"Es ist kein Geburtstag für {user.display_name} gespeichert.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Kein Geburtstag gefunden",
+                    f"Es ist kein Geburtstag für {user.display_name} gespeichert.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -395,21 +370,16 @@ class BirthdayCog(commands.Cog):
                 f"{birthday.birth_day}. {GERMAN_MONTH_NAMES[birthday.birth_month]}"
             )
 
-            embed = discord.Embed(
-                title="Geburtstag",
-                description=f"**{user.display_name}** hat am **{date_str}** Geburtstag.",
-                color=discord.Color.blurple(),
+            embed = EmbedFactory.info_embed(
+                "Geburtstag",
+                f"**{user.display_name}** hat am **{date_str}** Geburtstag.",
             )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Fehler beim Anzeigen des Geburtstags: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Laden des Geburtstags aufgetreten.",
-                color=discord.Color.red(),
-            )
+            embed = EmbedFactory.unexpected_error_embed("Laden des Geburtstags")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def _handle_list_birthdays(self, interaction: discord.Interaction):
@@ -421,10 +391,9 @@ class BirthdayCog(commands.Cog):
             birthdays = await self.bot.db.get_guild_birthdays(interaction.guild.id)
 
             if not birthdays:
-                embed = discord.Embed(
-                    title="Keine Geburtstage",
-                    description="Es sind noch keine Geburtstage in diesem Server gespeichert.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Keine Geburtstage",
+                    "Es sind noch keine Geburtstage in diesem Server gespeichert.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -456,10 +425,9 @@ class BirthdayCog(commands.Cog):
                     )
 
             if not birthday_list:
-                embed = discord.Embed(
-                    title="Keine Geburtstage",
-                    description="Alle gespeicherten Geburtstage gehören zu Benutzern, die nicht mehr existieren.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Keine Geburtstage",
+                    "Alle gespeicherten Geburtstage gehören zu Benutzern, die nicht mehr existieren.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -469,21 +437,16 @@ class BirthdayCog(commands.Cog):
             if len(description) > 4000:
                 description = description[:4000] + "\n..."
 
-            embed = discord.Embed(
-                title="Geburtstage in diesem Server",
-                description=description,
-                color=discord.Color.blurple(),
+            embed = EmbedFactory.info_embed(
+                "Geburtstage in diesem Server",
+                description,
             )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Fehler beim Auflisten der Geburtstage: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Laden der Geburtstage aufgetreten.",
-                color=discord.Color.red(),
-            )
+            embed = EmbedFactory.unexpected_error_embed("Laden der Geburtstage")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     async def save_birthday_from_string(
@@ -502,20 +465,18 @@ class BirthdayCog(commands.Cog):
                 birthday_str += "."
 
             if birthday_str.count(".") != 2:
-                embed = discord.Embed(
-                    title="Ungültiges Format",
-                    description="Bitte verwende das Format DD.MM. (z.B. 25.12.)",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültiges Format",
+                    "Bitte verwende das Format DD.MM. (z.B. 25.12.)",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
             parts = birthday_str.strip(".").split(".")
             if len(parts) != 2:
-                embed = discord.Embed(
-                    title="Ungültiges Format",
-                    description="Bitte verwende das Format DD.MM. (z.B. 25.12.)",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültiges Format",
+                    "Bitte verwende das Format DD.MM. (z.B. 25.12.)",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -524,29 +485,26 @@ class BirthdayCog(commands.Cog):
                 day = int(parts[0])
                 month = int(parts[1])
             except ValueError:
-                embed = discord.Embed(
-                    title="Ungültige Zahlen",
-                    description="Tag und Monat müssen Zahlen sein.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültige Zahlen",
+                    "Tag und Monat müssen Zahlen sein.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
             # Validiere Tag und Monat
             if not (1 <= month <= 12):
-                embed = discord.Embed(
-                    title="Ungültiger Monat",
-                    description="Der Monat muss zwischen 1 und 12 liegen.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültiger Monat",
+                    "Der Monat muss zwischen 1 und 12 liegen.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
 
             if not (1 <= day <= 31):
-                embed = discord.Embed(
-                    title="Ungültiger Tag",
-                    description="Der Tag muss zwischen 1 und 31 liegen.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültiger Tag",
+                    "Der Tag muss zwischen 1 und 31 liegen.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -557,18 +515,16 @@ class BirthdayCog(commands.Cog):
                 current_year = date.today().year
                 days_in_month = calendar.monthrange(current_year, month)[1]
                 if day > days_in_month:
-                    embed = discord.Embed(
-                        title="Ungültiges Datum",
-                        description=f"Der {month}. Monat hat nur {days_in_month} Tage.",
-                        color=discord.Color.red(),
+                    embed = EmbedFactory.error_embed(
+                        "Ungültiges Datum",
+                        f"Der {month}. Monat hat nur {days_in_month} Tage.",
                     )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
             except ValueError:
-                embed = discord.Embed(
-                    title="Ungültiges Datum",
-                    description="Das angegebene Datum ist nicht gültig.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Ungültiges Datum",
+                    "Das angegebene Datum ist nicht gültig.",
                 )
                 await interaction.response.send_message(embed=embed, ephemeral=True)
                 return
@@ -588,32 +544,26 @@ class BirthdayCog(commands.Cog):
                 # Formatiere das Datum für die Anzeige
                 date_str = f"{day}. {GERMAN_MONTH_NAMES[month]}"
 
-                embed = discord.Embed(
-                    title="Geburtstag gespeichert",
-                    description=f"Der Geburtstag von {user.display_name} wurde auf den **{date_str}** gesetzt.",
-                    color=discord.Color.green(),
+                embed = EmbedFactory.success_embed(
+                    "Geburtstag gespeichert",
+                    f"Der Geburtstag von {user.display_name} wurde auf den **{date_str}** gesetzt.",
                 )
             else:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Der Geburtstag konnte nicht gespeichert werden.",
-                    color=discord.Color.red(),
+                embed = EmbedFactory.error_embed(
+                    "Fehler",
+                    "Der Geburtstag konnte nicht gespeichert werden.",
                 )
 
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Fehler beim Speichern des Geburtstags: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Speichern des Geburtstags aufgetreten.",
-                color=discord.Color.red(),
-            )
+            embed = EmbedFactory.unexpected_error_embed("Speichern des Geburtstags")
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
     # Admin Testing Commands
 
-    @commands.hybrid_command(name="test_birthday")
+    @commands.hybrid_command(name="birthday_test")
     @commands.has_permissions(administrator=True)
     async def test_birthday_notifications(self, ctx):
         """Testet die Geburtstags-Benachrichtigungen manuell für diesen Server (nur für Admins)"""
@@ -660,9 +610,9 @@ class BirthdayCog(commands.Cog):
             status = "Läuft" if self.daily_birthday_check.is_running() else "Gestoppt"
             next_iteration = self.daily_birthday_check.next_iteration
 
-            embed = discord.Embed(
-                title="Geburtstags-Task Status",
-                color=discord.Color.blurple(),
+            embed = EmbedFactory.info_embed(
+                "Geburtstags-Task Status",
+                "",
             )
             embed.add_field(name="Status", value=status, inline=True)
             embed.add_field(
@@ -695,5 +645,34 @@ class BirthdayCog(commands.Cog):
             await ctx.send(f"Fehler beim Anzeigen des Status: {str(e)}")
 
 
+@app_commands.context_menu(name="Geburtstag setzen")
+@app_commands.default_permissions(administrator=True)
+@app_commands.guild_only()
+async def set_birthday_context_menu(
+    interaction: discord.Interaction, user: discord.Member
+):
+    """Kontextmenü-Befehl zum Setzen des Geburtstags eines Benutzers (nur für Admins)"""
+    if not interaction.guild:
+        await send_error_response(
+            interaction,
+            "Fehler",
+            "Dieser Befehl kann nur in einem Server verwendet werden.",
+            ephemeral=True,
+        )
+        return
+
+    # Überprüfe Administrator-Berechtigung
+    member = interaction.guild.get_member(interaction.user.id)
+    if not member or not member.guild_permissions.administrator:
+        embed = EmbedFactory.missing_permissions_embed("Administrator-Rechte")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+
+    # Öffne das Modal für die Geburtstags-Eingabe
+    modal = BirthdayModal(user)
+    await interaction.response.send_modal(modal)
+
+
 async def setup(bot):
     await bot.add_cog(BirthdayCog(bot))
+    bot.tree.add_command(set_birthday_context_menu)

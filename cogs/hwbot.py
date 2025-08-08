@@ -6,6 +6,7 @@ Enthält Kommandos für HWBOT Competition Informationen
 import logging
 import discord
 from discord.ext import commands
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ class HwbotCog(commands.Cog):
             title="HWBOT Team CUP 2023",
             colour=discord.Color.blurple(),
             url="",
+            timestamp=datetime.now(timezone.utc),
             description="""[**rules**](https://hwbot.org/benchmarkRules)
 
 [**AMD CPU**](https://hwbot.org/competition/TC2023AMD/)
@@ -99,6 +101,10 @@ Stage 3 - SuperPi - 32M - DDR2
             name="Loretta",
             url="",
             icon_url="",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)

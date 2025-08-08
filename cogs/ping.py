@@ -4,11 +4,12 @@ Ping Befehl für den Loretta Discord Bot
 
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 import time
 import asyncio
 import platform
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +31,10 @@ class Ping(commands.Cog):
         start_time = time.perf_counter()
 
         # Erstelle initial Embed für sofortige Antwort
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Pong!",
             description="Messe Latenz...",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            requester=ctx.author,
         )
 
         # Sende initiale Nachricht
@@ -55,10 +55,10 @@ class Ping(commands.Cog):
         internet_latency = await self._get_internet_latency()
 
         # Erstelle finales Embed
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Pong!",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description="",
+            requester=ctx.author,
         )
 
         # Latenz-Informationen mit Internet-Latenz als erste Zeile (ohne Message Edit Time)
@@ -96,11 +96,7 @@ class Ping(commands.Cog):
             inline=False,
         )
 
-        # Footer
-        embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
-            icon_url=ctx.author.display_avatar.url,
-        )
+        # Footer wird bereits durch info_command_embed gesetzt
 
         # Bearbeite die ursprüngliche Nachricht
         try:
@@ -108,14 +104,16 @@ class Ping(commands.Cog):
         except (discord.HTTPException, discord.NotFound) as e:
             logger.error(f"Fehler beim Bearbeiten der Ping Nachricht: {e}")
 
-        internet_log = (
-            f", Internet: {round(internet_latency)}ms"
-            if internet_latency
-            else ", Internet: N/A"
-        )
-        logger.info(
-            f"Ping-Befehl ausgeführt von {ctx.author} "
-            f"(WS: {round(websocket_latency)}ms, API: {round(api_latency)}ms{internet_log})"
+        # Logging mit neuen Utility-Funktionen
+        internet_log = f"{round(internet_latency)}ms" if internet_latency else "N/A"
+        log_command_success(
+            logger,
+            "ping",
+            ctx.author,
+            ctx.guild,
+            websocket_latency=f"{round(websocket_latency)}ms",
+            api_latency=f"{round(api_latency)}ms",
+            internet_latency=internet_log,
         )
 
     async def _get_internet_latency(self):
@@ -133,7 +131,7 @@ class Ping(commands.Cog):
                 *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
 
-            stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=5.0)
+            stdout, _ = await asyncio.wait_for(process.communicate(), timeout=5.0)
 
             if process.returncode == 0:
                 # Parse Ping-Ausgabe für durchschnittliche Latenz

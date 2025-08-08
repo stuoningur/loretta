@@ -3,6 +3,7 @@ Embed-Factory für konsistente Discord-Embed-Erstellung
 """
 
 import discord
+from datetime import datetime, timezone
 from typing import Optional, Union
 
 
@@ -170,3 +171,92 @@ class EmbedFactory:
             "Nur auf Servern verfügbar",
             "Dieser Befehl kann nur auf Servern verwendet werden, nicht in Direktnachrichten.",
         )
+
+    @staticmethod
+    def command_response_embed(
+        title: str,
+        description: str,
+        color: discord.Color,
+        requester: Union[discord.Member, discord.User],
+        thumbnail_url: Optional[str] = None,
+    ) -> discord.Embed:
+        """Erstellt ein standardmäßiges Command-Response-Embed mit Footer und Timestamp"""
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=color,
+            timestamp=datetime.now(timezone.utc),
+        )
+
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+
+        embed.set_footer(
+            text=f"Angefordert von {requester.display_name}",
+            icon_url=requester.display_avatar.url,
+        )
+
+        return embed
+
+    @staticmethod
+    def info_command_embed(
+        title: str,
+        description: str,
+        requester: Union[discord.Member, discord.User],
+        thumbnail_url: Optional[str] = None,
+    ) -> discord.Embed:
+        """Erstellt ein Info-Command-Embed mit Footer und Timestamp"""
+        return EmbedFactory.command_response_embed(
+            title, description, discord.Color.blurple(), requester, thumbnail_url
+        )
+
+    @staticmethod
+    def success_command_embed(
+        title: str,
+        description: str,
+        requester: Union[discord.Member, discord.User],
+        thumbnail_url: Optional[str] = None,
+    ) -> discord.Embed:
+        """Erstellt ein Erfolgs-Command-Embed mit Footer und Timestamp"""
+        return EmbedFactory.command_response_embed(
+            title, description, discord.Color.green(), requester, thumbnail_url
+        )
+
+    @staticmethod
+    def error_command_embed(
+        title: str,
+        description: str,
+        requester: Union[discord.Member, discord.User],
+        thumbnail_url: Optional[str] = None,
+    ) -> discord.Embed:
+        """Erstellt ein Fehler-Command-Embed mit Footer und Timestamp"""
+        return EmbedFactory.command_response_embed(
+            title, description, discord.Color.red(), requester, thumbnail_url
+        )
+
+    @staticmethod
+    def single_birthday_embed(
+        member: Union[discord.Member, discord.User], message: str
+    ) -> discord.Embed:
+        """Erstellt ein Embed für einen einzelnen Geburtstag"""
+        embed = discord.Embed(
+            title="🎉 Geburtstag! 🎂",
+            description=message,
+            color=discord.Color.gold(),
+            timestamp=datetime.now(timezone.utc),
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.set_footer(text="🎈 Hab einen wunderschönen Tag! 🎈")
+        return embed
+
+    @staticmethod
+    def multiple_birthdays_embed(user_mentions: list) -> discord.Embed:
+        """Erstellt ein Embed für mehrere Geburtstage"""
+        embed = discord.Embed(
+            title="🎉 Mehrere Geburtstage heute! 🎂",
+            description="🎈 Herzlichen Glückwunsch an:\n" + "\n".join(user_mentions),
+            color=discord.Color.gold(),
+            timestamp=datetime.now(timezone.utc),
+        )
+        embed.set_footer(text="🎉 Feiert schön zusammen! 🎉")
+        return embed

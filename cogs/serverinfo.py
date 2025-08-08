@@ -4,8 +4,10 @@ Serverinfo Befehle für den Loretta Discord Bot
 
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success
+from utils.responses import send_error_response
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,11 @@ class ServerInfo(commands.Cog):
     async def serverinfo(self, ctx):
         """Zeigt detaillierte Informationen über den Server an"""
         if not ctx.guild:
-            await ctx.send("Dieser Befehl kann nur auf einem Server verwendet werden!")
+            await send_error_response(
+                ctx,
+                "Nur auf Servern verfügbar",
+                "Dieser Befehl kann nur auf einem Server verwendet werden!",
+            )
             return
 
         guild = ctx.guild
@@ -72,15 +78,14 @@ class ServerInfo(commands.Cog):
         total_channels = len(guild.channels)
 
         # Erstelle Embed
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Server Informationen",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description="",
+            requester=ctx.author,
+            thumbnail_url=guild.icon.url if guild.icon else None,
         )
 
-        # Server-Icon hinzufügen
-        if guild.icon:
-            embed.set_thumbnail(url=guild.icon.url)
+        # Thumbnail wird bereits durch info_command_embed gesetzt
 
         # Server-Grundinformationen (Name, ID, Besitzer)
         embed.add_field(
@@ -139,14 +144,10 @@ class ServerInfo(commands.Cog):
             inline=True,
         )
 
-        # Footer
-        embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
-            icon_url=ctx.author.display_avatar.url,
-        )
+        # Footer wird bereits durch info_command_embed gesetzt
 
         await ctx.send(embed=embed)
-        logger.info(f"Serverinfo-Befehl ausgeführt von {ctx.author} in {guild.name}")
+        log_command_success(logger, "serverinfo", ctx.author, ctx.guild)
 
 
 async def setup(bot):

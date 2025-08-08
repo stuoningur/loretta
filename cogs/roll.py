@@ -2,11 +2,12 @@
 Würfel Befehl für den Loretta Discord Bot
 """
 
-import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 import random
+from utils.embeds import EmbedFactory
+from utils.responses import send_error_response, send_response
+from utils.logging import log_command_success, log_command_error
 
 logger = logging.getLogger(__name__)
 
@@ -28,105 +29,45 @@ class Roll(commands.Cog):
         try:
             # Validiere das Maximum
             if maximum < 1:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Das Maximum muss mindestens 1 sein.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
+                await send_error_response(
+                    ctx, "Fehler", "Das Maximum muss mindestens 1 sein."
                 )
-
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-
-                try:
-                    await ctx.send(embed=embed)
-                except (discord.HTTPException, discord.Forbidden) as e:
-                    logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
 
             if maximum > 1000000:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Das Maximum darf nicht größer als 1.000.000 sein.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
+                await send_error_response(
+                    ctx, "Fehler", "Das Maximum darf nicht größer als 1.000.000 sein."
                 )
-
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-
-                try:
-                    await ctx.send(embed=embed)
-                except (discord.HTTPException, discord.Forbidden) as e:
-                    logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
                 return
 
             # Würfle eine Zufallszahl
             result = random.randint(1, maximum)
 
             # Erstelle Erfolgs-Embed
-            embed = discord.Embed(
+            embed = EmbedFactory.info_command_embed(
                 title="Würfel",
                 description=f"Du hast eine **{result}** gewürfelt! (1-{maximum})",
-                color=discord.Color.blurple(),
-                timestamp=datetime.now(timezone.utc),
+                requester=ctx.author,
             )
 
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
+            await send_response(ctx, embed)
+            log_command_success(
+                logger, "roll", ctx.author, ctx.guild, result=result, maximum=maximum
             )
 
-            try:
-                await ctx.send(embed=embed)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
-
-            logger.info(
-                f"Würfel-Befehl ausgeführt von {ctx.author}: {result} (1-{maximum})"
+        except ValueError as e:
+            await send_error_response(
+                ctx,
+                "Fehler",
+                "Bitte gib eine gültige Zahl ein.\n\nBeispiel: `/würfel 20`",
             )
-
-        except ValueError:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Bitte gib eine gültige Zahl ein.\n\nBeispiel: `/würfel 20`",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
-            )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            try:
-                await ctx.send(embed=embed)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+            log_command_error(logger, "roll", ctx.author, ctx.guild, e)
 
         except Exception as e:
-            logger.error(f"Fehler beim Würfeln: {e}")
-
-            embed = discord.Embed(
-                title="Fehler",
-                description="Beim Würfeln ist ein Fehler aufgetreten.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx, "Fehler", "Beim Würfeln ist ein Fehler aufgetreten."
             )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            try:
-                await ctx.send(embed=embed)
-            except (discord.HTTPException, discord.Forbidden) as e:
-                logger.error(f"Fehler beim Senden der Roll Nachricht: {e}")
+            log_command_error(logger, "roll", ctx.author, ctx.guild, e)
 
 
 async def setup(bot):

@@ -8,6 +8,9 @@ from typing import Optional
 import discord
 from discord import app_commands
 from discord.ext import commands
+from utils.embeds import EmbedFactory
+from utils.responses import send_error_response
+from utils.logging import log_command_error
 
 logger = logging.getLogger(__name__)
 
@@ -240,29 +243,28 @@ class ConfigCog(commands.Cog):
 
         # Überprüfe Administrator-Berechtigung
         if not interaction.guild:
-            embed = discord.Embed(
-                title="Fehler",
-                description="Dieser Befehl kann nur in einem Server verwendet werden.",
-                color=discord.Color.red(),
+            await send_error_response(
+                interaction,
+                "Fehler",
+                "Dieser Befehl kann nur in einem Server verwendet werden.",
+                ephemeral=True,
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
         # Hole Member Objekt für Berechtigungen
         member = interaction.guild.get_member(interaction.user.id)
         if not member or not member.guild_permissions.administrator:
-            embed = discord.Embed(
-                title="Keine Berechtigung",
-                description="Du benötigst Administrator-Rechte, um die Serverkonfiguration zu ändern.",
-                color=discord.Color.red(),
+            await send_error_response(
+                interaction,
+                "Keine Berechtigung",
+                "Du benötigst Administrator-Rechte, um die Serverkonfiguration zu ändern.",
+                ephemeral=True,
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        embed = discord.Embed(
+        embed = EmbedFactory.info_embed(
             title="Serverkonfiguration",
             description="Wähle eine Konfigurationsoption aus dem Menü unten:",
-            color=discord.Color.blurple(),
         )
 
         view = ConfigOptionView()
@@ -278,13 +280,15 @@ class ConfigCog(commands.Cog):
             config = await self.bot.db.get_server_config(guild_id)
             await self._show_config(interaction, config)
         except Exception as e:
-            logger.error(f"Fehler beim Anzeigen der Konfiguration: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Es ist ein Fehler beim Laden der Konfiguration aufgetreten.",
-                color=discord.Color.red(),
+            log_command_error(
+                logger, "config-show", interaction.user, interaction.guild, e
             )
-            await interaction.response.send_message(embed=embed, ephemeral=True)
+            await send_error_response(
+                interaction,
+                "Fehler",
+                "Es ist ein Fehler beim Laden der Konfiguration aufgetreten.",
+                ephemeral=True,
+            )
 
     async def handle_config_option_selected(
         self, interaction: discord.Interaction, option: str
@@ -295,10 +299,9 @@ class ConfigCog(commands.Cog):
 
         try:
             if option == "prefix":
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="Prefix ändern",
                     description="Wähle einen neuen Command-Prefix:",
-                    color=discord.Color.blurple(),
                 )
                 view = PrefixView()
                 await interaction.response.send_message(
@@ -312,18 +315,17 @@ class ConfigCog(commands.Cog):
                     if ch.permissions_for(interaction.guild.me).send_messages
                 ]
                 if not channels:
-                    embed = discord.Embed(
-                        title="Keine Kanäle verfügbar",
-                        description="Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
-                        color=discord.Color.red(),
+                    await send_error_response(
+                        interaction,
+                        "Keine Kanäle verfügbar",
+                        "Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
+                        ephemeral=True,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
 
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="Log-Kanal setzen",
                     description="Wähle einen Kanal für die Log-Nachrichten:",
-                    color=discord.Color.blurple(),
                 )
                 view = ChannelView(channels, "logchannel", allow_none=True)
                 await interaction.response.send_message(
@@ -337,18 +339,17 @@ class ConfigCog(commands.Cog):
                     if ch.permissions_for(interaction.guild.me).send_messages
                 ]
                 if not channels:
-                    embed = discord.Embed(
-                        title="Keine Kanäle verfügbar",
-                        description="Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
-                        color=discord.Color.red(),
+                    await send_error_response(
+                        interaction,
+                        "Keine Kanäle verfügbar",
+                        "Es wurden keine Textkanäle gefunden, in die ich schreiben kann.",
+                        ephemeral=True,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
 
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="News-Kanal setzen",
                     description="Wähle einen Kanal für die News-Nachrichten:",
-                    color=discord.Color.blurple(),
                 )
                 view = ChannelView(channels, "newschannel", allow_none=True)
                 await interaction.response.send_message(
@@ -358,18 +359,17 @@ class ConfigCog(commands.Cog):
             elif option == "add_pic_channel":
                 channels = interaction.guild.text_channels
                 if not channels:
-                    embed = discord.Embed(
-                        title="Keine Kanäle verfügbar",
-                        description="Es wurden keine Textkanäle gefunden.",
-                        color=discord.Color.red(),
+                    await send_error_response(
+                        interaction,
+                        "Keine Kanäle verfügbar",
+                        "Es wurden keine Textkanäle gefunden.",
+                        ephemeral=True,
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
 
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="Nur-Bild-Kanal hinzufügen",
                     description="Wähle einen Kanal, der als Nur-Bild-Kanal konfiguriert werden soll:",
-                    color=discord.Color.blurple(),
                 )
                 view = ChannelView(channels, "add_pic_channel")
                 await interaction.response.send_message(

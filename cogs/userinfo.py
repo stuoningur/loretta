@@ -4,9 +4,12 @@ Userinfo Befehle für den Loretta Discord Bot
 
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 from typing import Optional
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success, log_command_error
+from utils.responses import send_error_response
+from utils.formatting import format_member_status
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +35,11 @@ class UserInfo(commands.Cog):
                 converter = commands.MemberConverter()
                 target_user = await converter.convert(ctx, user)
             except commands.MemberNotFound:
-                await ctx.send("Benutzer nicht gefunden. Bitte überprüfe die Eingabe.")
+                await send_error_response(
+                    ctx,
+                    "Benutzer nicht gefunden",
+                    "Benutzer nicht gefunden. Bitte überprüfe die Eingabe.",
+                )
                 logger.warning(
                     f"Userinfo-Befehl: Benutzer nicht gefunden - {ctx.author}"
                 )
@@ -53,22 +60,25 @@ class UserInfo(commands.Cog):
         embed = await self.create_userinfo_embed(target_user, ctx.author)
 
         await ctx.send(embed=embed)
-        logger.info(
-            f"Userinfo-Befehl ausgeführt von {ctx.author} für Benutzer {target_user.name}"
+        log_command_success(
+            logger, "userinfo", ctx.author, ctx.guild, target_user=target_user.name
         )
 
     async def create_userinfo_embed(self, user, requester):
         """Erstellt ein Userinfo-Embed für die gegebenen Benutzer"""
-        embed = discord.Embed(
+        embed = EmbedFactory.command_response_embed(
             title="Benutzer Informationen",
-            color=user.color
-            if user.color != discord.Color.default()
-            else discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
+            description="",
+            color=(
+                user.color
+                if user.color != discord.Color.default()
+                else discord.Color.blurple()
+            ),
+            requester=requester,
+            thumbnail_url=user.display_avatar.url,
         )
 
-        # Benutzer-Avatar hinzufügen
-        embed.set_thumbnail(url=user.display_avatar.url)
+        # Thumbnail wird bereits durch command_response_embed gesetzt
 
         # Grundinformationen
         embed.add_field(
@@ -101,15 +111,7 @@ class UserInfo(commands.Cog):
         # Server-spezifische Informationen
         if isinstance(user, discord.Member):
             # Status und Aktivität
-            status_text = {
-                discord.Status.online: "Online",
-                discord.Status.idle: "Abwesend",
-                discord.Status.dnd: "Bitte nicht stören",
-                discord.Status.offline: "Offline",
-            }
-
-            # Hol den Status vom status_text
-            status_info = f"**Status:** {status_text.get(user.status, 'Unbekannt')}"
+            status_info = f"**Status:** {format_member_status(user.status)}"
 
             # Aktivität hinzufügen falls vorhanden (Custom Activities überspringen)
             if user.activities:
@@ -173,11 +175,7 @@ class UserInfo(commands.Cog):
                     inline=False,
                 )
 
-        # Footer
-        embed.set_footer(
-            text=f"Angefordert von {requester.display_name}",
-            icon_url=requester.display_avatar.url,
-        )
+        # Footer wird bereits durch command_response_embed gesetzt
 
         return embed
 
@@ -209,11 +207,22 @@ async def userinfo_context_menu(interaction: discord.Interaction, user: discord.
 
         embed = await userinfo_cog.create_userinfo_embed(user, interaction.user)
         await interaction.response.send_message(embed=embed)
-        logger.info(
-            f"Userinfo-Kontextmenü verwendet von {interaction.user} für Benutzer {user.name}"
+        log_command_success(
+            logger,
+            "userinfo-context",
+            interaction.user,
+            interaction.guild,
+            target_user=user.name,
         )
     except Exception as e:
-        logger.error(f"Fehler beim Senden der Userinfo über Kontextmenü: {e}")
+        log_command_error(
+            logger,
+            "userinfo-context",
+            interaction.user,
+            interaction.guild,
+            e,
+            target_user=user.name,
+        )
         await interaction.response.send_message(
             "Fehler beim Anzeigen der Benutzerinformationen.", ephemeral=True
         )

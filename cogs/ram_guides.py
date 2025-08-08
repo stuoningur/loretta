@@ -6,6 +6,7 @@ Enthält alle RAM-bezogenen Kommandos (OC, Timings, SPD, etc.)
 import logging
 import discord
 from discord.ext import commands
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ class RamGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.hardwareluxx.de/community/threads/ryzen-ram-oc-thread-m%C3%B6gliche-limitierungen.1216557/",
             description="In diesem Thread werde ich Informationen zum Thema RAM OC Allgemein sammeln, sowie nennenswerte Anleitungen oder Threads verlinken. Habt ihr Fragen zum Thema RAM OC oder braucht Hilfe euren RAM zu übertakten, dann seid ihr hier im richtigen Thread. Zögert nicht zu fragen, wir helfen gerne weiter.\n\nChannel: <#506902038215655424>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/isFPomg.png")
         embed.set_thumbnail(url="https://i.imgur.com/RZVRV7K.png")
@@ -38,6 +40,10 @@ class RamGuidesCog(commands.Cog):
             name="Reous (Mr. AMD)",
             url="https://www.hardwareluxx.de/community/members/reous.55847/",
             icon_url="https://i.imgur.com/ArBeYmq.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)
@@ -56,6 +62,7 @@ class RamGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://docs.google.com/spreadsheets/d/1HKPVfDcFO-aieAOXHFQZp15rwWadbPTVDNgO8vtyDCM",
             description="Eine Sammlung an RAM OC Ergebnissen übersichtlich in einem Google Sheet dargestellt.\n\nChannel: <#590255495592542219>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/14yKUIi.png")
         embed.set_thumbnail(url="https://i.imgur.com/OE94LR0.png")
@@ -64,11 +71,17 @@ class RamGuidesCog(commands.Cog):
             url="https://www.hardwareluxx.de/community/members/shaav.25323/",
             icon_url="https://i.imgur.com/DB4ei4M.png",
         )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
+        )
 
         await ctx.send(embed=embed)
 
     @commands.hybrid_command(
-        name="manual", aliases=["anleitung"], description="Link zu der RAM OC Anleitung"
+        name="anleitung",
+        aliases=["manual"],
+        description="Link zu der RAM OC Anleitung",
     )
     async def ram_manual(self, ctx: commands.Context) -> None:
         """Zeigt Link zur RAM OC Anleitung"""
@@ -79,6 +92,7 @@ class RamGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.computerbase.de/forum/threads/amd-ryzen-ram-oc-community.1829356/",
             description="Wir versuchen nicht nur höhere RAM-Taktstufen zu erreichen, sondern auch die dazugehörigen Haupt- & Subtimings auf das System abgestimmt zu optimieren.",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.add_field(
             name="Download",
@@ -97,6 +111,10 @@ class RamGuidesCog(commands.Cog):
             url="https://www.computerbase.de/forum/members/cm87.771841/",
             icon_url="https://i.imgur.com/Fci12gO.png",
         )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
+        )
 
         await ctx.send(embed=embed)
 
@@ -114,6 +132,7 @@ class RamGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.computerbase.de/thema/ram/rangliste/",
             description="In der Prozessor- und der Grafikkarten-Rangliste spricht ComputerBase bereits seit vier Jahren monatlich CPU- und GPU-Kaufempfehlungen aus. Ab sofort gibt es auch eine Kaufberatung für Arbeitsspeicher. Deren Pflege verantwortet die Community.\n\nChannel: <#612647199737774104>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.set_image(url="https://i.imgur.com/pOsPkxk.png")
         embed.set_thumbnail(url="https://i.imgur.com/Iml7Mgn.png")
@@ -121,6 +140,10 @@ class RamGuidesCog(commands.Cog):
             name="SV3N",
             url="https://www.computerbase.de/forum/members/sv3n.774722/",
             icon_url="https://i.imgur.com/cjo3SMD.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)
@@ -137,6 +160,7 @@ class RamGuidesCog(commands.Cog):
             colour=discord.Color.blurple(),
             url="https://www.hardwareluxx.de/community/threads/hardwareluxx-spd-datenbank-anleitung-zum-ic-auslesen-v3-update-14-02-20.1073628/",
             description="Sammelthread auf Hardwareluxx für SPD Daten von DDR1 bis DDR4 inkl. Anleitung zum Auslesen der Daten.\n\nChannel: <#545701084409233438>",
+            timestamp=datetime.now(timezone.utc),
         )
         embed.add_field(
             name="Siehe auch",
@@ -149,6 +173,10 @@ class RamGuidesCog(commands.Cog):
             name="emissary42",
             url="https://www.hardwareluxx.de/community/members/emissary42.38573/",
             icon_url="https://i.imgur.com/DcfAykw.png",
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)

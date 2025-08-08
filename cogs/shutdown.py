@@ -6,6 +6,7 @@ Enthält den graceful shutdown Befehl für Bot-Owner
 import discord
 from discord.ext import commands
 import logging
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,11 @@ class Shutdown(commands.Cog):
             title="Bot wird heruntergefahren",
             description="Der Bot wird jetzt kontrolliert heruntergefahren...",
             color=discord.Color.blurple(),
+            timestamp=datetime.now(timezone.utc),
+        )
+        embed.set_footer(
+            text=f"Angefordert von {ctx.author.display_name}",
+            icon_url=ctx.author.display_avatar.url,
         )
 
         await ctx.send(embed=embed)
