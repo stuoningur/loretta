@@ -2,8 +2,11 @@
 Sgehdn Befehl für den Loretta Discord Bot
 """
 
-from discord.ext import commands
 import logging
+
+from discord.ext import commands
+
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +27,7 @@ class Sgehdn(commands.Cog):
         # Sende das GIF direkt
         await ctx.send("https://tenor.com/view/sgehdn-hi-hello-wave-greet-gif-17067641")
 
-        logger.info(f"Sgehdn-Befehl ausgeführt von {ctx.author}")
+        log_command_success(logger, "sgehdn", ctx.author, ctx.guild)
 
 
 async def setup(bot):

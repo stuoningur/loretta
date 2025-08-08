@@ -4,9 +4,11 @@ Enthält Kommandos für BIOS/UEFI/AGESA Übersichten
 """
 
 import logging
+from datetime import datetime, timezone
+
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
+
 
 logger = logging.getLogger(__name__)
 

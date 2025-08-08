@@ -2,9 +2,11 @@
 Command Synchronisierungs-Befehle für den Loretta Discord Bot
 """
 
-from discord.ext import commands
-import discord
 import logging
+
+import discord
+from discord.ext import commands
+
 
 logger = logging.getLogger(__name__)
 

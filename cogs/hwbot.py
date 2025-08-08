@@ -4,9 +4,11 @@ Enthält Kommandos für HWBOT Competition Informationen
 """
 
 import logging
-import discord
+
 from discord.ext import commands
-from datetime import datetime, timezone
+
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -24,13 +26,9 @@ class HwbotCog(commands.Cog):
     )
     async def hwbot_info(self, ctx: commands.Context) -> None:
         """Zeigt HWBOT Team CUP 2023 Informationen"""
-        logger.info(f"HWBOT command ausgeführt von {ctx.author} in {ctx.guild}")
-
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="HWBOT Team CUP 2023",
-            colour=discord.Color.blurple(),
-            url="",
-            timestamp=datetime.now(timezone.utc),
+            requester=ctx.author,
             description="""[**rules**](https://hwbot.org/benchmarkRules)
 
 [**AMD CPU**](https://hwbot.org/competition/TC2023AMD/)
@@ -96,17 +94,8 @@ Stage 3 - SuperPi - 32M - DDR2
 - Only use DDR5 SDRAM memory.
 - Only use processors using socket AM5.""",
         )
-        embed.set_author(
-            name="Loretta",
-            url="",
-            icon_url="",
-        )
-        embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
-            icon_url=ctx.author.display_avatar.url,
-        )
-
         await ctx.send(embed=embed)
+        log_command_success(logger, "hwbot", ctx.author, ctx.guild)
 
 
 async def setup(bot: commands.Bot) -> None:

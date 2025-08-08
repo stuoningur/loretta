@@ -2,11 +2,13 @@
 Random Befehl für den Loretta Discord Bot
 """
 
-import discord
-from discord.ext import commands
-from datetime import datetime, timezone
 import logging
 import random
+from datetime import datetime, timezone
+
+import discord
+from discord.ext import commands
+
 
 logger = logging.getLogger(__name__)
 

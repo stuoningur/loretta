@@ -640,10 +640,10 @@ class DatabaseManager:
     # Spezifikations-Methoden
 
     async def add_specification(
-        self, 
-        specification: Specification, 
+        self,
+        specification: Specification,
         user: Optional[Union[discord.User, discord.Member]] = None,
-        guild: Optional[discord.Guild] = None
+        guild: Optional[discord.Guild] = None,
     ) -> bool:
         """
         Fügt Benutzer-Spezifikationen hinzu oder aktualisiert sie.
@@ -689,9 +689,17 @@ class DatabaseManager:
                 await db.commit()
 
             # Erstelle aussagekräftige Log-Nachricht
-            user_info = f"{user.name} ({specification.user_id})" if user else str(specification.user_id)
-            guild_info = f"{guild.name} ({specification.guild_id})" if guild else str(specification.guild_id)
-            
+            user_info = (
+                f"{user.name} ({specification.user_id})"
+                if user
+                else str(specification.user_id)
+            )
+            guild_info = (
+                f"{guild.name} ({specification.guild_id})"
+                if guild
+                else str(specification.guild_id)
+            )
+
             logger.info(
                 f"Spezifikationen für Benutzer {user_info} in Guild {guild_info} hinzugefügt/aktualisiert"
             )
@@ -741,11 +749,11 @@ class DatabaseManager:
             return None
 
     async def remove_specification(
-        self, 
-        guild_id: int, 
+        self,
+        guild_id: int,
         user_id: int,
         user: Optional[Union[discord.User, discord.Member]] = None,
-        guild: Optional[discord.Guild] = None
+        guild: Optional[discord.Guild] = None,
     ) -> bool:
         """
         Entfernt die Spezifikationen eines Benutzers.
@@ -770,7 +778,7 @@ class DatabaseManager:
             # Erstelle aussagekräftige Log-Nachricht
             user_info = f"{user.name} ({user_id})" if user else str(user_id)
             guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
-            
+
             logger.info(
                 f"Spezifikationen für Benutzer {user_info} in Guild {guild_info} entfernt"
             )

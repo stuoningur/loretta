@@ -3,14 +3,16 @@ ComputerBase News Cog für den Loretta Discord Bot
 Überwacht ComputerBase RSS-Feed nach Hardware-News
 """
 
-import discord
-from discord.ext import commands, tasks
-import aiohttp
-import feedparser
 import logging
+import asyncio
 from datetime import datetime, timezone
 from typing import Optional, List
-import asyncio
+
+import discord
+import aiohttp
+import feedparser
+from discord.ext import commands, tasks
+
 from utils.database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
 

@@ -3,10 +3,12 @@ Cog-Management-Befehle für den Loretta Discord Bot
 Enthält Cog-Management-Befehle (laden, entladen, neuladen)
 """
 
-import discord
-from discord.ext import commands
 import logging
 from pathlib import Path
+
+import discord
+from discord.ext import commands
+
 
 logger = logging.getLogger(__name__)
 

@@ -2,9 +2,11 @@
 Serverinfo Befehle für den Loretta Discord Bot
 """
 
+import logging
+
 import discord
 from discord.ext import commands
-import logging
+
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
 from utils.responses import send_error_response

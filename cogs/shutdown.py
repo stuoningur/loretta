@@ -3,10 +3,12 @@ Shutdown-Befehl für den Loretta Discord Bot
 Enthält den graceful shutdown Befehl für Bot-Owner
 """
 
-import discord
-from discord.ext import commands
 import logging
-from datetime import datetime, timezone
+
+from discord.ext import commands
+
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -28,25 +30,20 @@ class Shutdown(commands.Cog):
     async def shutdown_bot(self, ctx):
         """Fährt den Bot kontrolliert herunter"""
 
-        embed = discord.Embed(
+        embed = EmbedFactory.info_command_embed(
             title="Bot wird heruntergefahren",
             description="Der Bot wird jetzt kontrolliert heruntergefahren...",
-            color=discord.Color.blurple(),
-            timestamp=datetime.now(timezone.utc),
-        )
-        embed.set_footer(
-            text=f"Angefordert von {ctx.author.display_name}",
-            icon_url=ctx.author.display_avatar.url,
+            requester=ctx.author,
         )
 
         await ctx.send(embed=embed)
-        logger.info(f"Bot-Herunterfahren wurde von {ctx.author} initiiert")
+        log_command_success(logger, "shutdown", ctx.author, ctx.guild)
 
         # Bot herunterfahren
         try:
             await self.bot.close()
         except Exception as e:
-            logger.error(f"Fehler beim Herunterfahren: {e}")
+            logger.error(f"Fehler beim Herunterfahren des Bots: {e}", exc_info=True)
 
 
 async def setup(bot):

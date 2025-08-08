@@ -82,7 +82,9 @@ class SpecificationsCog(commands.Cog):
         self._search_cache[cache_key] = (results, total_count, time.time())
 
         # Bereinige alte Cache-Einträge periodisch
-        if len(self._search_cache) > 100:  # Willkürliches Limit um Memory-Bloat zu verhindern
+        if (
+            len(self._search_cache) > 100
+        ):  # Willkürliches Limit um Memory-Bloat zu verhindern
             self._cleanup_cache()
 
         return results, total_count
@@ -181,7 +183,9 @@ class SpecificationsCog(commands.Cog):
                 specs_text=specs_text,
             )
 
-            success = await self.bot.db.add_specification(specification, ctx.author, ctx.guild)
+            success = await self.bot.db.add_specification(
+                specification, ctx.author, ctx.guild
+            )
 
             if success:
                 # Invalidiere Suchcache für diese Guild da sich Spezifikationen geändert haben

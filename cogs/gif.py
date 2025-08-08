@@ -2,14 +2,17 @@
 GIF Befehl für den Loretta Discord Bot
 """
 
-import discord
-from discord.ext import commands
-from datetime import datetime, timezone
+import os
 import logging
 import random
-import aiohttp
 import asyncio
-import os
+
+import aiohttp
+from discord.ext import commands
+
+from utils.embeds import EmbedFactory
+from utils.responses import send_error_response, send_response
+from utils.logging import log_command_success, log_command_error
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +34,11 @@ class Gif(commands.Cog):
 
         try:
             if not self.tenor_api:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Tenor API-Schlüssel ist nicht konfiguriert.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
+                await send_error_response(
+                    ctx,
+                    "Konfigurationsfehler",
+                    "Tenor API-Schlüssel ist nicht konfiguriert.",
                 )
-
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-
-                await ctx.send(embed=embed)
                 return
 
             lmt = 30
@@ -54,62 +49,48 @@ class Gif(commands.Cog):
                     url = f"https://api.tenor.com/v1/search?q={arg}&key={self.tenor_api}&limit={lmt}"
                     async with session.get(url) as api_request:
                         if api_request.status != 200:
-                            embed = discord.Embed(
-                                title="Fehler",
-                                description="Fehler beim Suchen von GIFs. Versuche es später erneut.",
-                                color=discord.Color.red(),
-                                timestamp=datetime.now(timezone.utc),
+                            await send_error_response(
+                                ctx,
+                                "API Fehler",
+                                "Fehler beim Suchen von GIFs. Versuche es später erneut.",
                             )
-                            embed.set_footer(
-                                text=f"Angefordert von {ctx.author.display_name}",
-                                icon_url=ctx.author.display_avatar.url,
+                            log_command_error(
+                                logger,
+                                "gif",
+                                ctx.author,
+                                ctx.guild,
+                                Exception(
+                                    f"Tenor API returned status {api_request.status}"
+                                ),
                             )
-                            await ctx.send(embed=embed)
                             return
 
                         response = await api_request.json()
 
-            except (aiohttp.ClientError, asyncio.TimeoutError):
-                embed = discord.Embed(
-                    title="Verbindungsfehler",
-                    description="Konnte keine Verbindung zur Tenor API herstellen. Versuche es später erneut.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
+            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                await send_error_response(
+                    ctx,
+                    "Verbindungsfehler",
+                    "Konnte keine Verbindung zur Tenor API herstellen. Versuche es später erneut.",
                 )
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-                await ctx.send(embed=embed)
+                log_command_error(logger, "gif", ctx.author, ctx.guild, e)
                 return
             except Exception as e:
-                logger.error(f"Unerwarteter Fehler beim GIF-Abruf: {e}")
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="Ein unerwarteter Fehler ist aufgetreten. Versuche es später erneut.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
+                await send_error_response(
+                    ctx,
+                    "Unerwarteter Fehler",
+                    "Ein unerwarteter Fehler ist aufgetreten. Versuche es später erneut.",
                 )
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-                await ctx.send(embed=embed)
+                log_command_error(logger, "gif", ctx.author, ctx.guild, e)
                 return
 
             # Handle JSON parsing and response validation
             if not response or "results" not in response:
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="Keine GIFs gefunden",
                     description=f"Keine GIFs für '{arg}' gefunden.",
-                    color=discord.Color.orange(),
-                    timestamp=datetime.now(timezone.utc),
                 )
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-                await ctx.send(embed=embed)
+                await send_response(ctx, embed)
                 return
 
             gifs = []
@@ -119,38 +100,28 @@ class Gif(commands.Cog):
 
             if gifs:
                 await ctx.send(random.choice(gifs))
-                logger.info(
-                    f"GIF-Befehl ausgeführt von {ctx.author} mit Suchbegriff: '{arg}'"
+                log_command_success(
+                    logger,
+                    "gif",
+                    ctx.author,
+                    ctx.guild,
+                    search_term=arg,
+                    results_count=len(gifs),
                 )
             else:
-                embed = discord.Embed(
+                embed = EmbedFactory.info_embed(
                     title="Keine GIFs gefunden",
                     description=f"Keine GIFs für '{arg}' gefunden.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
                 )
-                embed.set_footer(
-                    text=f"Angefordert von {ctx.author.display_name}",
-                    icon_url=ctx.author.display_avatar.url,
-                )
-                await ctx.send(embed=embed)
+                await send_response(ctx, embed)
 
         except Exception as e:
-            logger.error(f"Fehler beim Suchen von GIFs: {e}")
-
-            embed = discord.Embed(
-                title="Fehler",
-                description="Ein Fehler ist beim Suchen von GIFs aufgetreten.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
+            await send_error_response(
+                ctx,
+                "Fehler",
+                "Ein Fehler ist beim Suchen von GIFs aufgetreten.",
             )
-
-            embed.set_footer(
-                text=f"Angefordert von {ctx.author.display_name}",
-                icon_url=ctx.author.display_avatar.url,
-            )
-
-            await ctx.send(embed=embed)
+            log_command_error(logger, "gif", ctx.author, ctx.guild, e)
 
 
 async def setup(bot):

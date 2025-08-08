@@ -2,8 +2,11 @@
 Schmutz Befehl für den Loretta Discord Bot
 """
 
-from discord.ext import commands
 import logging
+
+from discord.ext import commands
+
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ class Schmutz(commands.Cog):
             "https://tenor.com/view/schmutz-dirt-filth-write-word-gif-16247714"
         )
 
-        logger.info(f"Schmutz-Befehl ausgeführt von {ctx.author}")
+        log_command_success(logger, "schmutz", ctx.author, ctx.guild)
 
 
 async def setup(bot):
