@@ -39,7 +39,6 @@ class SoftwareCheck(commands.Cog):
         """Initialisiert die HTTP-Session und startet den RSS-Check"""
         self.session = aiohttp.ClientSession()
         self.check_rss_feed.start()
-        logger.info("Software Check Cog geladen und RSS-Überwachung gestartet")
 
     async def cog_unload(self):
         """Stoppt die RSS-Überwachung und schließt die HTTP-Session"""
@@ -407,4 +406,4 @@ class SoftwareCheck(commands.Cog):
 async def setup(bot):
     """Lädt das Software Check Cog"""
     await bot.add_cog(SoftwareCheck(bot))
-    logger.info("Software Check Cog geladen")
+    logger.info("Software Check Cog geladen und RSS-Überwachung gestartet")

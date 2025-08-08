@@ -16,7 +16,6 @@ class RamGuidesCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        logger.info("RAM Guides Cog initialisiert")
 
     @commands.hybrid_command(
         name="limit",
@@ -185,3 +184,4 @@ class RamGuidesCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the cog to the bot"""
     await bot.add_cog(RamGuidesCog(bot))
+    logger.info("RAM Guides Cog geladen")

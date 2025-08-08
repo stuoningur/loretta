@@ -32,7 +32,6 @@ class Hardwareluxx(commands.Cog):
         timeout = aiohttp.ClientTimeout(total=30)  # 30 second timeout
         self.session = aiohttp.ClientSession(timeout=timeout)
         self.check_rss_feed.start()
-        logger.info("Hardwareluxx News Cog geladen und RSS-Überwachung gestartet")
 
     async def cog_unload(self):
         """Stoppt die RSS-Überwachung und schließt die HTTP-Session"""
@@ -469,4 +468,4 @@ class Hardwareluxx(commands.Cog):
 async def setup(bot):
     """Lädt das Hardwareluxx Hardware-News Cog"""
     await bot.add_cog(Hardwareluxx(bot))
-    logger.info("Hardwareluxx Hardware-News Cog geladen")
+    logger.info("Hardwareluxx News Cog geladen und RSS-Überwachung gestartet")

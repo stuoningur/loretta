@@ -16,7 +16,6 @@ class HwbotCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        logger.info("HWBOT Cog initialisiert")
 
     @commands.hybrid_command(
         name="hwbot",
@@ -113,3 +112,4 @@ Stage 3 - SuperPi - 32M - DDR2
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the cog to the bot"""
     await bot.add_cog(HwbotCog(bot))
+    logger.info("HWBOT Cog geladen")

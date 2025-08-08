@@ -32,7 +32,6 @@ class ComputerBase(commands.Cog):
         timeout = aiohttp.ClientTimeout(total=30)  # 30 second timeout
         self.session = aiohttp.ClientSession(timeout=timeout)
         self.check_rss_feed.start()
-        logger.info("ComputerBase News Cog geladen und RSS-Überwachung gestartet")
 
     async def cog_unload(self):
         """Stoppt die RSS-Überwachung und schließt die HTTP-Session"""
@@ -456,4 +455,4 @@ class ComputerBase(commands.Cog):
 async def setup(bot):
     """Lädt das ComputerBase Hardware-News Cog"""
     await bot.add_cog(ComputerBase(bot))
-    logger.info("ComputerBase Hardware-News Cog geladen")
+    logger.info("ComputerBase News Cog geladen und RSS-Überwachung gestartet")

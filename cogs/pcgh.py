@@ -34,7 +34,6 @@ class PCGH(commands.Cog):
         """Initialisiert die HTTP-Session und startet den RSS-Check"""
         self.session = aiohttp.ClientSession()
         self.check_rss_feed.start()
-        logger.info("PCGH News Cog geladen und RSS-Überwachung gestartet")
 
     async def cog_unload(self):
         """Stoppt die RSS-Überwachung und schließt die HTTP-Session"""
@@ -496,4 +495,4 @@ class PCGH(commands.Cog):
 async def setup(bot):
     """Lädt das PCGH Hardware-News Cog"""
     await bot.add_cog(PCGH(bot))
-    logger.info("PCGH Hardware-News Cog geladen")
+    logger.info("PCGH News Cog geladen und RSS-Überwachung gestartet")

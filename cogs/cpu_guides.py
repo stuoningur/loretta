@@ -16,7 +16,6 @@ class CpuGuidesCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        logger.info("CPU Guides Cog initialisiert")
 
     @commands.hybrid_command(
         name="cpu", description="Link zu dem Community CPU und Bios Guide"
@@ -91,3 +90,4 @@ class CpuGuidesCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the cog to the bot"""
     await bot.add_cog(CpuGuidesCog(bot))
+    logger.info("CPU Guides Cog geladen")

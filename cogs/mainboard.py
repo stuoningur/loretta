@@ -16,7 +16,6 @@ class MainboardCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        logger.info("Mainboard Cog initialisiert")
 
     @commands.hybrid_command(
         name="mainboard",
@@ -52,3 +51,4 @@ class MainboardCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """Setup function to add the cog to the bot"""
     await bot.add_cog(MainboardCog(bot))
+    logger.info("Mainboard Cog geladen")

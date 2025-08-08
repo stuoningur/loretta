@@ -16,7 +16,6 @@ class BiosCog(commands.Cog):
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        logger.info("BIOS Cog initialisiert")
 
     @commands.hybrid_command(
         name="bios", description="Link zu der besten AM4 BIOS Übersicht"
@@ -52,3 +51,4 @@ class BiosCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     """Setup-Funktion zum Hinzufügen des Cogs zum Bot"""
     await bot.add_cog(BiosCog(bot))
+    logger.info("BIOS Cog geladen")
