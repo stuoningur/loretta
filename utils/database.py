@@ -98,12 +98,15 @@ class DatabaseManager:
             # Gib Standard-Konfiguration bei Fehler zurück
             return GuildConfig(guild_id=guild_id)
 
-    async def set_guild_config(self, config: GuildConfig) -> bool:
+    async def set_guild_config(
+        self, config: GuildConfig, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Setzt die Guild-Konfiguration für eine Guild.
 
         Args:
             config: GuildConfig-Objekt mit der neuen Konfiguration
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -127,22 +130,31 @@ class DatabaseManager:
                 )
                 await db.commit()
 
-            logger.info(f"Guild-Konfiguration für Guild {config.guild_id} aktualisiert")
+            guild_info = (
+                f"{guild.name} ({config.guild_id})" if guild else str(config.guild_id)
+            )
+            logger.info(f"Guild-Konfiguration für Guild {guild_info} aktualisiert")
             return True
 
         except Exception as e:
+            guild_info = (
+                f"{guild.name} ({config.guild_id})" if guild else str(config.guild_id)
+            )
             logger.error(
-                f"Fehler beim Setzen der Guild-Konfiguration für Guild {config.guild_id}: {e}"
+                f"Fehler beim Setzen der Guild-Konfiguration für Guild {guild_info}: {e}"
             )
             return False
 
-    async def set_command_prefix(self, guild_id: int, prefix: str) -> bool:
+    async def set_command_prefix(
+        self, guild_id: int, prefix: str, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Setzt das Command-Prefix für eine Guild.
 
         Args:
             guild_id: Discord Guild-ID
             prefix: Neues Command-Prefix
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -150,21 +162,28 @@ class DatabaseManager:
         try:
             config = await self.get_guild_config(guild_id)
             config.command_prefix = prefix
-            return await self.set_guild_config(config)
+            return await self.set_guild_config(config, guild)
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Setzen des Command-Prefix für Guild {guild_id}: {e}"
+                f"Fehler beim Setzen des Command-Prefix für Guild {guild_info}: {e}"
             )
             return False
 
-    async def set_log_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
+    async def set_log_channel(
+        self,
+        guild_id: int,
+        channel_id: Optional[int],
+        guild: Optional[discord.Guild] = None,
+    ) -> bool:
         """
         Setzt den Log-Kanal für eine Guild.
 
         Args:
             guild_id: Discord Guild-ID
             channel_id: Kanal-ID für Logging, None zum Deaktivieren
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -172,19 +191,28 @@ class DatabaseManager:
         try:
             config = await self.get_guild_config(guild_id)
             config.log_channel_id = channel_id
-            return await self.set_guild_config(config)
+            return await self.set_guild_config(config, guild)
 
         except Exception as e:
-            logger.error(f"Fehler beim Setzen des Log-Kanals für Guild {guild_id}: {e}")
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
+            logger.error(
+                f"Fehler beim Setzen des Log-Kanals für Guild {guild_info}: {e}"
+            )
             return False
 
-    async def set_news_channel(self, guild_id: int, channel_id: Optional[int]) -> bool:
+    async def set_news_channel(
+        self,
+        guild_id: int,
+        channel_id: Optional[int],
+        guild: Optional[discord.Guild] = None,
+    ) -> bool:
         """
         Setzt den News-Kanal für eine Guild.
 
         Args:
             guild_id: Discord Guild-ID
             channel_id: Kanal-ID für News, None zum Deaktivieren
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -192,21 +220,25 @@ class DatabaseManager:
         try:
             config = await self.get_guild_config(guild_id)
             config.news_channel_id = channel_id
-            return await self.set_guild_config(config)
+            return await self.set_guild_config(config, guild)
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Setzen des News-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Setzen des News-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
-    async def add_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
+    async def add_picture_only_channel(
+        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Fügt einen Kanal zur Liste der Nur-Bild-Kanäle hinzu.
 
         Args:
             guild_id: Discord Guild-ID
             channel_id: Kanal-ID zum Hinzufügen
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -215,22 +247,26 @@ class DatabaseManager:
             config = await self.get_guild_config(guild_id)
             if channel_id not in config.picture_only_channels:
                 config.picture_only_channels.append(channel_id)
-                return await self.set_guild_config(config)
+                return await self.set_guild_config(config, guild)
             return True
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Hinzufügen des Nur-Bild-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Hinzufügen des Nur-Bild-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
-    async def remove_picture_only_channel(self, guild_id: int, channel_id: int) -> bool:
+    async def remove_picture_only_channel(
+        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Entfernt einen Kanal aus der Liste der Nur-Bild-Kanäle.
 
         Args:
             guild_id: Discord Guild-ID
             channel_id: Kanal-ID zum Entfernen
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -239,12 +275,13 @@ class DatabaseManager:
             config = await self.get_guild_config(guild_id)
             if channel_id in config.picture_only_channels:
                 config.picture_only_channels.remove(channel_id)
-                return await self.set_guild_config(config)
+                return await self.set_guild_config(config, guild)
             return True
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Entfernen des Nur-Bild-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Entfernen des Nur-Bild-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
@@ -378,12 +415,19 @@ class DatabaseManager:
 
     # Geburtstags-Verwaltungs-Methoden
 
-    async def add_birthday(self, birthday: Birthday) -> bool:
+    async def add_birthday(
+        self,
+        birthday: Birthday,
+        guild: Optional[discord.Guild] = None,
+        user: Optional[Union[discord.User, discord.Member]] = None,
+    ) -> bool:
         """
         Fügt einen Benutzer-Geburtstag hinzu oder aktualisiert ihn.
 
         Args:
             birthday: Birthday-Objekt mit Benutzer-Geburtstagsinformationen
+            guild: Discord Guild Objekt für bessere Logs (optional)
+            user: Discord User/Member Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -403,8 +447,16 @@ class DatabaseManager:
                 )
                 await db.commit()
 
+            user_info = (
+                f"{user.name} ({birthday.user_id})" if user else str(birthday.user_id)
+            )
+            guild_info = (
+                f"{guild.name} ({birthday.guild_id})"
+                if guild
+                else str(birthday.guild_id)
+            )
             logger.info(
-                f"Geburtstag für Benutzer {birthday.user_id} in Guild {birthday.guild_id} hinzugefügt"
+                f"Geburtstag für Benutzer {user_info} in Guild {guild_info} hinzugefügt"
             )
             return True
 
@@ -412,13 +464,21 @@ class DatabaseManager:
             logger.error(f"Fehler beim Hinzufügen des Geburtstags: {e}")
             return False
 
-    async def remove_birthday(self, guild_id: int, user_id: int) -> bool:
+    async def remove_birthday(
+        self,
+        guild_id: int,
+        user_id: int,
+        guild: Optional[discord.Guild] = None,
+        user: Optional[Union[discord.User, discord.Member]] = None,
+    ) -> bool:
         """
         Entfernt einen Benutzer-Geburtstag.
 
         Args:
             guild_id: Discord Guild-ID
             user_id: Discord Benutzer-ID
+            guild: Discord Guild Objekt für bessere Logs (optional)
+            user: Discord User/Member Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -431,8 +491,10 @@ class DatabaseManager:
                 )
                 await db.commit()
 
+            user_info = f"{user.name} ({user_id})" if user else str(user_id)
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.info(
-                f"Geburtstag für Benutzer {user_id} in Guild {guild_id} entfernt"
+                f"Geburtstag für Benutzer {user_info} in Guild {guild_info} entfernt"
             )
             return True
 
@@ -548,7 +610,10 @@ class DatabaseManager:
             return []
 
     async def set_birthday_channel(
-        self, guild_id: int, channel_id: Optional[int]
+        self,
+        guild_id: int,
+        channel_id: Optional[int],
+        guild: Optional[discord.Guild] = None,
     ) -> bool:
         """
         Setzt den Geburtstags-Ankündigungs-Kanal für eine Guild.
@@ -556,6 +621,7 @@ class DatabaseManager:
         Args:
             guild_id: Discord Guild-ID
             channel_id: Discord Kanal-ID, None zum Deaktivieren
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
@@ -563,30 +629,35 @@ class DatabaseManager:
         try:
             config = await self.get_guild_config(guild_id)
             config.birthday_channel_id = channel_id
-            return await self.set_guild_config(config)
+            return await self.set_guild_config(config, guild)
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Setzen des Geburtstags-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Setzen des Geburtstags-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
-    async def remove_birthday_channel(self, guild_id: int) -> bool:
+    async def remove_birthday_channel(
+        self, guild_id: int, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Entfernt den Geburtstags-Ankündigungs-Kanal für eine Guild.
 
         Args:
             guild_id: Discord Guild-ID
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
         """
         try:
-            return await self.set_birthday_channel(guild_id, None)
+            return await self.set_birthday_channel(guild_id, None, guild)
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Entfernen des Geburtstags-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Entfernen des Geburtstags-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
@@ -629,7 +700,9 @@ class DatabaseManager:
             logger.error(f"Fehler beim Abrufen aller Geburtstags-Kanäle: {e}")
             return []
 
-    async def add_birthday_channel(self, guild_id: int, channel_id: int) -> bool:
+    async def add_birthday_channel(
+        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+    ) -> bool:
         """
         Fügt einen Geburtstags-Ankündigungs-Kanal für eine Guild hinzu.
         Alias für set_birthday_channel für Rückwärtskompatibilität.
@@ -637,16 +710,18 @@ class DatabaseManager:
         Args:
             guild_id: Discord Guild-ID
             channel_id: Discord Kanal-ID für Geburtstags-Ankündigungen
+            guild: Discord Guild Objekt für bessere Logs (optional)
 
         Returns:
             True wenn erfolgreich, False andernfalls
         """
         try:
-            return await self.set_birthday_channel(guild_id, channel_id)
+            return await self.set_birthday_channel(guild_id, channel_id, guild)
 
         except Exception as e:
+            guild_info = f"{guild.name} ({guild_id})" if guild else str(guild_id)
             logger.error(
-                f"Fehler beim Hinzufügen des Geburtstags-Kanals für Guild {guild_id}: {e}"
+                f"Fehler beim Hinzufügen des Geburtstags-Kanals für Guild {guild_info}: {e}"
             )
             return False
 
