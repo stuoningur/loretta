@@ -7,13 +7,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# SQL-Schema für Server-Konfigurationen
-SERVER_CONFIG_SCHEMA = """
-CREATE TABLE IF NOT EXISTS server_config (
+# SQL-Schema für Guild-Konfigurationen
+GUILD_CONFIG_SCHEMA = """
+CREATE TABLE IF NOT EXISTS guild_config (
     guild_id INTEGER PRIMARY KEY,
     command_prefix TEXT NOT NULL DEFAULT '!',
     log_channel_id INTEGER,
     news_channel_id INTEGER,
+    birthday_channel_id INTEGER,
     picture_only_channels TEXT,  -- JSON-Array von Kanal-IDs
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -21,12 +22,12 @@ CREATE TABLE IF NOT EXISTS server_config (
 """
 
 # Trigger um den updated_at Zeitstempel zu aktualisieren
-UPDATE_TIMESTAMP_TRIGGER = """
-CREATE TRIGGER IF NOT EXISTS update_server_config_timestamp 
-    AFTER UPDATE ON server_config
+UPDATE_GUILD_CONFIG_TIMESTAMP_TRIGGER = """
+CREATE TRIGGER IF NOT EXISTS update_guild_config_timestamp 
+    AFTER UPDATE ON guild_config
     FOR EACH ROW
 BEGIN
-    UPDATE server_config SET updated_at = CURRENT_TIMESTAMP WHERE guild_id = NEW.guild_id;
+    UPDATE guild_config SET updated_at = CURRENT_TIMESTAMP WHERE guild_id = NEW.guild_id;
 END;
 """
 
@@ -54,16 +55,6 @@ CREATE TABLE IF NOT EXISTS birthdays (
 );
 """
 
-# SQL-Schema für Geburtstags-Kanäle
-BIRTHDAY_CHANNELS_SCHEMA = """
-CREATE TABLE IF NOT EXISTS birthday_channels (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    guild_id INTEGER NOT NULL,
-    channel_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(guild_id, channel_id)
-);
-"""
 
 # SQL-Schema für Benutzer-Spezifikationen
 SPECIFICATIONS_SCHEMA = """
@@ -100,6 +91,14 @@ SPECIFICATIONS_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_specifications_updated_at ON specifications(updated_at DESC);",
 ]
 
+# Indizes für Geburtstage-Performance
+BIRTHDAYS_INDEXES = [
+    # Index für Guild-basierte Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_birthdays_guild_id ON birthdays(guild_id);",
+    # Index für Geburtstags-Matching (Monat/Tag Abfragen)
+    "CREATE INDEX IF NOT EXISTS idx_birthdays_date_lookup ON birthdays(guild_id, birth_month, birth_day);",
+]
+
 
 async def initialize_database(db_path: str) -> None:
     """
@@ -110,11 +109,11 @@ async def initialize_database(db_path: str) -> None:
     """
     try:
         async with aiosqlite.connect(db_path) as db:
-            # Erstelle server_config Tabelle
-            await db.execute(SERVER_CONFIG_SCHEMA)
+            # Erstelle guild_config Tabelle
+            await db.execute(GUILD_CONFIG_SCHEMA)
 
             # Erstelle Zeitstempel-Update-Trigger
-            await db.execute(UPDATE_TIMESTAMP_TRIGGER)
+            await db.execute(UPDATE_GUILD_CONFIG_TIMESTAMP_TRIGGER)
 
             # Erstelle RSS-Einträge Tabelle
             await db.execute(RSS_ENTRIES_SCHEMA)
@@ -122,17 +121,18 @@ async def initialize_database(db_path: str) -> None:
             # Erstelle Geburtstags-Tabelle
             await db.execute(BIRTHDAYS_SCHEMA)
 
-            # Erstelle Geburtstags-Kanäle Tabelle
-            await db.execute(BIRTHDAY_CHANNELS_SCHEMA)
-
             # Erstelle Spezifikations-Tabelle
             await db.execute(SPECIFICATIONS_SCHEMA)
 
             # Erstelle Spezifikations-Zeitstempel-Update-Trigger
             await db.execute(UPDATE_SPECS_TIMESTAMP_TRIGGER)
 
-            # Erstelle Performance-Indizes
+            # Erstelle Performance-Indizes für Spezifikationen
             for index_sql in SPECIFICATIONS_INDEXES:
+                await db.execute(index_sql)
+
+            # Erstelle Performance-Indizes für Geburtstage
+            for index_sql in BIRTHDAYS_INDEXES:
                 await db.execute(index_sql)
 
             # Übertrage Änderungen

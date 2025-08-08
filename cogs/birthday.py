@@ -143,12 +143,20 @@ class BirthdayCog(commands.Cog):
                 logger.warning(f"Guild {guild_id} nicht gefunden")
                 return
 
-            # Hole die konfigurierten Geburtstags-Kanäle für diese Guild
-            birthday_channels = await self.bot.db.get_birthday_channels(guild_id)
+            # Hole den konfigurierten Geburtstags-Kanal für diese Guild
+            birthday_channel_id = await self.bot.db.get_birthday_channel(guild_id)
 
-            if not birthday_channels:
+            if not birthday_channel_id:
                 logger.info(
-                    f"Keine Geburtstags-Kanäle für Guild {guild.name} konfiguriert"
+                    f"Kein Geburtstags-Kanal für Guild {guild.name} konfiguriert"
+                )
+                return
+
+            # Hole das Channel-Objekt
+            birthday_channel = guild.get_channel(birthday_channel_id)
+            if not birthday_channel:
+                logger.warning(
+                    f"Geburtstags-Kanal {birthday_channel_id} für Guild {guild.name} nicht gefunden"
                 )
                 return
 
@@ -169,23 +177,15 @@ class BirthdayCog(commands.Cog):
                 )
                 return
 
-            # Sende Nachrichten in alle konfigurierten Kanäle
-            for channel_id in birthday_channels:
-                channel = guild.get_channel(channel_id)
-                if not channel:
-                    logger.warning(
-                        f"Geburtstags-Kanal {channel_id} in Guild {guild.name} nicht gefunden"
-                    )
-                    continue
+            # Überprüfe Bot-Berechtigungen
+            if not birthday_channel.permissions_for(guild.me).send_messages:
+                logger.warning(
+                    f"Keine Berechtigung zum Senden in Kanal {birthday_channel.name} in Guild {guild.name}"
+                )
+                return
 
-                # Überprüfe Bot-Berechtigungen
-                if not channel.permissions_for(guild.me).send_messages:
-                    logger.warning(
-                        f"Keine Berechtigung zum Senden in Kanal {channel.name} in Guild {guild.name}"
-                    )
-                    continue
-
-                await self._send_birthday_message(channel, birthday_users)
+            # Sende Nachricht in den konfigurierten Kanal
+            await self._send_birthday_message(birthday_channel, birthday_users)
 
         except Exception as e:
             logger.error(

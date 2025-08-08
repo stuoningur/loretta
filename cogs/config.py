@@ -266,7 +266,7 @@ class ConfigCog(commands.Cog):
 
         try:
             guild_id = interaction.guild.id
-            config = await self.bot.db.get_server_config(guild_id)
+            config = await self.bot.db.get_guild_config(guild_id)
             await self._show_config(interaction, config)
         except Exception as e:
             log_command_error(
@@ -368,7 +368,7 @@ class ConfigCog(commands.Cog):
             elif option == "remove_pic_channel":
                 try:
                     guild_id = interaction.guild.id
-                    config = await self.bot.db.get_server_config(guild_id)
+                    config = await self.bot.db.get_guild_config(guild_id)
                 except Exception as e:
                     logger.error(
                         f"Fehler beim Laden der Konfiguration für remove_pic_channel: {e}"
@@ -444,53 +444,49 @@ class ConfigCog(commands.Cog):
             elif option == "remove_birthday_channel":
                 try:
                     guild_id = interaction.guild.id
-                    birthday_channel_ids = await self.bot.db.get_birthday_channels(
+                    birthday_channel_id = await self.bot.db.get_birthday_channel(
                         guild_id
                     )
                 except Exception as e:
-                    logger.error(f"Fehler beim Laden der Geburtstags-Kanäle: {e}")
+                    logger.error(f"Fehler beim Laden des Geburtstags-Kanals: {e}")
                     embed = discord.Embed(
                         title="Datenbankfehler",
-                        description="Die Geburtstags-Kanäle konnten nicht geladen werden.",
+                        description="Der Geburtstags-Kanal konnte nicht geladen werden.",
                         color=discord.Color.red(),
                     )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
 
-                if not birthday_channel_ids:
+                if not birthday_channel_id:
                     embed = discord.Embed(
-                        title="Keine Geburtstags-Kanäle",
-                        description="Es sind keine Geburtstags-Kanäle konfiguriert.",
+                        title="Kein Geburtstags-Kanal",
+                        description="Es ist kein Geburtstags-Kanal konfiguriert.",
                         color=discord.Color.red(),
                     )
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
 
-                # Nur die konfigurierten Kanäle anzeigen
-                configured_channels = []
-                for channel_id in birthday_channel_ids:
-                    channel = interaction.guild.get_channel(channel_id)
-                    if channel:
-                        configured_channels.append(channel)
+                # Direkt entfernen da nur ein Kanal konfiguriert ist
+                success = await self.bot.db.remove_birthday_channel(guild_id)
 
-                if not configured_channels:
+                if success:
+                    channel = interaction.guild.get_channel(birthday_channel_id)
+                    channel_name = (
+                        channel.mention if channel else f"<#{birthday_channel_id}>"
+                    )
                     embed = discord.Embed(
-                        title="Keine gültigen Kanäle",
-                        description="Alle konfigurierten Geburtstags-Kanäle sind nicht mehr verfügbar.",
+                        title="Geburtstags-Kanal entfernt",
+                        description=f"{channel_name} wurde aus den Geburtstags-Benachrichtigungen entfernt.",
+                        color=discord.Color.green(),
+                    )
+                else:
+                    embed = discord.Embed(
+                        title="Fehler",
+                        description="Der Geburtstags-Kanal konnte nicht entfernt werden.",
                         color=discord.Color.red(),
                     )
-                    await interaction.response.send_message(embed=embed, ephemeral=True)
-                    return
 
-                embed = discord.Embed(
-                    title="Geburtstags-Kanal entfernen",
-                    description="Wähle einen Kanal, der aus den Geburtstags-Benachrichtigungen entfernt werden soll:",
-                    color=discord.Color.blurple(),
-                )
-                view = ChannelView(configured_channels, "remove_birthday_channel")
-                await interaction.response.send_message(
-                    embed=embed, view=view, ephemeral=True
-                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
 
         except Exception as e:
             logger.error(f"Fehler bei Konfigurationsoption {option}: {e}")
@@ -513,7 +509,7 @@ class ConfigCog(commands.Cog):
 
         try:
             guild_id = interaction.guild.id
-            config = await self.bot.db.get_server_config(guild_id)
+            config = await self.bot.db.get_guild_config(guild_id)
             await self._set_prefix_direct(interaction, config, new_prefix)
         except Exception as e:
             logger.error(f"Fehler beim Setzen des Prefix: {e}")
@@ -536,7 +532,7 @@ class ConfigCog(commands.Cog):
 
         try:
             guild_id = interaction.guild.id
-            config = await self.bot.db.get_server_config(guild_id)
+            config = await self.bot.db.get_guild_config(guild_id)
 
             if config_type == "logchannel":
                 await self._set_log_channel_direct(interaction, config, channel_id)
@@ -550,8 +546,9 @@ class ConfigCog(commands.Cog):
                 )
             elif config_type == "add_birthday_channel" and channel_id is not None:
                 await self._add_birthday_channel_direct(interaction, channel_id)
-            elif config_type == "remove_birthday_channel" and channel_id is not None:
-                await self._remove_birthday_channel_direct(interaction, channel_id)
+            elif config_type == "remove_birthday_channel":
+                # Für remove_birthday_channel ignorieren wir channel_id da nur ein Kanal gesetzt werden kann
+                await self._remove_birthday_channel_direct(interaction)
 
         except Exception as e:
             logger.error(f"Fehler beim Setzen des Kanals ({config_type}): {e}")
@@ -810,50 +807,76 @@ class ConfigCog(commands.Cog):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        success = await self.bot.db.add_birthday_channel(
-            interaction.guild.id, channel.id
+        # Prüfe ob bereits ein Kanal konfiguriert ist
+        existing_channel_id = await self.bot.db.get_birthday_channel(
+            interaction.guild.id
         )
 
-        if success:
-            embed = discord.Embed(
-                title="Geburtstags-Kanal hinzugefügt",
-                description=f"{channel.mention} wurde als Geburtstags-Benachrichtigungskanal konfiguriert.",
-                color=discord.Color.green(),
-            )
-        else:
+        if existing_channel_id == channel.id:
             embed = discord.Embed(
                 title="Bereits konfiguriert",
                 description=f"{channel.mention} ist bereits als Geburtstags-Kanal konfiguriert.",
-                color=discord.Color.red(),
+                color=discord.Color.orange(),
             )
+        else:
+            success = await self.bot.db.add_birthday_channel(
+                interaction.guild.id, channel.id
+            )
+
+            if success:
+                if existing_channel_id:
+                    old_channel = interaction.guild.get_channel(existing_channel_id)
+                    old_channel_name = (
+                        old_channel.mention
+                        if old_channel
+                        else f"<#{existing_channel_id}>"
+                    )
+                    embed = discord.Embed(
+                        title="Geburtstags-Kanal aktualisiert",
+                        description=f"Geburtstags-Benachrichtigungen werden jetzt in {channel.mention} gesendet (vorher: {old_channel_name}).",
+                        color=discord.Color.green(),
+                    )
+                else:
+                    embed = discord.Embed(
+                        title="Geburtstags-Kanal hinzugefügt",
+                        description=f"{channel.mention} wurde als Geburtstags-Benachrichtigungskanal konfiguriert.",
+                        color=discord.Color.green(),
+                    )
+            else:
+                embed = discord.Embed(
+                    title="Fehler",
+                    description="Der Geburtstags-Kanal konnte nicht konfiguriert werden.",
+                    color=discord.Color.red(),
+                )
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    async def _remove_birthday_channel_direct(
-        self, interaction: discord.Interaction, channel_id: int
-    ):
-        """Entfernt einen Geburtstags-Kanal direkt"""
+    async def _remove_birthday_channel_direct(self, interaction: discord.Interaction):
+        """Entfernt den Geburtstags-Kanal direkt"""
         if not interaction.guild:
             return
 
-        channel = interaction.guild.get_channel(channel_id)
-        if not channel:
+        # Hole den aktuell konfigurierten Kanal
+        birthday_channel_id = await self.bot.db.get_birthday_channel(
+            interaction.guild.id
+        )
+        if not birthday_channel_id:
             embed = discord.Embed(
-                title="Kanal nicht gefunden",
-                description="Der angegebene Kanal konnte nicht gefunden werden.",
+                title="Kein Geburtstags-Kanal",
+                description="Es ist kein Geburtstags-Kanal konfiguriert.",
                 color=discord.Color.red(),
             )
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        success = await self.bot.db.remove_birthday_channel(
-            interaction.guild.id, channel.id
-        )
+        success = await self.bot.db.remove_birthday_channel(interaction.guild.id)
 
         if success:
+            channel = interaction.guild.get_channel(birthday_channel_id)
+            channel_name = channel.mention if channel else f"<#{birthday_channel_id}>"
             embed = discord.Embed(
                 title="Geburtstags-Kanal entfernt",
-                description=f"{channel.mention} wurde aus den Geburtstags-Benachrichtigungen entfernt.",
+                description=f"{channel_name} wurde aus den Geburtstags-Benachrichtigungen entfernt.",
                 color=discord.Color.green(),
             )
         else:
@@ -903,24 +926,21 @@ class ConfigCog(commands.Cog):
                     pic_channel_names.append(f"Unbekannt (ID: {channel_id})")
             pic_channels_text = ", ".join(pic_channel_names)
 
-        # Geburtstags-Kanäle anzeigen
-        birthday_channels_text = "Keine konfiguriert"
+        # Geburtstags-Kanal anzeigen
+        birthday_channel_text = "Nicht konfiguriert"
         try:
-            birthday_channel_ids = await self.bot.db.get_birthday_channels(
+            birthday_channel_id = await self.bot.db.get_birthday_channel(
                 interaction.guild.id
             )
-            if birthday_channel_ids:
-                birthday_channel_names = []
-                for channel_id in birthday_channel_ids:
-                    channel = interaction.guild.get_channel(channel_id)
-                    if channel:
-                        birthday_channel_names.append(f"#{channel.name}")
-                    else:
-                        birthday_channel_names.append(f"Unbekannt (ID: {channel_id})")
-                birthday_channels_text = ", ".join(birthday_channel_names)
+            if birthday_channel_id:
+                channel = interaction.guild.get_channel(birthday_channel_id)
+                if channel:
+                    birthday_channel_text = f"#{channel.name}"
+                else:
+                    birthday_channel_text = f"Unbekannt (ID: {birthday_channel_id})"
         except Exception as e:
-            logger.error(f"Fehler beim Abrufen der Geburtstags-Kanäle für Anzeige: {e}")
-            birthday_channels_text = "Fehler beim Laden"
+            logger.error(f"Fehler beim Abrufen des Geburtstags-Kanals für Anzeige: {e}")
+            birthday_channel_text = "Fehler beim Laden"
 
         embed = discord.Embed(
             title="Serverkonfiguration",
@@ -934,7 +954,7 @@ class ConfigCog(commands.Cog):
         embed.add_field(name="News-Kanal", value=news_channel_text, inline=True)
         embed.add_field(name="Nur-Bild-Kanäle", value=pic_channels_text, inline=False)
         embed.add_field(
-            name="Geburtstags-Kanäle", value=birthday_channels_text, inline=False
+            name="Geburtstags-Kanal", value=birthday_channel_text, inline=False
         )
         embed.set_footer(text="Verwende /config um Einstellungen zu ändern")
 

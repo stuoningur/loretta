@@ -29,7 +29,7 @@ class MemberLogCog(commands.Cog):
                 return
 
             # Hole Server-Konfiguration
-            config = await self.bot.db.get_server_config(member.guild.id)
+            config = await self.bot.db.get_guild_config(member.guild.id)
 
             # Prüfe ob Log-Kanal konfiguriert ist
             if not config.log_channel_id:
@@ -97,7 +97,7 @@ class MemberLogCog(commands.Cog):
                 return
 
             # Hole Server-Konfiguration
-            config = await self.bot.db.get_server_config(member.guild.id)
+            config = await self.bot.db.get_guild_config(member.guild.id)
 
             # Prüfe ob Log-Kanal konfiguriert ist
             if not config.log_channel_id:

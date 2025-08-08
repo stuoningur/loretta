@@ -48,6 +48,29 @@ class LorettaBot(commands.Bot):
         self.db_path = os.getenv("DATABASE_PATH", "data/loretta.db")
         self.db = DatabaseManager(self.db_path)
 
+        # Owner ID Setup
+        self.configured_owner_id = None
+        owner_id_str = os.getenv("OWNER_ID")
+        if owner_id_str:
+            try:
+                self.configured_owner_id = int(owner_id_str)
+                logger.info(f"Bot Owner ID gesetzt auf: {self.configured_owner_id}")
+            except ValueError:
+                logger.error(
+                    f"Ungültige OWNER_ID in Umgebungsvariablen: {owner_id_str}"
+                )
+        else:
+            logger.warning("Keine OWNER_ID in Umgebungsvariablen gesetzt")
+
+    async def is_owner(self, user):
+        """Überprüft ob ein Benutzer der Bot-Owner ist"""
+        # Verwende konfigurierte Owner-ID falls gesetzt
+        if self.configured_owner_id:
+            return user.id == self.configured_owner_id
+
+        # Fallback auf Standard-Discord.py is_owner Verhalten
+        return await super().is_owner(user)
+
     async def get_prefix(self, message):
         """Dynamische Prefix-Funktion die Einstellungen aus der Datenbank lädt"""
         # Behandle Grenzfälle wo Nachricht None sein könnte oder Guild fehlt
@@ -55,7 +78,7 @@ class LorettaBot(commands.Bot):
             return "!"  # Standard-Prefix für DMs oder ungültige Messages
 
         try:
-            config = await self.db.get_server_config(message.guild.id)
+            config = await self.db.get_guild_config(message.guild.id)
             return config.command_prefix
         except Exception as e:
             logger.error(
@@ -138,8 +161,8 @@ class LorettaBot(commands.Bot):
 
         # Erstelle Standardkonfiguration für neuen Server
         try:
-            config = await self.db.get_server_config(guild.id)
-            await self.db.set_server_config(config)
+            config = await self.db.get_guild_config(guild.id)
+            await self.db.set_guild_config(config)
             logger.info(f"Standardkonfiguration für Server {guild.id} erstellt")
         except Exception as e:
             logger.error(

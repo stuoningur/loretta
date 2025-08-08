@@ -232,7 +232,7 @@ class Hardwareluxx(commands.Cog):
         """Zeigt Informationen über die Hardwareluxx Hardware-News Überwachung"""
         try:
             # Aktuellen News-Kanal für diesen Server abrufen
-            config = await self.db_manager.get_server_config(ctx.guild.id)
+            config = await self.db_manager.get_guild_config(ctx.guild.id)
             news_channel_id = config.news_channel_id
 
             embed = discord.Embed(
