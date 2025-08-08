@@ -557,7 +557,10 @@ class BirthdayCog(commands.Cog):
 
     # Admin Testing Commands
 
-    @commands.hybrid_command(name="birthday_test")
+    @commands.hybrid_command(
+        name="birthday_test",
+        description="Testet die Geburtstags-Benachrichtigungen manuell (nur für Admins)",
+    )
     @commands.has_permissions(administrator=True)
     @track_command_usage
     async def test_birthday_notifications(self, ctx):
@@ -597,7 +600,10 @@ class BirthdayCog(commands.Cog):
             )
             await ctx.send(f"Fehler beim Testen: {str(e)}")
 
-    @commands.hybrid_command(name="birthday_status")
+    @commands.hybrid_command(
+        name="birthday_status",
+        description="Zeigt den Status der Geburtstags-Task an (nur für Admins)",
+    )
     @commands.has_permissions(administrator=True)
     @track_command_usage
     async def birthday_task_status(self, ctx):

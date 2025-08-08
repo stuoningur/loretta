@@ -25,7 +25,7 @@ CACHE_TTL = 300  # Cache-Lebensdauer in Sekunden (5 Minuten)
 logger = logging.getLogger(__name__)
 
 
-class SpecificationsCog(commands.Cog):
+class Specs(commands.Cog):
     """Cog für Hardware-Spezifikationen der Benutzer"""
 
     def __init__(self, bot):
@@ -97,7 +97,12 @@ class SpecificationsCog(commands.Cog):
         for key in keys_to_remove:
             del self._search_cache[key]
 
-    @commands.hybrid_group(name="specs", aliases=["s"], invoke_without_command=True)
+    @commands.hybrid_group(
+        name="specs",
+        aliases=["s"],
+        invoke_without_command=True,
+        description="Hardware-Spezifikationen verwalten und anzeigen",
+    )
     @commands.guild_only()
     @track_command_usage
     async def specs(self, ctx: commands.Context, *, user: Optional[str] = None):
@@ -540,8 +545,8 @@ async def show_user_specs_context(
         )
 
         # Hole die Cog-Instanz um die Embed-Erstellungsmethode zu verwenden
-        cog = interaction.client.get_cog("SpecificationsCog")
-        if cog and isinstance(cog, SpecificationsCog):
+        cog = interaction.client.get_cog("Specs")
+        if cog and isinstance(cog, Specs):
             embed = cog._create_specifications_embed(
                 specification, user, interaction.user
             )
@@ -564,7 +569,7 @@ async def show_user_specs_context(
 
 
 async def setup(bot):
-    await bot.add_cog(SpecificationsCog(bot))
+    await bot.add_cog(Specs(bot))
 
     # Füge das Kontext-Menü zum Command Tree hinzu
     bot.tree.add_command(show_user_specs_context)

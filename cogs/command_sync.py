@@ -18,7 +18,9 @@ class CommandSync(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="sync")
+    @commands.hybrid_command(
+        name="sync", description="Synchronisiert Slash-Commands (nur Bot-Besitzer)"
+    )
     @commands.is_owner()
     @track_command_usage
     async def sync_commands(self, ctx, scope: str = "server"):

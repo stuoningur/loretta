@@ -80,6 +80,7 @@ class CogManagement(commands.Cog):
         name="load",
         description="Lädt ein Cog",
     )
+    @commands.is_owner()
     @track_command_usage
     async def load_cog(self, ctx, *, cog_name: str):
         """Lädt ein spezifisches Cog"""
@@ -132,6 +133,7 @@ class CogManagement(commands.Cog):
         name="unload",
         description="Entlädt ein Cog",
     )
+    @commands.is_owner()
     @track_command_usage
     async def unload_cog(self, ctx, *, cog_name: str):
         """Entlädt ein spezifisches Cog"""
@@ -185,6 +187,7 @@ class CogManagement(commands.Cog):
         name="listcogs",
         description="Zeigt alle verfügbaren und geladenen Cogs an",
     )
+    @commands.is_owner()
     @track_command_usage
     async def list_cogs(self, ctx):
         """Zeigt eine Liste aller verfügbaren und geladenen Cogs"""
@@ -227,6 +230,7 @@ class CogManagement(commands.Cog):
         name="reloadall",
         description="Lädt alle geladenen Cogs neu",
     )
+    @commands.is_owner()
     @track_command_usage
     async def reload_all_cogs(self, ctx):
         """Lädt alle momentan geladenen Cogs neu"""

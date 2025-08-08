@@ -23,7 +23,7 @@ class HwbotCog(commands.Cog):
     @commands.hybrid_command(
         name="hwbot",
         aliases=["rrocc"],
-        description="Link zu dem Community Curve Optimizer Guide",
+        description="HWBOT Team CUP 2023 Informationen",
     )
     @track_command_usage
     async def hwbot_info(self, ctx: commands.Context) -> None:
