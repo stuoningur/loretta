@@ -4,9 +4,12 @@ Enthält Kommandos für CPU Optimierung und Curve Optimizer
 """
 
 import logging
+from datetime import datetime, timezone
+
 import discord
 from discord.ext import commands
-from datetime import datetime, timezone
+
+from utils.logging import log_command_success
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +25,7 @@ class CpuGuidesCog(commands.Cog):
     )
     async def cpu_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Community CPU und BIOS Guide"""
-        logger.info(f"CPU command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "cpu", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="CPU und BIOS Guide für Ryzen 3000 (und älter)",
@@ -55,7 +58,7 @@ class CpuGuidesCog(commands.Cog):
     )
     async def curve_optimizer_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Community Curve Optimizer Guide"""
-        logger.info(f"Curve command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "curve", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="Curve Optimizer Guide Ryzen 5000",

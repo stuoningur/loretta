@@ -22,6 +22,7 @@ def format_guild_info(guild: Optional[discord.Guild]) -> str:
 def format_user_info(user: Union[discord.Member, discord.User]) -> str:
     """
     Formatiert Benutzer-Informationen konsistent
+    Format: DisplayName (ID)
 
     Args:
         user: Member oder User-Objekt
@@ -29,7 +30,8 @@ def format_user_info(user: Union[discord.Member, discord.User]) -> str:
     Returns:
         Formatierter Benutzer-Info-String
     """
-    return f"{user} ({user.id})"
+    display_name = user.display_name if hasattr(user, "display_name") else user.name
+    return f"{display_name} ({user.id})"
 
 
 def format_channel_info(channel: Optional[discord.abc.GuildChannel]) -> str:
@@ -56,6 +58,7 @@ def format_command_context(
 ) -> str:
     """
     Formatiert Command-Context für Logging
+    Format: Guild Name (ID) - User DisplayName (ID) - Command run - additional details
 
     Args:
         command_name: Name des Commands
@@ -66,14 +69,25 @@ def format_command_context(
     Returns:
         Formatierter Context-String für Logging
     """
+    # Guild Name (ID)
     guild_info = format_guild_info(guild)
-    user_info = format_user_info(user)
 
-    base_info = f"{command_name} ausgeführt von {user_info} in {guild_info}"
+    # User DisplayName (ID)
+    user_display_name = (
+        user.display_name if hasattr(user, "display_name") else user.name
+    )
+    user_info = f"{user_display_name} ({user.id})"
 
+    # Command run
+    command_info = f"Command '{command_name}' run"
+
+    # Base format: Guild Name (ID) - User DisplayName (ID) - Command run
+    base_info = f"{guild_info} - {user_info} - {command_info}"
+
+    # Additional details
     if kwargs:
-        extra_info = " ".join([f"{k}={v}" for k, v in kwargs.items()])
-        return f"{base_info} ({extra_info})"
+        extra_info = ", ".join([f"{k}={v}" for k, v in kwargs.items()])
+        return f"{base_info} - {extra_info}"
 
     return base_info
 

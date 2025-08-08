@@ -8,8 +8,8 @@ import logging
 from typing import Optional
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success, log_command_error
-from utils.responses import send_error_response
 from utils.formatting import format_member_status
+from utils.user_resolver import UserResolver
 
 logger = logging.getLogger(__name__)
 
@@ -30,19 +30,9 @@ class UserInfo(commands.Cog):
         if user is None:
             target_user = ctx.author
         else:
-            # Versuche den User zu konvertieren
-            try:
-                converter = commands.MemberConverter()
-                target_user = await converter.convert(ctx, user)
-            except commands.MemberNotFound:
-                await send_error_response(
-                    ctx,
-                    "Benutzer nicht gefunden",
-                    "Benutzer nicht gefunden. Bitte überprüfe die Eingabe.",
-                )
-                logger.warning(
-                    f"Userinfo-Befehl: Benutzer nicht gefunden - {ctx.author}"
-                )
+            # Verwende UserResolver für bessere Benutzersuche
+            target_user = await UserResolver.resolve_user(ctx, user)
+            if not target_user:
                 return
 
         # Hole das Member-Objekt neu vom Server für aktuelle Daten

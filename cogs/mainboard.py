@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
+from utils.logging import log_command_success
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class MainboardCog(commands.Cog):
     )
     async def mainboard_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Hardwareluxx AM4 VRM Thread"""
-        logger.info(f"Mainboard command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "mainboard", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="AMD 3rd Gen AM4 Mainboards & VRM Liste (X570, P560, B550, A520, A420)",

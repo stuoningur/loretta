@@ -15,6 +15,7 @@ from utils.database import Birthday
 from utils.constants import GERMAN_MONTH_NAMES
 from utils.responses import send_error_response
 from utils.embeds import EmbedFactory
+from utils.user_resolver import UserResolver
 
 logger = logging.getLogger(__name__)
 
@@ -216,8 +217,7 @@ class BirthdayCog(commands.Cog):
     )
     @app_commands.describe(
         aktion="Was möchtest du tun?",
-        benutzer="Benutzer für den die Aktion ausgeführt werden soll (nur für Admins)",
-        benutzer_id="Discord User ID für offline Benutzer (nur für Admins)",
+        user="Benutzer für den die Aktion ausgeführt werden soll (nur für Admins)",
     )
     @app_commands.choices(
         aktion=[
@@ -231,8 +231,7 @@ class BirthdayCog(commands.Cog):
         self,
         interaction: discord.Interaction,
         aktion: app_commands.Choice[str],
-        benutzer: Optional[discord.Member] = None,
-        benutzer_id: Optional[str] = None,
+        user: Optional[str] = None,
     ):
         """Hauptkommando für Geburtstage"""
         if not interaction.guild:
@@ -244,39 +243,20 @@ class BirthdayCog(commands.Cog):
             )
             return
 
-        # Validiere Parameter
-        if benutzer and benutzer_id:
-            await send_error_response(
-                interaction,
-                "Fehler",
-                "Du kannst nicht sowohl einen Benutzer als auch eine Benutzer-ID angeben.",
-                ephemeral=True,
-            )
-            return
-
         # Bestimme den Zielbenutzer
-        target_user = None
+        target_user = interaction.user
         is_admin_action = False
 
-        if benutzer_id:
-            # Versuche User ID zu validieren und zu konvertieren
-            try:
-                user_id = int(benutzer_id)
-                target_user = await self.bot.fetch_user(user_id)
-                is_admin_action = True
-            except (ValueError, discord.NotFound, discord.HTTPException):
-                await send_error_response(
-                    interaction,
-                    "Ungültige Benutzer-ID",
-                    "Die angegebene Benutzer-ID ist ungültig oder der Benutzer existiert nicht.",
-                    ephemeral=True,
-                )
+        if user:
+            # Verwende UserResolver für bessere Benutzersuche
+            # Erstelle einen temporären Context für UserResolver
+            from discord.ext import commands
+
+            ctx = await commands.Context.from_interaction(interaction)
+            target_user = await UserResolver.resolve_user(ctx, user)
+            if not target_user:
                 return
-        elif benutzer:
-            target_user = benutzer
-            is_admin_action = benutzer != interaction.user
-        else:
-            target_user = interaction.user
+            is_admin_action = target_user != interaction.user
 
         # Nur Administratoren können Geburtstage für andere Benutzer verwalten
         if is_admin_action:

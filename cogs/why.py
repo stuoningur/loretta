@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
+from utils.logging import log_command_success
+
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,7 @@ class Why(commands.Cog):
 
             await ctx.send(embed=embed)
 
-            logger.info(f"Why-Befehl ausgeführt von {ctx.author}")
+            log_command_success(logger, "why", ctx.author, ctx.guild)
 
         except Exception as e:
             logger.error(f"Fehler beim Ausführen des Why-Befehls: {e}")

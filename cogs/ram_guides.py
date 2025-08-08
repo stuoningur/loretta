@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
+from utils.logging import log_command_success
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,7 @@ class RamGuidesCog(commands.Cog):
     )
     async def ram_limits(self, ctx: commands.Context) -> None:
         """Zeigt Link zu Hardwareluxx RAM OC und Limit Thread"""
-        logger.info(f"Limit command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "limit", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="Ryzen RAM OC Thread + Mögliche Limitierungen",
@@ -56,7 +58,7 @@ class RamGuidesCog(commands.Cog):
     )
     async def ram_results(self, ctx: commands.Context) -> None:
         """Zeigt Link zum OC Ergebnisse Google Sheet"""
-        logger.info(f"Liste command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "liste", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="RAM OC Ergebnisse - Google Sheet",
@@ -86,7 +88,7 @@ class RamGuidesCog(commands.Cog):
     )
     async def ram_manual(self, ctx: commands.Context) -> None:
         """Zeigt Link zur RAM OC Anleitung"""
-        logger.info(f"Manual command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "manual", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="RAM OC Anleitung",
@@ -126,7 +128,7 @@ class RamGuidesCog(commands.Cog):
     )
     async def ram_recommendations(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Computerbase RAM-Empfehlungen Artikel"""
-        logger.info(f"Ramkit command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "ramkit", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="Aus der Community: RAM-Empfehlungen für AMD Ryzen und Intel Core",
@@ -154,7 +156,7 @@ class RamGuidesCog(commands.Cog):
     )
     async def spd_database(self, ctx: commands.Context) -> None:
         """Zeigt Link zur HARDWARELUXX SPD Datenbank"""
-        logger.info(f"SPD command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "spd", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="Hardwareluxx SPD Datenbank",

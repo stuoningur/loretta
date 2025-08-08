@@ -9,6 +9,8 @@ from datetime import datetime, timezone
 import discord
 from discord.ext import commands
 
+from utils.logging import log_command_success
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +26,7 @@ class BiosCog(commands.Cog):
     )
     async def bios_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zur besten AM4/AM5 BIOS Übersicht"""
-        logger.info(f"BIOS command ausgeführt von {ctx.author} in {ctx.guild}")
+        log_command_success(logger, "bios", ctx.author, ctx.guild)
 
         embed = discord.Embed(
             title="Ultimative AM4 & AM5 UEFI/BIOS/AGESA Übersicht",
