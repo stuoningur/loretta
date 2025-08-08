@@ -14,6 +14,7 @@ import feedparser
 from discord.ext import commands, tasks
 
 from utils.database import DatabaseManager
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -217,6 +218,7 @@ class SoftwareCheck(commands.Cog):
         description="Zeigt Informationen über die Software-Überwachung",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def software_info(self, ctx):
         """Zeigt Informationen über die Software-Überwachung"""
         try:
@@ -280,6 +282,7 @@ class SoftwareCheck(commands.Cog):
         name="software_test", description="Testet die Software-Check Funktionalität"
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def test_software_check(self, ctx):
         """Testet den RSS-Feed Check manuell"""
         await ctx.defer()

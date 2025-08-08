@@ -7,6 +7,7 @@ import logging
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class Sgehdn(commands.Cog):
         name="sgehdn",
         description="Sendet ein Sgehdn GIF",
     )
+    @track_command_usage
     async def sgehdn(self, ctx):
         """Sendet das Sgehdn GIF von Tenor"""
 

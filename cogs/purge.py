@@ -11,6 +11,7 @@ from discord.ext import commands
 from utils.embeds import EmbedFactory
 from utils.responses import send_error_response, send_response
 from utils.logging import log_command_success, log_command_error
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ class Purge(commands.Cog):
         description="Löscht eine bestimmte Anzahl von Nachrichten aus dem aktuellen Kanal",
     )
     @commands.has_permissions(manage_messages=True)
+    @track_command_usage
     async def purge(self, ctx, anzahl: int):
         """Löscht eine bestimmte Anzahl von Nachrichten"""
 

@@ -10,6 +10,7 @@ import psutil
 import platform
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success, BYTES_TO_GB_DIVISOR
+from utils.decorators import track_command_usage
 
 # Constants
 CPU_INTERVAL = 0.1
@@ -28,6 +29,7 @@ class BotInfo(commands.Cog):
         name="botinfo",
         description="Zeigt detaillierte Bot- und Systeminformationen an",
     )
+    @track_command_usage
     async def botinfo(self, ctx):
         """Zeigt detaillierte Bot-Informationen mit System- und Statusdaten"""
 

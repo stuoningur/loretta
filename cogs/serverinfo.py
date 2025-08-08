@@ -10,6 +10,7 @@ from discord.ext import commands
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
 from utils.responses import send_error_response
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class ServerInfo(commands.Cog):
         name="serverinfo",
         description="Zeigt Informationen über den aktuellen Server an",
     )
+    @track_command_usage
     async def serverinfo(self, ctx):
         """Zeigt detaillierte Informationen über den Server an"""
         if not ctx.guild:

@@ -6,6 +6,7 @@ import logging
 
 import discord
 from discord.ext import commands
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class CommandSync(commands.Cog):
 
     @commands.command(name="sync")
     @commands.is_owner()
+    @track_command_usage
     async def sync_commands(self, ctx, scope: str = "server"):
         """
         Löscht den Command-Tree und synchronisiert die Slash-Commands manuell (nur Bot-Besitzer)

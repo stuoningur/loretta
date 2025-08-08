@@ -8,6 +8,7 @@ from pathlib import Path
 
 import discord
 from discord.ext import commands
+from utils.decorators import track_command_usage
 
 # Constants
 MAX_ERROR_MESSAGE_LENGTH = 50
@@ -27,6 +28,7 @@ class CogManagement(commands.Cog):
         description="Lädt ein Cog neu",
     )
     @commands.is_owner()
+    @track_command_usage
     async def reload_cog(self, ctx, *, cog_name: str):
         """Lädt ein spezifisches Cog neu"""
 
@@ -78,6 +80,7 @@ class CogManagement(commands.Cog):
         name="load",
         description="Lädt ein Cog",
     )
+    @track_command_usage
     async def load_cog(self, ctx, *, cog_name: str):
         """Lädt ein spezifisches Cog"""
 
@@ -129,6 +132,7 @@ class CogManagement(commands.Cog):
         name="unload",
         description="Entlädt ein Cog",
     )
+    @track_command_usage
     async def unload_cog(self, ctx, *, cog_name: str):
         """Entlädt ein spezifisches Cog"""
 
@@ -181,6 +185,7 @@ class CogManagement(commands.Cog):
         name="listcogs",
         description="Zeigt alle verfügbaren und geladenen Cogs an",
     )
+    @track_command_usage
     async def list_cogs(self, ctx):
         """Zeigt eine Liste aller verfügbaren und geladenen Cogs"""
 
@@ -222,6 +227,7 @@ class CogManagement(commands.Cog):
         name="reloadall",
         description="Lädt alle geladenen Cogs neu",
     )
+    @track_command_usage
     async def reload_all_cogs(self, ctx):
         """Lädt alle momentan geladenen Cogs neu"""
 

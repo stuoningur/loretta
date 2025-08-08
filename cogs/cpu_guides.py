@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class CpuGuidesCog(commands.Cog):
     @commands.hybrid_command(
         name="cpu", description="Link zu dem Community CPU und Bios Guide"
     )
+    @track_command_usage
     async def cpu_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Community CPU und BIOS Guide"""
         log_command_success(logger, "cpu", ctx.author, ctx.guild)
@@ -56,6 +58,7 @@ class CpuGuidesCog(commands.Cog):
         aliases=["co", "curveoptimizer", "kurvenoptimierer"],
         description="Link zu dem Community Curve Optimizer Guide",
     )
+    @track_command_usage
     async def curve_optimizer_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Community Curve Optimizer Guide"""
         log_command_success(logger, "curve", ctx.author, ctx.guild)

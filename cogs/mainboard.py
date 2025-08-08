@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class MainboardCog(commands.Cog):
         aliases=["mobo", "motherboard", "vrm"],
         description="Link zum Hardwareluxx AM4 VRM Thread",
     )
+    @track_command_usage
     async def mainboard_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Hardwareluxx AM4 VRM Thread"""
         log_command_success(logger, "mainboard", ctx.author, ctx.guild)

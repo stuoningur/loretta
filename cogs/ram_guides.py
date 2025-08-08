@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class RamGuidesCog(commands.Cog):
         aliases=["limits"],
         description="Link zu Hardwareluxx RAM OC und Limit Thread",
     )
+    @track_command_usage
     async def ram_limits(self, ctx: commands.Context) -> None:
         """Zeigt Link zu Hardwareluxx RAM OC und Limit Thread"""
         log_command_success(logger, "limit", ctx.author, ctx.guild)
@@ -56,6 +58,7 @@ class RamGuidesCog(commands.Cog):
         aliases=["list", "ergebnisse"],
         description="Link zum OC Ergebnisse Google Sheet",
     )
+    @track_command_usage
     async def ram_results(self, ctx: commands.Context) -> None:
         """Zeigt Link zum OC Ergebnisse Google Sheet"""
         log_command_success(logger, "liste", ctx.author, ctx.guild)
@@ -86,6 +89,7 @@ class RamGuidesCog(commands.Cog):
         aliases=["manual"],
         description="Link zu der RAM OC Anleitung",
     )
+    @track_command_usage
     async def ram_manual(self, ctx: commands.Context) -> None:
         """Zeigt Link zur RAM OC Anleitung"""
         log_command_success(logger, "manual", ctx.author, ctx.guild)
@@ -126,6 +130,7 @@ class RamGuidesCog(commands.Cog):
         aliases=["ramkits", "ram"],
         description="Link zum Computerbase RAM-Empfehlungen Artikel",
     )
+    @track_command_usage
     async def ram_recommendations(self, ctx: commands.Context) -> None:
         """Zeigt Link zum Computerbase RAM-Empfehlungen Artikel"""
         log_command_success(logger, "ramkit", ctx.author, ctx.guild)
@@ -154,6 +159,7 @@ class RamGuidesCog(commands.Cog):
     @commands.hybrid_command(
         name="spd", aliases=["ics"], description="Link zur HARDWARELUXX SPD Datenbank"
     )
+    @track_command_usage
     async def spd_database(self, ctx: commands.Context) -> None:
         """Zeigt Link zur HARDWARELUXX SPD Datenbank"""
         log_command_success(logger, "spd", ctx.author, ctx.guild)

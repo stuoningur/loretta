@@ -13,6 +13,7 @@ from discord.ext import commands
 from utils.embeds import EmbedFactory
 from utils.responses import send_error_response, send_response
 from utils.logging import log_command_success, log_command_error
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class Gif(commands.Cog):
         aliases=["gifs"],
         description="Sucht die Top 30 GIFs für das Argument und gibt ein Ergebnis zufällig wieder",
     )
+    @track_command_usage
     async def gif(self, ctx, *, arg: str):
         """Sucht die Top 30 GIFs für das Argument und gibt ein Ergebnis zufällig wieder"""
 

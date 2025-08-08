@@ -16,6 +16,7 @@ from utils.constants import GERMAN_MONTH_NAMES
 from utils.responses import send_error_response
 from utils.embeds import EmbedFactory
 from utils.user_resolver import UserResolver
+from utils.decorators import track_command_usage
 
 # Constants
 BIRTHDAY_INPUT_MAX_LENGTH = 6
@@ -558,6 +559,7 @@ class BirthdayCog(commands.Cog):
 
     @commands.hybrid_command(name="birthday_test")
     @commands.has_permissions(administrator=True)
+    @track_command_usage
     async def test_birthday_notifications(self, ctx):
         """Testet die Geburtstags-Benachrichtigungen manuell für diesen Server (nur für Admins)"""
         if not ctx.guild:
@@ -597,6 +599,7 @@ class BirthdayCog(commands.Cog):
 
     @commands.hybrid_command(name="birthday_status")
     @commands.has_permissions(administrator=True)
+    @track_command_usage
     async def birthday_task_status(self, ctx):
         """Zeigt den Status der Geburtstags-Task an (nur für Admins)"""
         try:

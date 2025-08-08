@@ -10,6 +10,7 @@ from utils.embeds import EmbedFactory
 from utils.logging import log_command_success, log_command_error
 from utils.formatting import format_member_status
 from utils.user_resolver import UserResolver
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class UserInfo(commands.Cog):
         name="userinfo",
         description="Zeigt Informationen über einen Benutzer an",
     )
+    @track_command_usage
     async def userinfo(self, ctx, *, user: Optional[str] = None):
         """Zeigt detaillierte Informationen über einen Benutzer an"""
         # Wenn kein User angegeben wurde, verwende den Autor des Befehls

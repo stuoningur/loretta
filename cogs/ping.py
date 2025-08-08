@@ -10,6 +10,7 @@ import asyncio
 import platform
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class Ping(commands.Cog):
         name="ping",
         description="Zeigt die Bot-Latenz an",
     )
+    @track_command_usage
     async def ping(self, ctx):
         """Zeigt Ping-Informationen mit Latenz und API-Antwortzeit"""
 

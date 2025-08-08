@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class Shutdown(commands.Cog):
         description="Fährt den Bot kontrolliert herunter",
     )
     @commands.is_owner()
+    @track_command_usage
     async def shutdown_bot(self, ctx):
         """Fährt den Bot kontrolliert herunter"""
 

@@ -15,6 +15,7 @@ from discord.ext import commands, tasks
 
 from utils.database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +287,7 @@ class PCGH(commands.Cog):
         description="Zeigt Informationen über die PCGH Hardware-News Überwachung",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def pcgh_info(self, ctx):
         """Zeigt Informationen über die PCGH Hardware-News Überwachung"""
         try:
@@ -361,6 +363,7 @@ class PCGH(commands.Cog):
         description="Testet die PCGH Hardware-News Funktionalität",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def test_pcgh_check(self, ctx):
         """Testet die PCGH RSS-Feed Checks manuell"""
         await ctx.defer()

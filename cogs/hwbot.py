@@ -9,6 +9,7 @@ from discord.ext import commands
 
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class HwbotCog(commands.Cog):
         aliases=["rrocc"],
         description="Link zu dem Community Curve Optimizer Guide",
     )
+    @track_command_usage
     async def hwbot_info(self, ctx: commands.Context) -> None:
         """Zeigt HWBOT Team CUP 2023 Informationen"""
         embed = EmbedFactory.info_command_embed(

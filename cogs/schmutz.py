@@ -7,6 +7,7 @@ import logging
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ class Schmutz(commands.Cog):
         name="schmutz",
         description="Sendet ein Schmutz GIF",
     )
+    @track_command_usage
     async def schmutz(self, ctx):
         """Sendet das Schmutz GIF von Tenor"""
 

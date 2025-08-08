@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 
 import discord
 from discord.ext import commands
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class Random(commands.Cog):
         name="random",
         description="Macht Text zufällig groß und klein",
     )
+    @track_command_usage
     async def random(self, ctx, *, text: str):
         """Macht jeden Buchstaben im Text zufällig groß oder klein"""
 

@@ -99,6 +99,36 @@ BIRTHDAYS_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_birthdays_date_lookup ON birthdays(guild_id, birth_month, birth_day);",
 ]
 
+# SQL-Schema für Command-Statistiken
+COMMAND_STATISTICS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS command_statistics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    guild_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    command_name TEXT NOT NULL,
+    cog_name TEXT,
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    success BOOLEAN NOT NULL DEFAULT 1,
+    error_message TEXT
+);
+"""
+
+# Indizes für Command-Statistiken-Performance
+COMMAND_STATISTICS_INDEXES = [
+    # Index für Guild-basierte Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_guild_id ON command_statistics(guild_id);",
+    # Index für Benutzer-basierte Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_user_id ON command_statistics(user_id);",
+    # Index für Command-Name-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_command_name ON command_statistics(command_name);",
+    # Index für Zeitstempel-basierte Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_executed_at ON command_statistics(executed_at DESC);",
+    # Zusammengesetzter Index für häufige Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_guild_command ON command_statistics(guild_id, command_name);",
+    # Index für Erfolg/Fehler-Filter
+    "CREATE INDEX IF NOT EXISTS idx_command_stats_success ON command_statistics(success);",
+]
+
 
 async def initialize_database(db_path: str) -> None:
     """
@@ -133,6 +163,13 @@ async def initialize_database(db_path: str) -> None:
 
             # Erstelle Performance-Indizes für Geburtstage
             for index_sql in BIRTHDAYS_INDEXES:
+                await db.execute(index_sql)
+
+            # Erstelle Command-Statistiken-Tabelle
+            await db.execute(COMMAND_STATISTICS_SCHEMA)
+
+            # Erstelle Performance-Indizes für Command-Statistiken
+            for index_sql in COMMAND_STATISTICS_INDEXES:
                 await db.execute(index_sql)
 
             # Übertrage Änderungen

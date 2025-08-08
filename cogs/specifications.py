@@ -11,7 +11,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from utils.database import Specification
-from utils.decorators import validate_input
+from utils.decorators import validate_input, track_command_usage
 from utils.embeds import EmbedFactory
 from utils.user_resolver import UserResolver
 from utils.pagination import SearchPaginationView
@@ -99,6 +99,7 @@ class SpecificationsCog(commands.Cog):
 
     @commands.hybrid_group(name="specs", aliases=["s"], invoke_without_command=True)
     @commands.guild_only()
+    @track_command_usage
     async def specs(self, ctx: commands.Context, *, user: Optional[str] = None):
         """Hardware-Spezifikationen verwalten und anzeigen"""
         # Zeige Spezifikationen für den angegebenen Benutzer oder den Autor
@@ -112,6 +113,7 @@ class SpecificationsCog(commands.Cog):
 
     @specs.command(name="show")
     @commands.guild_only()
+    @track_command_usage
     async def specs_show(self, ctx: commands.Context, *, user: Optional[str] = None):
         """Zeige Spezifikationen eines Benutzers an"""
         target_user = ctx.author
@@ -154,6 +156,7 @@ class SpecificationsCog(commands.Cog):
     @validate_input(
         min_length=10, max_length=MAX_SPECS_LENGTH, field_name="Spezifikationen"
     )
+    @track_command_usage
     async def specs_set(self, ctx: commands.Context, *, specs_text: str):
         """Setze deine Hardware-Spezifikationen"""
         # Zusätzliche Validierung für Spezifikationen
@@ -217,6 +220,7 @@ class SpecificationsCog(commands.Cog):
 
     @specs.command(name="delete")
     @commands.guild_only()
+    @track_command_usage
     async def specs_delete(self, ctx: commands.Context):
         """Lösche deine Hardware-Spezifikationen"""
         try:
@@ -258,6 +262,7 @@ class SpecificationsCog(commands.Cog):
 
     @specs.command(name="raw")
     @commands.guild_only()
+    @track_command_usage
     async def specs_raw(self, ctx: commands.Context):
         """Zeige deine Spezifikationen als Raw-Text an"""
         try:
@@ -296,6 +301,7 @@ class SpecificationsCog(commands.Cog):
     @specs.command(name="search")
     @commands.guild_only()
     @validate_input(min_length=2, max_length=100, field_name="Suchbegriff")
+    @track_command_usage
     async def specs_search(self, ctx: commands.Context, *, search_term: str):
         """Suche nach Hardware in allen Spezifikationen"""
         try:
@@ -337,6 +343,7 @@ class SpecificationsCog(commands.Cog):
     @specs.command(name="clean")
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
+    @track_command_usage
     async def specs_clean(self, ctx: commands.Context):
         """Bereinige die Spezifikations-Datenbank von Benutzern, die nicht mehr im Server sind"""
 

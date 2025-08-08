@@ -8,6 +8,7 @@ import random
 from utils.embeds import EmbedFactory
 from utils.responses import send_response, send_error_response
 from utils.logging import log_command_success, log_command_error
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class MagicBall(commands.Cog):
         description="Gibt eine Magic 8 Ball Antwort auf eine Frage",
         aliases=["magicball", "loretta"],
     )
+    @track_command_usage
     async def magic_ball(self, ctx, *, question: str):
         """Gibt eine Magic 8 Ball Antwort auf eine Frage zurück"""
 

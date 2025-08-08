@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any
 from utils.embeds import EmbedFactory
 from utils.responses import send_error_response, defer_response
 from utils.logging import log_command_success, log_api_request
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +195,7 @@ class Weather(commands.Cog):
         aliases=["w"],
         description="Zeigt aktuelle Wetterdaten und 6-Tage-Vorhersage für einen Ort an",
     )
+    @track_command_usage
     async def weather(self, ctx, *, location: str):
         """Zeigt Wetterinformationen für einen angegebenen Ort"""
 
@@ -333,6 +335,7 @@ class Weather(commands.Cog):
         aliases=["ws"],
         description="Zeigt kurze Wetterinformationen für einen Ort an",
     )
+    @track_command_usage
     async def weather_short(self, ctx, *, location: str):
         """Zeigt kurze Wetterinformationen für einen angegebenen Ort"""
 

@@ -15,6 +15,7 @@ from discord.ext import commands, tasks
 
 from utils.database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -253,6 +254,7 @@ class ComputerBase(commands.Cog):
         description="Zeigt Informationen über die ComputerBase Hardware-News Überwachung",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def computerbase_info(self, ctx):
         """Zeigt Informationen über die ComputerBase Hardware-News Überwachung"""
         try:
@@ -324,6 +326,7 @@ class ComputerBase(commands.Cog):
         description="Testet die ComputerBase Hardware-News Funktionalität",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def test_computerbase_check(self, ctx):
         """Testet den ComputerBase RSS-Feed Check manuell"""
         await ctx.defer()

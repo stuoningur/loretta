@@ -8,6 +8,7 @@ import random
 from utils.embeds import EmbedFactory
 from utils.responses import send_error_response, send_response
 from utils.logging import log_command_success, log_command_error
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class Roll(commands.Cog):
         aliases=["würfel"],
         description="Würfelt eine Zufallszahl (Standard: 1-100)",
     )
+    @track_command_usage
     async def roll(self, ctx, maximum: int = 100):
         """Würfelt eine Zufallszahl zwischen 1 und dem angegebenen Maximum"""
 

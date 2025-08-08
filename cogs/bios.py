@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ class BiosCog(commands.Cog):
     @commands.hybrid_command(
         name="bios", description="Link zu der besten AM4 BIOS Übersicht"
     )
+    @track_command_usage
     async def bios_guide(self, ctx: commands.Context) -> None:
         """Zeigt Link zur besten AM4/AM5 BIOS Übersicht"""
         log_command_success(logger, "bios", ctx.author, ctx.guild)

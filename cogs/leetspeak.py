@@ -5,6 +5,7 @@ Leetspeak Befehl für den Loretta Discord Bot
 import logging
 
 from discord.ext import commands
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ class Leetspeak(commands.Cog):
         aliases=["leet", "1337"],
         description="Konvertiert Text zu Leet Speak (1337 sp34k)",
     )
+    @track_command_usage
     async def leetspeak(self, ctx, *, text: str):
         """Konvertiert den eingegebenen Text zu Leet Speak"""
 

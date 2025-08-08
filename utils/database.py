@@ -52,6 +52,20 @@ class Specification:
     updated_at: Optional[str] = None
 
 
+@dataclass
+class CommandStatistic:
+    """Datenklasse für Command-Statistiken."""
+
+    id: Optional[int]
+    guild_id: int
+    user_id: int
+    command_name: str
+    cog_name: Optional[str] = None
+    executed_at: Optional[str] = None
+    success: bool = True
+    error_message: Optional[str] = None
+
+
 class DatabaseManager:
     """Manager-Klasse für Datenbankoperationen."""
 
@@ -966,3 +980,221 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Fehler beim Abrufen der Guild-Spezifikationen: {e}")
             return []
+
+    # Command-Statistiken-Methoden
+
+    async def log_command_usage(
+        self,
+        stat: CommandStatistic,
+        user: Optional[Union[discord.User, discord.Member]] = None,
+        guild: Optional[discord.Guild] = None,
+    ) -> bool:
+        """
+        Protokolliert eine Command-Ausführung in der Statistik-Tabelle.
+
+        Args:
+            stat: CommandStatistic-Objekt mit den Ausführungsdetails
+            user: Discord User/Member Objekt für bessere Logs (optional)
+            guild: Discord Guild Objekt für bessere Logs (optional)
+
+        Returns:
+            True wenn erfolgreich, False andernfalls
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute(
+                    """INSERT INTO command_statistics 
+                       (guild_id, user_id, command_name, cog_name, success, error_message)
+                       VALUES (?, ?, ?, ?, ?, ?)""",
+                    (
+                        stat.guild_id,
+                        stat.user_id,
+                        stat.command_name,
+                        stat.cog_name,
+                        stat.success,
+                        stat.error_message,
+                    ),
+                )
+                await db.commit()
+
+            return True
+
+        except Exception as e:
+            user_info = f"{user.name} ({stat.user_id})" if user else str(stat.user_id)
+            guild_info = (
+                f"{guild.name} ({stat.guild_id})" if guild else str(stat.guild_id)
+            )
+            logger.error(
+                f"Fehler beim Protokollieren der Command-Statistik für Benutzer {user_info} in Guild {guild_info}: {e}"
+            )
+            return False
+
+    async def get_command_statistics_summary(
+        self, guild_id: int, days: int = 30
+    ) -> dict:
+        """
+        Holt eine Zusammenfassung der Command-Statistiken für eine Guild.
+
+        Args:
+            guild_id: Discord Guild-ID
+            days: Anzahl der Tage zurück (Standard: 30)
+
+        Returns:
+            Dictionary mit Statistik-Zusammenfassung
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                # Gesamtanzahl Commands
+                cursor = await db.execute(
+                    "SELECT COUNT(*) FROM command_statistics WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')",
+                    (guild_id, days),
+                )
+                result = await cursor.fetchone()
+                total_commands = result[0] if result else 0
+
+                # Erfolgreiche Commands
+                cursor = await db.execute(
+                    "SELECT COUNT(*) FROM command_statistics WHERE guild_id = ? AND success = 1 AND executed_at >= date('now', '-' || ? || ' days')",
+                    (guild_id, days),
+                )
+                result = await cursor.fetchone()
+                successful_commands = result[0] if result else 0
+
+                # Top Commands
+                cursor = await db.execute(
+                    """SELECT command_name, COUNT(*) as count 
+                       FROM command_statistics 
+                       WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
+                       GROUP BY command_name 
+                       ORDER BY count DESC 
+                       LIMIT 10""",
+                    (guild_id, days),
+                )
+                top_commands = await cursor.fetchall()
+
+                # Top Users
+                cursor = await db.execute(
+                    """SELECT user_id, COUNT(*) as count 
+                       FROM command_statistics 
+                       WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
+                       GROUP BY user_id 
+                       ORDER BY count DESC 
+                       LIMIT 10""",
+                    (guild_id, days),
+                )
+                top_users = await cursor.fetchall()
+
+                return {
+                    "total_commands": total_commands,
+                    "successful_commands": successful_commands,
+                    "failed_commands": total_commands - successful_commands,
+                    "success_rate": (
+                        (successful_commands / total_commands * 100)
+                        if total_commands > 0
+                        else 0
+                    ),
+                    "top_commands": [(row[0], row[1]) for row in top_commands],
+                    "top_users": [(row[0], row[1]) for row in top_users],
+                    "days": days,
+                }
+
+        except Exception as e:
+            logger.error(
+                f"Fehler beim Abrufen der Command-Statistiken-Zusammenfassung: {e}"
+            )
+            return {
+                "total_commands": 0,
+                "successful_commands": 0,
+                "failed_commands": 0,
+                "success_rate": 0,
+                "top_commands": [],
+                "top_users": [],
+                "days": days,
+            }
+
+    async def get_user_command_statistics(
+        self, guild_id: int, user_id: int, days: int = 30
+    ) -> dict:
+        """
+        Holt Command-Statistiken für einen spezifischen Benutzer.
+
+        Args:
+            guild_id: Discord Guild-ID
+            user_id: Discord Benutzer-ID
+            days: Anzahl der Tage zurück (Standard: 30)
+
+        Returns:
+            Dictionary mit Benutzer-Statistiken
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                # Gesamtanzahl Commands des Benutzers
+                cursor = await db.execute(
+                    "SELECT COUNT(*) FROM command_statistics WHERE guild_id = ? AND user_id = ? AND executed_at >= date('now', '-' || ? || ' days')",
+                    (guild_id, user_id, days),
+                )
+                result = await cursor.fetchone()
+                total_commands = result[0] if result else 0
+
+                # Erfolgreiche Commands
+                cursor = await db.execute(
+                    "SELECT COUNT(*) FROM command_statistics WHERE guild_id = ? AND user_id = ? AND success = 1 AND executed_at >= date('now', '-' || ? || ' days')",
+                    (guild_id, user_id, days),
+                )
+                result = await cursor.fetchone()
+                successful_commands = result[0] if result else 0
+
+                # Commands des Benutzers
+                cursor = await db.execute(
+                    """SELECT command_name, COUNT(*) as count 
+                       FROM command_statistics 
+                       WHERE guild_id = ? AND user_id = ? AND executed_at >= date('now', '-' || ? || ' days')
+                       GROUP BY command_name 
+                       ORDER BY count DESC""",
+                    (guild_id, user_id, days),
+                )
+                user_commands = await cursor.fetchall()
+
+                # Rang des Benutzers im Server
+                cursor = await db.execute(
+                    """SELECT user_id, COUNT(*) as count 
+                       FROM command_statistics 
+                       WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
+                       GROUP BY user_id 
+                       ORDER BY count DESC""",
+                    (guild_id, days),
+                )
+                all_users = await cursor.fetchall()
+                user_rank = None
+                for i, (uid, _) in enumerate(all_users, 1):
+                    if uid == user_id:
+                        user_rank = i
+                        break
+
+                return {
+                    "total_commands": total_commands,
+                    "successful_commands": successful_commands,
+                    "failed_commands": total_commands - successful_commands,
+                    "success_rate": (
+                        (successful_commands / total_commands * 100)
+                        if total_commands > 0
+                        else 0
+                    ),
+                    "commands_used": [(row[0], row[1]) for row in user_commands],
+                    "server_rank": user_rank,
+                    "total_server_users": len(list(all_users)),
+                    "days": days,
+                }
+
+        except Exception as e:
+            logger.error(f"Fehler beim Abrufen der Benutzer-Command-Statistiken: {e}")
+            return {
+                "total_commands": 0,
+                "successful_commands": 0,
+                "failed_commands": 0,
+                "success_rate": 0,
+                "commands_used": [],
+                "server_rank": None,
+                "total_server_users": 0,
+                "days": days,
+            }

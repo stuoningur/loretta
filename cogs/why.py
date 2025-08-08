@@ -9,6 +9,7 @@ import discord
 from discord.ext import commands
 
 from utils.logging import log_command_success
+from utils.decorators import track_command_usage
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class Why(commands.Cog):
         aliases=["warum"],
         description="Erklärt den Namen des Bots",
     )
+    @track_command_usage
     async def why(self, ctx):
         """Erklärt den Namen des Bots"""
 

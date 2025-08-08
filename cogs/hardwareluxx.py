@@ -15,6 +15,7 @@ from discord.ext import commands, tasks
 
 from utils.database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 
@@ -228,6 +229,7 @@ class Hardwareluxx(commands.Cog):
         description="Zeigt Informationen über die Hardwareluxx Hardware-News Überwachung",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def hardwareluxx_info(self, ctx):
         """Zeigt Informationen über die Hardwareluxx Hardware-News Überwachung"""
         try:
@@ -299,6 +301,7 @@ class Hardwareluxx(commands.Cog):
         description="Testet die Hardwareluxx Hardware-News Funktionalität",
     )
     @commands.has_permissions(manage_channels=True)
+    @track_command_usage
     async def test_hardwareluxx_check(self, ctx):
         """Testet den Hardwareluxx RSS-Feed Check manuell"""
         await ctx.defer()
