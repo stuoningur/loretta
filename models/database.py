@@ -113,6 +113,63 @@ CREATE TABLE IF NOT EXISTS command_statistics (
 );
 """
 
+# SQL-Schema für Memory-Timings
+MEMORY_TIMINGS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS memory_timings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    generation TEXT NOT NULL,
+    name TEXT NOT NULL,
+    rank TEXT,
+    vendor TEXT,
+    ics TEXT,
+    memclk INTEGER,
+    fclk INTEGER,
+    preset TEXT,
+    pdm TEXT,
+    gdm TEXT,
+    vsoc TEXT,
+    vdimm TEXT,
+    vdd TEXT,
+    vddq TEXT,
+    vddio TEXT,
+    vddg TEXT,
+    cldo_vddp TEXT,
+    vddp TEXT,
+    cads TEXT,
+    procodt TEXT,
+    rtts TEXT,
+    tcl INTEGER,
+    trcdrp INTEGER,
+    trcdwr INTEGER,
+    trcd INTEGER,
+    trp INTEGER,
+    tras INTEGER,
+    trc INTEGER,
+    trrds INTEGER,
+    trrdl INTEGER,
+    tfaw INTEGER,
+    twtrs INTEGER,
+    twtrl INTEGER,
+    twr INTEGER,
+    trdrdscl INTEGER,
+    twrwrscl INTEGER,
+    trefi INTEGER,
+    trfc INTEGER,
+    tcwl INTEGER,
+    trtp INTEGER,
+    trdwr INTEGER,
+    twrrd INTEGER,
+    twrwrsc INTEGER,
+    twrwrsd INTEGER,
+    twrwrdd INTEGER,
+    trdrdsc INTEGER,
+    trdrdsd INTEGER,
+    trdrddd INTEGER,
+    tcke INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+"""
+
 # Indizes für Command-Statistiken-Performance
 COMMAND_STATISTICS_INDEXES = [
     # Index für Guild-basierte Abfragen
@@ -127,6 +184,24 @@ COMMAND_STATISTICS_INDEXES = [
     "CREATE INDEX IF NOT EXISTS idx_command_stats_guild_command ON command_statistics(guild_id, command_name);",
     # Index für Erfolg/Fehler-Filter
     "CREATE INDEX IF NOT EXISTS idx_command_stats_success ON command_statistics(success);",
+]
+
+# Indizes für Memory-Timings-Performance
+MEMORY_TIMINGS_INDEXES = [
+    # Index für Generation-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_generation ON memory_timings(generation);",
+    # Index für Hersteller-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_vendor ON memory_timings(vendor);",
+    # Index für Speicher-IC-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_ics ON memory_timings(ics);",
+    # Index für Speichertakt-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_memclk ON memory_timings(memclk);",
+    # Index für FCLK-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_fclk ON memory_timings(fclk);",
+    # Zusammengesetzter Index für häufige Suchabfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_search ON memory_timings(generation, vendor, ics);",
+    # Index für Preset-Abfragen
+    "CREATE INDEX IF NOT EXISTS idx_memory_timings_preset ON memory_timings(preset);",
 ]
 
 
@@ -170,6 +245,13 @@ async def initialize_database(db_path: str) -> None:
 
             # Erstelle Performance-Indizes für Command-Statistiken
             for index_sql in COMMAND_STATISTICS_INDEXES:
+                await db.execute(index_sql)
+
+            # Erstelle Memory-Timings-Tabelle
+            await db.execute(MEMORY_TIMINGS_SCHEMA)
+
+            # Erstelle Performance-Indizes für Memory-Timings
+            for index_sql in MEMORY_TIMINGS_INDEXES:
                 await db.execute(index_sql)
 
             # Übertrage Änderungen

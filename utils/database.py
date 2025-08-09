@@ -66,6 +66,63 @@ class CommandStatistic:
     error_message: Optional[str] = None
 
 
+@dataclass
+class MemoryTiming:
+    """Datenklasse für Memory-Timings."""
+
+    id: Optional[int]
+    generation: str
+    name: str
+    rank: Optional[str] = None
+    vendor: Optional[str] = None
+    ics: Optional[str] = None
+    memclk: Optional[int] = None
+    fclk: Optional[int] = None
+    preset: Optional[str] = None
+    pdm: Optional[str] = None
+    gdm: Optional[str] = None
+    vsoc: Optional[str] = None
+    vdimm: Optional[str] = None
+    vdd: Optional[str] = None
+    vddq: Optional[str] = None
+    vddio: Optional[str] = None
+    vddg: Optional[str] = None
+    cldo_vddp: Optional[str] = None
+    vddp: Optional[str] = None
+    cads: Optional[str] = None
+    procodt: Optional[str] = None
+    rtts: Optional[str] = None
+    tcl: Optional[int] = None
+    trcdrp: Optional[int] = None
+    trcdwr: Optional[int] = None
+    trcd: Optional[int] = None
+    trp: Optional[int] = None
+    tras: Optional[int] = None
+    trc: Optional[int] = None
+    trrds: Optional[int] = None
+    trrdl: Optional[int] = None
+    tfaw: Optional[int] = None
+    twtrs: Optional[int] = None
+    twtrl: Optional[int] = None
+    twr: Optional[int] = None
+    trdrdscl: Optional[int] = None
+    twrwrscl: Optional[int] = None
+    trefi: Optional[int] = None
+    trfc: Optional[int] = None
+    tcwl: Optional[int] = None
+    trtp: Optional[int] = None
+    trdwr: Optional[int] = None
+    twrrd: Optional[int] = None
+    twrwrsc: Optional[int] = None
+    twrwrsd: Optional[int] = None
+    twrwrdd: Optional[int] = None
+    trdrdsc: Optional[int] = None
+    trdrdsd: Optional[int] = None
+    trdrddd: Optional[int] = None
+    tcke: Optional[int] = None
+    created_at: Optional[str] = None
+
+
 class DatabaseManager:
     """Manager-Klasse für Datenbankoperationen."""
 
@@ -1197,4 +1254,178 @@ class DatabaseManager:
                 "server_rank": None,
                 "total_server_users": 0,
                 "days": days,
+            }
+
+    # Memory-Timing-Verwaltungs-Methoden
+
+    async def search_memory_timings(
+        self,
+        generation: Optional[str] = None,
+        vendor: Optional[str] = None,
+        ics: Optional[str] = None,
+        memclk: Optional[int] = None,
+        preset: Optional[str] = None,
+        limit: int = 100,
+    ) -> List[MemoryTiming]:
+        """
+        Durchsuche Memory-Timings-Datenbank mit optionalen Filtern.
+
+        Args:
+            generation: CPU-Generation (z.B. zen4, zen3)
+            vendor: RAM-Hersteller (z.B. H, C, M)
+            ics: Memory-ICs (z.B. 16M, 16A, 24M)
+            memclk: Speichertakt in MHz
+            preset: Timing-Preset (z.B. lasch, scharf)
+            limit: Maximale Anzahl der Ergebnisse
+
+        Returns:
+            Liste von MemoryTiming-Objekten
+        """
+        query = "SELECT * FROM memory_timings WHERE 1=1"
+        params = []
+
+        if generation:
+            query += " AND generation LIKE ?"
+            params.append(f"%{generation}%")
+
+        if vendor:
+            query += " AND vendor LIKE ?"
+            params.append(f"%{vendor}%")
+
+        if ics:
+            query += " AND ics LIKE ?"
+            params.append(f"%{ics}%")
+
+        if memclk:
+            query += " AND memclk = ?"
+            params.append(memclk)
+
+        if preset:
+            query += " AND preset LIKE ?"
+            params.append(f"%{preset}%")
+
+        query += " ORDER BY memclk DESC, name ASC LIMIT ?"
+        params.append(limit)
+
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                db.row_factory = aiosqlite.Row
+                cursor = await db.execute(query, params)
+                rows = await cursor.fetchall()
+
+                timings = []
+                for row in rows:
+                    timing = MemoryTiming(
+                        id=row["id"],
+                        generation=row["generation"],
+                        name=row["name"],
+                        rank=row["rank"],
+                        vendor=row["vendor"],
+                        ics=row["ics"],
+                        memclk=row["memclk"],
+                        fclk=row["fclk"],
+                        preset=row["preset"],
+                        pdm=row["pdm"],
+                        gdm=row["gdm"],
+                        vsoc=row["vsoc"],
+                        vdimm=row["vdimm"],
+                        vdd=row["vdd"],
+                        vddq=row["vddq"],
+                        vddio=row["vddio"],
+                        vddg=row["vddg"],
+                        cldo_vddp=row["cldo_vddp"],
+                        vddp=row["vddp"],
+                        cads=row["cads"],
+                        procodt=row["procodt"],
+                        rtts=row["rtts"],
+                        tcl=row["tcl"],
+                        trcdrp=row["trcdrp"],
+                        trcdwr=row["trcdwr"],
+                        trcd=row["trcd"],
+                        trp=row["trp"],
+                        tras=row["tras"],
+                        trc=row["trc"],
+                        trrds=row["trrds"],
+                        trrdl=row["trrdl"],
+                        tfaw=row["tfaw"],
+                        twtrs=row["twtrs"],
+                        twtrl=row["twtrl"],
+                        twr=row["twr"],
+                        trdrdscl=row["trdrdscl"],
+                        twrwrscl=row["twrwrscl"],
+                        trefi=row["trefi"],
+                        trfc=row["trfc"],
+                        tcwl=row["tcwl"],
+                        trtp=row["trtp"],
+                        trdwr=row["trdwr"],
+                        twrrd=row["twrrd"],
+                        twrwrsc=row["twrwrsc"],
+                        twrwrsd=row["twrwrsd"],
+                        twrwrdd=row["twrwrdd"],
+                        trdrdsc=row["trdrdsc"],
+                        trdrdsd=row["trdrdsd"],
+                        trdrddd=row["trdrddd"],
+                        tcke=row["tcke"],
+                        created_at=row["created_at"],
+                    )
+                    timings.append(timing)
+
+                return timings
+
+        except Exception as e:
+            logger.error(f"Fehler beim Durchsuchen der Memory-Timings: {e}")
+            return []
+
+    async def get_memory_timing_filter_options(self) -> dict:
+        """
+        Hole verfügbare Filter-Optionen für Memory-Timing-Suche.
+
+        Returns:
+            Dictionary mit verfügbaren Optionen für verschiedene Filter
+        """
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                result = {}
+
+                # Hole verfügbare Generationen
+                cursor = await db.execute(
+                    "SELECT DISTINCT generation FROM memory_timings ORDER BY generation"
+                )
+                result["generations"] = [row[0] for row in await cursor.fetchall()]
+
+                # Hole verfügbare Hersteller
+                cursor = await db.execute(
+                    "SELECT DISTINCT vendor FROM memory_timings WHERE vendor IS NOT NULL ORDER BY vendor"
+                )
+                result["vendors"] = [row[0] for row in await cursor.fetchall()]
+
+                # Hole verfügbare ICs
+                cursor = await db.execute(
+                    "SELECT DISTINCT ics FROM memory_timings WHERE ics IS NOT NULL ORDER BY ics"
+                )
+                result["ics"] = [row[0] for row in await cursor.fetchall()]
+
+                # Hole verfügbare Presets
+                cursor = await db.execute(
+                    "SELECT DISTINCT preset FROM memory_timings WHERE preset IS NOT NULL ORDER BY preset"
+                )
+                result["presets"] = [row[0] for row in await cursor.fetchall()]
+
+                # Hole Taktbereich
+                cursor = await db.execute(
+                    "SELECT MIN(memclk), MAX(memclk) FROM memory_timings WHERE memclk IS NOT NULL"
+                )
+                clock_range = await cursor.fetchone()
+                result["memclk_range"] = clock_range if clock_range else (None, None)
+
+                return result
+
+        except Exception as e:
+            logger.error(f"Fehler beim Abrufen der Memory-Timing-Filter-Optionen: {e}")
+            return {
+                "generations": [],
+                "vendors": [],
+                "ics": [],
+                "presets": [],
+                "memclk_range": (None, None),
             }

@@ -81,3 +81,5 @@ loretta.db
 # Discord bot
 config.json
 secrets.json
+
+node_modules
