@@ -2,10 +2,11 @@
 Wiederverwendbare Paginierungs-Utilities für Discord-Bots
 """
 
-import discord
 import logging
-from typing import Optional, Union, Callable, Any
 from abc import ABC, abstractmethod
+from typing import Any, Callable, Optional, Union
+
+import discord
 
 # Constants
 DEFAULT_TIMEOUT = 180

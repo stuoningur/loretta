@@ -5,14 +5,14 @@ Enthält Kommandos für Memory-Timing-Suche aus der Datenbank mit Dropdown-Inter
 
 import logging
 import re
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 import discord
 from discord.ext import commands
 
+from utils.database import MemoryTiming
 from utils.decorators import track_command_usage
 from utils.embeds import EmbedFactory
-from utils.database import MemoryTiming
 
 logger = logging.getLogger(__name__)
 

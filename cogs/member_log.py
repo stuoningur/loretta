@@ -3,14 +3,13 @@ Member Log Cog für den Loretta Discord Bot
 Protokolliert Member Join/Leave Events
 """
 
-import logging
 import asyncio
-from datetime import datetime, timezone, timedelta
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import discord
 from discord.ext import commands
-
 
 logger = logging.getLogger(__name__)
 

@@ -7,10 +7,10 @@ import logging
 import discord
 from discord.ext import commands
 
+from utils.decorators import track_command_usage
 from utils.embeds import EmbedFactory
 from utils.logging import log_command_success
 from utils.responses import send_error_response
-from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 

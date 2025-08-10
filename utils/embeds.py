@@ -2,9 +2,10 @@
 Embed-Factory für konsistente Discord-Embed-Erstellung
 """
 
-import discord
 from datetime import datetime, timezone
 from typing import Optional, Union
+
+import discord
 
 
 class EmbedFactory:

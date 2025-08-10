@@ -7,8 +7,9 @@ import logging
 import logging.handlers
 import os
 from pathlib import Path
-import discord
 from typing import Optional, Union
+
+import discord
 
 # Constants
 MAX_LOG_FILE_SIZE = 10 * 1024 * 1024  # 10MB

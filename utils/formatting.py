@@ -2,8 +2,9 @@
 Utility-Funktionen für konsistente Formatierung
 """
 
-import discord
 from typing import Optional, Union
+
+import discord
 
 
 def format_guild_info(guild: Optional[discord.Guild]) -> str:

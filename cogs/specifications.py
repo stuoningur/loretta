@@ -4,17 +4,17 @@ Spezifikationskommandos für Hardware-Specs der Benutzer
 
 import logging
 import time
-from typing import Optional, Union, Dict, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
 
 from utils.database import Specification
-from utils.decorators import validate_input, track_command_usage
+from utils.decorators import track_command_usage, validate_input
 from utils.embeds import EmbedFactory
-from utils.user_resolver import UserResolver
 from utils.pagination import SearchPaginationView
+from utils.user_resolver import UserResolver
 
 # Konstanten
 MAX_SPECS_LENGTH = 2000

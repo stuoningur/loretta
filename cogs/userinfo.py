@@ -2,15 +2,17 @@
 Userinfo Befehle für den Loretta Discord Bot
 """
 
-import discord
-from discord.ext import commands
 import logging
 from typing import Optional
-from utils.embeds import EmbedFactory
-from utils.logging import log_command_success, log_command_error
-from utils.formatting import format_member_status
-from utils.user_resolver import UserResolver
+
+import discord
+from discord.ext import commands
+
 from utils.decorators import track_command_usage
+from utils.embeds import EmbedFactory
+from utils.formatting import format_member_status
+from utils.logging import log_command_error, log_command_success
+from utils.user_resolver import UserResolver
 
 logger = logging.getLogger(__name__)
 

@@ -3,10 +3,12 @@ Dekoratoren für Discord-Befehle
 """
 
 import logging
-import discord
-from discord.ext import commands
 from functools import wraps
 from typing import Union
+
+import discord
+from discord.ext import commands
+
 from utils.database import CommandStatistic
 
 logger = logging.getLogger(__name__)

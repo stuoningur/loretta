@@ -2,13 +2,15 @@
 Magic 8 Ball Befehl für den Loretta Discord Bot
 """
 
-from discord.ext import commands
 import logging
 import random
-from utils.embeds import EmbedFactory
-from utils.responses import send_response, send_error_response
-from utils.logging import log_command_success, log_command_error
+
+from discord.ext import commands
+
 from utils.decorators import track_command_usage
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_error, log_command_success
+from utils.responses import send_error_response, send_response
 
 logger = logging.getLogger(__name__)
 

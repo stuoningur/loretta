@@ -2,12 +2,13 @@
 Datenbank-Utility-Funktionen für Guild-Konfigurationsverwaltung.
 """
 
-import aiosqlite
 import json
 import logging
-from typing import Optional, List, Tuple, Union
 from dataclasses import dataclass, field
 from datetime import date
+from typing import List, Optional, Tuple, Union
+
+import aiosqlite
 import discord
 
 logger = logging.getLogger(__name__)
@@ -187,7 +188,7 @@ class DatabaseManager:
 
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute(
-                    """INSERT OR REPLACE INTO guild_config 
+                    """INSERT OR REPLACE INTO guild_config
                        (guild_id, command_prefix, log_channel_id, news_channel_id, birthday_channel_id, picture_only_channels)
                        VALUES (?, ?, ?, ?, ?, ?)""",
                     (
@@ -506,7 +507,7 @@ class DatabaseManager:
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute(
-                    """INSERT OR REPLACE INTO birthdays 
+                    """INSERT OR REPLACE INTO birthdays
                        (guild_id, user_id, birth_day, birth_month)
                        VALUES (?, ?, ?, ?)""",
                     (
@@ -1060,7 +1061,7 @@ class DatabaseManager:
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 await db.execute(
-                    """INSERT INTO command_statistics 
+                    """INSERT INTO command_statistics
                        (guild_id, user_id, command_name, cog_name, success, error_message)
                        VALUES (?, ?, ?, ?, ?, ?)""",
                     (
@@ -1119,11 +1120,11 @@ class DatabaseManager:
 
                 # Top Commands
                 cursor = await db.execute(
-                    """SELECT command_name, COUNT(*) as count 
-                       FROM command_statistics 
+                    """SELECT command_name, COUNT(*) as count
+                       FROM command_statistics
                        WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
-                       GROUP BY command_name 
-                       ORDER BY count DESC 
+                       GROUP BY command_name
+                       ORDER BY count DESC
                        LIMIT 10""",
                     (guild_id, days),
                 )
@@ -1131,11 +1132,11 @@ class DatabaseManager:
 
                 # Top Users
                 cursor = await db.execute(
-                    """SELECT user_id, COUNT(*) as count 
-                       FROM command_statistics 
+                    """SELECT user_id, COUNT(*) as count
+                       FROM command_statistics
                        WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
-                       GROUP BY user_id 
-                       ORDER BY count DESC 
+                       GROUP BY user_id
+                       ORDER BY count DESC
                        LIMIT 10""",
                     (guild_id, days),
                 )
@@ -1203,10 +1204,10 @@ class DatabaseManager:
 
                 # Commands des Benutzers
                 cursor = await db.execute(
-                    """SELECT command_name, COUNT(*) as count 
-                       FROM command_statistics 
+                    """SELECT command_name, COUNT(*) as count
+                       FROM command_statistics
                        WHERE guild_id = ? AND user_id = ? AND executed_at >= date('now', '-' || ? || ' days')
-                       GROUP BY command_name 
+                       GROUP BY command_name
                        ORDER BY count DESC""",
                     (guild_id, user_id, days),
                 )
@@ -1214,10 +1215,10 @@ class DatabaseManager:
 
                 # Rang des Benutzers im Server
                 cursor = await db.execute(
-                    """SELECT user_id, COUNT(*) as count 
-                       FROM command_statistics 
+                    """SELECT user_id, COUNT(*) as count
+                       FROM command_statistics
                        WHERE guild_id = ? AND executed_at >= date('now', '-' || ? || ' days')
-                       GROUP BY user_id 
+                       GROUP BY user_id
                        ORDER BY count DESC""",
                     (guild_id, days),
                 )

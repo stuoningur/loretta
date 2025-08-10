@@ -2,10 +2,11 @@
 Utility-Funktionen für Discord-Interaction-Responses
 """
 
+import logging
+from typing import Optional, Union
+
 import discord
 from discord.ext import commands
-import logging
-from typing import Union, Optional
 
 logger = logging.getLogger(__name__)
 

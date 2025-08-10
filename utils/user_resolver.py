@@ -2,9 +2,11 @@
 Benutzer-Auflösungs-Utilities für Discord-Bots
 """
 
+from typing import List, Optional, Union
+
 import discord
 from discord.ext import commands
-from typing import Optional, Union, List
+
 from utils.embeds import EmbedFactory
 
 # Constants

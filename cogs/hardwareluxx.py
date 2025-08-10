@@ -3,18 +3,18 @@ Hardwareluxx News Cog für den Loretta Discord Bot
 Überwacht Hardwareluxx RSS-Feed nach Hardware-News
 """
 
-import logging
 import asyncio
+import logging
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import List, Optional
 
-import discord
 import aiohttp
+import discord
 import feedparser
 from discord.ext import commands, tasks
 
-from utils.database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
+from utils.database import DatabaseManager
 from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)

@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 
 import discord
 from discord.ext import commands
-from utils.decorators import track_command_usage
 
+from utils.decorators import track_command_usage
 
 logger = logging.getLogger(__name__)
 

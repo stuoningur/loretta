@@ -2,18 +2,18 @@
 GIF Befehl für den Loretta Discord Bot
 """
 
-import os
-import logging
-import random
 import asyncio
+import logging
+import os
+import random
 
 import aiohttp
 from discord.ext import commands
 
-from utils.embeds import EmbedFactory
-from utils.responses import send_error_response, send_response
-from utils.logging import log_command_success, log_command_error
 from utils.decorators import track_command_usage
+from utils.embeds import EmbedFactory
+from utils.logging import log_command_error, log_command_success
+from utils.responses import send_error_response, send_response
 
 logger = logging.getLogger(__name__)
 

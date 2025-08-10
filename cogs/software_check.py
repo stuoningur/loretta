@@ -3,13 +3,13 @@ Software Check Cog für den Loretta Discord Bot
 Überwacht RSS-Feeds nach Software-Downloads
 """
 
-import logging
 import asyncio
+import logging
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import List, Optional
 
-import discord
 import aiohttp
+import discord
 import feedparser
 from discord.ext import commands, tasks
 

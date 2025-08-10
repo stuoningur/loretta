@@ -2,15 +2,17 @@
 Bot-Informationen Befehl für den Loretta Discord Bot
 """
 
-import discord
-from discord.ext import commands
 import logging
-import time
-import psutil
 import platform
-from utils.embeds import EmbedFactory
-from utils.logging import log_command_success, BYTES_TO_GB_DIVISOR
+import time
+
+import discord
+import psutil
+from discord.ext import commands
+
 from utils.decorators import track_command_usage
+from utils.embeds import EmbedFactory
+from utils.logging import BYTES_TO_GB_DIVISOR, log_command_success
 
 # Constants
 CPU_INTERVAL = 0.1
@@ -64,6 +66,8 @@ class BotInfo(commands.Cog):
             memory = None
             system_info = "Unbekannt"
             system_uptime_days = 0
+            discord_version = "Unbekannt"
+            python_version = "Unbekannt"
 
         # Erstelle detailliertes Embed
         embed = EmbedFactory.info_command_embed(

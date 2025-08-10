@@ -2,8 +2,9 @@
 Datenbank-Schema-Definitionen für den Loretta Discord-Bot.
 """
 
-import aiosqlite
 import logging
+
+import aiosqlite
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ CREATE TABLE IF NOT EXISTS guild_config (
 
 # Trigger um den updated_at Zeitstempel zu aktualisieren
 UPDATE_GUILD_CONFIG_TIMESTAMP_TRIGGER = """
-CREATE TRIGGER IF NOT EXISTS update_guild_config_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_guild_config_timestamp
     AFTER UPDATE ON guild_config
     FOR EACH ROW
 BEGIN
@@ -71,7 +72,7 @@ CREATE TABLE IF NOT EXISTS specifications (
 
 # Trigger um den updated_at Zeitstempel zu aktualisieren for specifications
 UPDATE_SPECS_TIMESTAMP_TRIGGER = """
-CREATE TRIGGER IF NOT EXISTS update_specifications_timestamp 
+CREATE TRIGGER IF NOT EXISTS update_specifications_timestamp
     AFTER UPDATE ON specifications
     FOR EACH ROW
 BEGIN
