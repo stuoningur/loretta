@@ -4,6 +4,7 @@ Contains models and database management utilities that can be shared
 between the Discord bot and the web interface.
 """
 
+from .init import initialize_database
 from .manager import DatabaseManager
 from .models import (
     Birthday,
@@ -11,7 +12,6 @@ from .models import (
     GuildConfig,
     MemoryTiming,
     Specification,
-    initialize_database,
 )
 
 __all__ = [
