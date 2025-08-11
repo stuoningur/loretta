@@ -1,8 +1,9 @@
 """
-Gemeinsame Konstanten für den Loretta Bot
+Gemeinsame Konstanten
 """
 
 # Deutsche Monatsnamen für Datumsformatierung
+
 GERMAN_MONTH_NAMES = [
     "",  # Index 0 - nicht verwendet
     "Januar",
@@ -102,4 +103,20 @@ HARDWARE_KEYWORDS = [
     "xbox",
     "nintendo",
     "playstation",
+]
+
+# Software-Keywords für RSS-Feed Monitoring
+SOFTWARE_KEYWORDS = [
+    "aida64",
+    "hwinfo",
+    "cpu-z",
+    "gpu-z",
+    "zentimings",
+    "amd",
+    "nvidia",
+    "intel",
+    "capframex",
+    "afterburner",
+    "rtss",
+    "rivatuner",
 ]

@@ -4,7 +4,7 @@ Contains utilities that are not specific to the Discord bot
 """
 
 # General constants that can be used across the application
-from .constants import GERMAN_MONTH_NAMES, HARDWARE_KEYWORDS
+from .constants import GERMAN_MONTH_NAMES, HARDWARE_KEYWORDS, SOFTWARE_KEYWORDS
 
 # General formatting utilities
 from .formatting import (
@@ -33,6 +33,7 @@ from .logging import (
 __all__ = [
     "GERMAN_MONTH_NAMES",
     "HARDWARE_KEYWORDS",
+    "SOFTWARE_KEYWORDS",
     "format_guild_info",
     "format_user_info",
     "format_channel_info",

@@ -2,6 +2,7 @@
 Embed-Factory für konsistente Discord-Embed-Erstellung
 """
 
+import re
 from datetime import datetime, timezone
 from typing import Optional, Union
 
@@ -10,6 +11,33 @@ import discord
 
 class EmbedFactory:
     """Factory-Klasse für die Erstellung konsistenter Discord-Embeds"""
+
+    # RSS-spezifische Konfigurationen
+    RSS_COLORS = {
+        "hardwareluxx": discord.Color.red(),
+        "computerbase": discord.Color.blue(),
+        "pcgh": discord.Color.dark_blue(),
+        "software": discord.Color.blurple(),
+    }
+
+    RSS_FOOTER_CONFIG = {
+        "hardwareluxx": {
+            "text": "Hardwareluxx • Nachrichten",
+            "icon_url": "https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/hardwareluxx.png?raw=true",
+        },
+        "computerbase": {
+            "text": "ComputerBase • Nachrichten",
+            "icon_url": "https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/computerbase.png?raw=true",
+        },
+        "pcgh": {
+            "text": "PC Games Hardware • Nachrichten",
+            "icon_url": "https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/pcgh.png?raw=true",
+        },
+        "software": {
+            "text": "ComputerBase • Downloads",
+            "icon_url": "https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/computerbase.png?raw=true",
+        },
+    }
 
     @staticmethod
     def error_embed(title: str, description: str) -> discord.Embed:
@@ -260,4 +288,149 @@ class EmbedFactory:
             timestamp=datetime.now(timezone.utc),
         )
         embed.set_footer(text="🎉 Feiert schön zusammen! 🎉")
+        return embed
+
+    @staticmethod
+    def _extract_image_url(html_content: str) -> str | None:
+        """
+        Extrahiert die erste Bild-URL aus HTML-Content
+
+        Args:
+            html_content: HTML-String mit potentiellen Image-Tags
+
+        Returns:
+            URL des ersten gefundenen Bildes oder None
+        """
+        if not html_content:
+            return None
+
+        # Suche nach <img src="..."> Tags
+        img_match = re.search(
+            r'<img\s+[^>]*src=["\']([^"\']+)["\']', html_content, re.IGNORECASE
+        )
+        if img_match:
+            return img_match.group(1)
+        return None
+
+    @staticmethod
+    def _extract_enclosure_image(entry) -> str | None:
+        """
+        Extrahiert Bild-URL aus RSS-Enclosures
+
+        Args:
+            entry: RSS-Feed-Entry-Objekt
+
+        Returns:
+            URL des ersten gefundenen Bildes oder None
+        """
+        if not hasattr(entry, "enclosures") or not entry.enclosures:
+            return None
+
+        for enclosure in entry.enclosures:
+            if (
+                hasattr(enclosure, "type")
+                and enclosure.type
+                and enclosure.type.startswith("image/")
+                and hasattr(enclosure, "url")
+                and enclosure.url
+            ):
+                return enclosure.url
+        return None
+
+    @staticmethod
+    def _clean_html_text(html_text: str, max_length: int = 200) -> str:
+        """
+        Entfernt HTML-Tags und kürzt Text
+
+        Args:
+            html_text: Text mit HTML-Tags
+            max_length: Maximale Länge des Textes
+
+        Returns:
+            Bereinigter und gekürzter Text
+        """
+        # HTML-Tags entfernen
+        clean_text = re.sub(r"<[^>]+>", "", html_text)
+
+        # Text kürzen falls nötig
+        if len(clean_text) > max_length:
+            clean_text = clean_text[:max_length] + "..."
+
+        return clean_text.strip()
+
+    @classmethod
+    def rss_news_embed(
+        cls,
+        entry,
+        source: str,
+        include_description: bool = True,
+        include_thumbnail: bool = True,
+        include_category: bool = False,
+        max_description_length: int = 200,
+    ) -> discord.Embed:
+        """
+        Erstellt ein standardisiertes Embed für RSS-News
+
+        Args:
+            entry: RSS-Feed-Entry-Objekt mit title, link, summary etc.
+            source: Quelle (hardwareluxx, computerbase, pcgh, software)
+            include_description: Ob Beschreibung hinzugefügt werden soll
+            include_thumbnail: Ob Thumbnail extrahiert werden soll
+            include_category: Ob Kategorie-Feld hinzugefügt werden soll
+            max_description_length: Maximale Länge der Beschreibung
+
+        Returns:
+            Fertig konfiguriertes Discord-Embed
+        """
+        # Grundlegendes Embed erstellen
+        embed = discord.Embed(
+            title=entry.title,
+            url=entry.link,
+            color=cls.RSS_COLORS.get(source, discord.Color.blurple()),
+            timestamp=datetime.now(timezone.utc),
+        )
+
+        # Thumbnail hinzufügen falls gewünscht
+        if include_thumbnail:
+            image_url = None
+
+            # Zuerst aus Enclosures versuchen
+            image_url = cls._extract_enclosure_image(entry)
+
+            # Falls kein Enclosure-Bild, aus HTML-Summary extrahieren
+            if not image_url and hasattr(entry, "summary") and entry.summary:
+                image_url = cls._extract_image_url(entry.summary)
+
+            if image_url:
+                embed.set_thumbnail(url=image_url)
+
+        # Kategorie hinzufügen falls gewünscht (hauptsächlich für Hardwareluxx)
+        if include_category and hasattr(entry, "tags") and entry.tags:
+            category = entry.tags[0].get("term", "")
+            if category:
+                embed.add_field(name="Kategorie", value=category, inline=True)
+
+        # Beschreibung hinzufügen falls gewünscht und vorhanden
+        if include_description and hasattr(entry, "summary") and entry.summary:
+            clean_summary = cls._clean_html_text(entry.summary, max_description_length)
+            if clean_summary:
+                embed.add_field(name="Beschreibung", value=clean_summary, inline=False)
+
+        # Veröffentlichungsdatum hinzufügen falls vorhanden
+        if hasattr(entry, "published_parsed") and entry.published_parsed:
+            pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+            embed.add_field(
+                name="Veröffentlicht",
+                value=f"<t:{int(pub_date.timestamp())}:R>",
+                inline=True,
+            )
+
+        # Footer konfigurieren
+        footer_config = cls.RSS_FOOTER_CONFIG.get(source)
+        if footer_config:
+            embed.set_footer(
+                text=footer_config["text"],
+                icon_url=footer_config["icon_url"],
+            )
+
         return embed
