@@ -40,7 +40,7 @@ def setup_logging():
     log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper())
 
     # Stelle sicher dass Daten-Verzeichnis existiert
-    Path("data").mkdir(exist_ok=True)
+    Path("logs").mkdir(exist_ok=True)
 
     # Erstelle Formattierer
     logging_formatter = logging.Formatter(
@@ -54,7 +54,7 @@ def setup_logging():
 
     # Datei-Handler mit Rotation
     file_handler = logging.handlers.RotatingFileHandler(
-        "data/loretta.log",
+        "logs/loretta.log",
         maxBytes=MAX_LOG_FILE_SIZE,
         backupCount=LOG_BACKUP_COUNT,
         encoding="utf-8",
