@@ -91,8 +91,8 @@ class SoftwareCheck(commands.Cog):
 
         # ComputerBase favicon im Footer hinzufügen
         embed.set_footer(
-            text="ComputerBase Downloads • Automatische Benachrichtigung",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/computerbase.png?raw=true",
+            text="ComputerBase • Downloads",
+            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/others/computerbase.png?raw=true",
         )
 
         return embed

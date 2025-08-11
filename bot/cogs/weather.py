@@ -66,7 +66,7 @@ class Weather(commands.Cog):
             99: "thunderstorm-with-hail@4x.png",  # Gewitter mit starkem Hagel
         }
         icon_filename = weather_icon_mapping.get(weather_code, "clear@4x.png")
-        return f"https://raw.githubusercontent.com/stuoningur/loretta/master/data/icons/weather/{icon_filename}"
+        return f"https://raw.githubusercontent.com/stuoningur/loretta/master/resources/icons/weather/{icon_filename}"
 
     def _get_weather_description(self, weather_code: int) -> str:
         """Gibt deutsche Beschreibung für Wetter-Codes zurück"""

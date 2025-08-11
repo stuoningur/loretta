@@ -109,8 +109,8 @@ class ComputerBase(commands.Cog):
 
         # ComputerBase favicon im Footer hinzufügen
         embed.set_footer(
-            text="ComputerBase News • Nachrichten",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/computerbase.png?raw=true",
+            text="ComputerBase • Nachrichten",
+            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/others/computerbase.png?raw=true",
         )
 
         return embed

@@ -128,7 +128,7 @@ class PCGH(commands.Cog):
         # PCGH Footer hinzufügen
         embed.set_footer(
             text="PC Games Hardware • Nachrichten",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/pcgh.png?raw=true",
+            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/others/pcgh.png?raw=true",
         )
 
         return embed

@@ -84,8 +84,8 @@ class Hardwareluxx(commands.Cog):
 
         # Hardwareluxx Footer hinzufügen
         embed.set_footer(
-            text="Hardwareluxx News • Nachrichten",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/hardwareluxx.png?raw=true",
+            text="Hardwareluxx • Nachrichten",
+            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/others/hardwareluxx.png?raw=true",
         )
 
         return embed
