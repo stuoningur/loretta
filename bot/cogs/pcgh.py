@@ -6,15 +6,12 @@ PCGH News Cog für den Loretta Discord Bot
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import List, Optional
 
 import aiohttp
 import discord
 import feedparser
 from discord.ext import commands, tasks
 
-from bot.utils.decorators import track_command_usage
-from database import DatabaseManager
 from utils.constants import HARDWARE_KEYWORDS
 
 logger = logging.getLogger(__name__)
@@ -25,13 +22,12 @@ class PCGH(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.session: aiohttp.ClientSession | None = None
         self.rss_urls = [
             "https://www.pcgameshardware.de/feed.cfm?menu_alias=Test/",
             "https://www.pcgameshardware.de/feed.cfm",
         ]
         self.keywords = HARDWARE_KEYWORDS
-        self.db_manager = DatabaseManager("database/loretta.db")
 
     async def cog_load(self):
         """Initialisiert die HTTP-Session und startet den RSS-Check"""
@@ -45,7 +41,7 @@ class PCGH(commands.Cog):
             await self.session.close()
         logger.info("PCGH News Cog entladen und RSS-Überwachung gestoppt")
 
-    def _matches_keywords(self, text: str) -> List[str]:
+    def _matches_keywords(self, text: str) -> list[str]:
         """Prüft, ob der Text eines der Keywords als ganze Wörter enthält"""
         import re
 
@@ -60,7 +56,7 @@ class PCGH(commands.Cog):
 
         return matched_keywords
 
-    def _extract_image_url(self, html_content: str) -> Optional[str]:
+    def _extract_image_url(self, html_content: str) -> str | None:
         """Extrahiert die erste Bild-URL aus HTML-Content"""
         if not html_content:
             return None
@@ -128,7 +124,7 @@ class PCGH(commands.Cog):
         # PCGH Footer hinzufügen
         embed.set_footer(
             text="PC Games Hardware • Nachrichten",
-            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/others/pcgh.png?raw=true",
+            icon_url="https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/pcgh.png?raw=true",
         )
 
         return embed
@@ -142,7 +138,7 @@ class PCGH(commands.Cog):
                 return
 
             # News-Kanäle abrufen
-            channel_ids = await self.db_manager.get_news_channels()
+            channel_ids = await self.bot.db.get_news_channels()
             if not channel_ids:
                 logger.debug("Keine News-Kanäle für PCGH-News konfiguriert")
                 return
@@ -204,7 +200,7 @@ class PCGH(commands.Cog):
                 entry_link = str(entry.link)
 
                 # Prüfen, ob bereits gepostet
-                if await self.db_manager.is_rss_entry_posted(entry_guid):
+                if await self.bot.db.is_rss_entry_posted(entry_guid):
                     continue
 
                 # Keywords im Titel und Beschreibung prüfen
@@ -249,7 +245,7 @@ class PCGH(commands.Cog):
                             )
 
                 # Als gepostet markieren
-                await self.db_manager.mark_rss_entry_as_posted(
+                await self.bot.db.mark_rss_entry_as_posted(
                     entry_guid, entry_title, entry_link
                 )
                 new_entries_count += 1
@@ -281,220 +277,6 @@ class PCGH(commands.Cog):
     async def before_rss_check(self):
         """Wartet bis der Bot bereit ist"""
         await self.bot.wait_until_ready()
-
-    @commands.hybrid_command(
-        name="pcgh_info",
-        description="Zeigt Informationen über die PCGH Hardware-News Überwachung",
-    )
-    @commands.has_permissions(manage_channels=True)
-    @track_command_usage
-    async def pcgh_info(self, ctx):
-        """Zeigt Informationen über die PCGH Hardware-News Überwachung"""
-        try:
-            # Aktuellen News-Kanal für diesen Server abrufen
-            config = await self.db_manager.get_guild_config(ctx.guild.id)
-            news_channel_id = config.news_channel_id
-
-            embed = discord.Embed(
-                title="PCGH Hardware-News Überwachung",
-                color=discord.Color.dark_blue(),
-                timestamp=datetime.now(timezone.utc),
-            )
-
-            if news_channel_id:
-                news_channel = ctx.guild.get_channel(news_channel_id)
-                if news_channel:
-                    embed.add_field(
-                        name="News-Kanal",
-                        value=f"Hardware-News werden in {news_channel.mention} gesendet.",
-                        inline=False,
-                    )
-                else:
-                    embed.add_field(
-                        name="News-Kanal",
-                        value="Konfigurierter Kanal wurde nicht gefunden.",
-                        inline=False,
-                    )
-            else:
-                embed.add_field(
-                    name="News-Kanal",
-                    value="Kein News-Kanal konfiguriert. Verwende `/config news_channel` um einen zu setzen.",
-                    inline=False,
-                )
-
-            embed.add_field(
-                name="Überwachte Hardware-Keywords",
-                value=", ".join(self.keywords),
-                inline=False,
-            )
-
-            embed.add_field(
-                name="RSS-Feeds",
-                value="\n".join([f"• {url}" for url in self.rss_urls]),
-                inline=False,
-            )
-
-            embed.add_field(
-                name="Überprüfungsintervall", value="Alle 15 Minuten", inline=True
-            )
-
-            embed.set_footer(
-                text="PC Games Hardware • Automatische Hardware-Nachrichten",
-                icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/pcgh.png?raw=true",
-            )
-
-            await ctx.send(embed=embed)
-            logger.info(
-                f"PCGH-Info angezeigt für Guild '{ctx.guild.name}' ({ctx.guild.id})"
-            )
-
-        except Exception as e:
-            logger.error(f"Fehler beim Anzeigen der PCGH-Informationen: {e}")
-            embed = discord.Embed(
-                title="Fehler",
-                description="Fehler beim Abrufen der PCGH-Informationen.",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
-            )
-            await ctx.send(embed=embed)
-
-    @commands.hybrid_command(
-        name="pcgh_test",
-        description="Testet die PCGH Hardware-News Funktionalität",
-    )
-    @commands.has_permissions(manage_channels=True)
-    @track_command_usage
-    async def test_pcgh_check(self, ctx):
-        """Testet die PCGH RSS-Feed Checks manuell"""
-        await ctx.defer()
-
-        try:
-            if not self.session:
-                embed = discord.Embed(
-                    title="Fehler",
-                    description="HTTP-Session nicht verfügbar.",
-                    color=discord.Color.red(),
-                    timestamp=datetime.now(timezone.utc),
-                )
-                await ctx.send(embed=embed)
-                return
-
-            total_entries = 0
-            total_keyword_matches = 0
-            feed_results = []
-
-            # Beide Feeds testen
-            for i, rss_url in enumerate(self.rss_urls):
-                feed_name = "Test-Feed" if i == 0 else "Haupt-Feed"
-
-                try:
-                    # RSS-Feed abrufen
-                    async with self.session.get(rss_url) as response:
-                        if response.status != 200:
-                            feed_results.append(
-                                f"**{feed_name}**: HTTP {response.status} Fehler"
-                            )
-                            continue
-
-                        content = await response.text()
-
-                    # RSS-Feed parsen
-                    feed = feedparser.parse(content)
-
-                    if not feed.entries:
-                        feed_results.append(f"**{feed_name}**: Keine Einträge gefunden")
-                        continue
-
-                    # Statistiken sammeln
-                    feed_entries = len(feed.entries)
-                    keyword_matches = 0
-                    matched_entries = []
-
-                    for entry in feed.entries:
-                        search_text = str(entry.title)
-                        if hasattr(entry, "summary") and entry.summary:
-                            search_text += " " + str(entry.summary)
-
-                        matched_keywords = self._matches_keywords(search_text)
-                        if matched_keywords:
-                            keyword_matches += 1
-                            matched_entries.append((str(entry.title), matched_keywords))
-
-                    total_entries += feed_entries
-                    total_keyword_matches += keyword_matches
-                    feed_results.append(
-                        f"**{feed_name}**: {feed_entries} Einträge, {keyword_matches} Treffer"
-                    )
-
-                except Exception as e:
-                    feed_results.append(f"**{feed_name}**: Fehler - {str(e)}")
-
-            # Test-Ergebnis anzeigen
-            embed = discord.Embed(
-                title="PCGH Hardware-News Test",
-                description="RSS-Feeds erfolgreich getestet",
-                color=discord.Color.dark_blue(),
-                timestamp=datetime.now(timezone.utc),
-            )
-
-            embed.add_field(
-                name="Gesamt-Statistiken",
-                value=f"**Gesamte Einträge:** {total_entries}\n**Hardware-Keyword-Treffer:** {total_keyword_matches}",
-                inline=False,
-            )
-
-            embed.add_field(
-                name="Feed-Details",
-                value="\n".join(feed_results),
-                inline=False,
-            )
-
-            embed.add_field(
-                name="RSS-Feed URLs",
-                value="\n".join([f"• {url}" for url in self.rss_urls]),
-                inline=False,
-            )
-
-            embed.add_field(
-                name="Überwachte Hardware-Keywords",
-                value=", ".join(self.keywords),
-                inline=False,
-            )
-
-            # Aktuelle News-Kanäle anzeigen
-            news_channels = await self.db_manager.get_news_channels()
-            if news_channels:
-                embed.add_field(
-                    name="Aktive News-Kanäle",
-                    value=f"{len(news_channels)} Kanal(e) konfiguriert",
-                    inline=True,
-                )
-            else:
-                embed.add_field(
-                    name="Aktive News-Kanäle",
-                    value="Keine News-Kanäle konfiguriert",
-                    inline=True,
-                )
-
-            embed.set_footer(
-                text="PC Games Hardware • Test-Ergebnis",
-                icon_url="https://github.com/stuoningur/loretta/blob/master/data/icons/others/pcgh.png?raw=true",
-            )
-
-            await ctx.send(embed=embed)
-            logger.info(
-                f"PCGH Hardware-News Test ausgeführt von {ctx.author} in Guild '{ctx.guild.name}' ({ctx.guild.id})"
-            )
-
-        except Exception as e:
-            logger.error(f"Fehler beim PCGH Hardware-News Test: {e}")
-            embed = discord.Embed(
-                title="Test Fehler",
-                description=f"Fehler beim Testen der PCGH Hardware-News Funktionalität: {str(e)}",
-                color=discord.Color.red(),
-                timestamp=datetime.now(timezone.utc),
-            )
-            await ctx.send(embed=embed)
 
 
 async def setup(bot):
