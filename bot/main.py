@@ -40,7 +40,7 @@ class LorettaBot(commands.Bot):
         intents.presences = True
 
         super().__init__(
-            command_prefix=self.get_prefix,  # type: ignore
+            command_prefix="!",  # Standard-Prefix, wird durch process_commands überschrieben
             intents=intents,
             help_command=None,
             description="Loretta - Ein vielseitiger Discord-Bot",
@@ -73,7 +73,7 @@ class LorettaBot(commands.Bot):
         # Fallback auf Standard-Discord.py is_owner Verhalten
         return await super().is_owner(user)
 
-    async def get_prefix(self, message):
+    async def get_prefix(self, message) -> str:
         """Dynamische Prefix-Funktion die Einstellungen aus der Datenbank lädt"""
         # Behandle Grenzfälle wo Nachricht None sein könnte oder Guild fehlt
         if not message or not hasattr(message, "guild") or not message.guild:
@@ -175,13 +175,27 @@ class LorettaBot(commands.Bot):
         """Wird ausgeführt wenn der Bot einen Server verlässt"""
         logger.info(f'Bot hat den Server "{guild.name}" (ID: {guild.id}) verlassen')
 
-    async def on_message(self, message):
-        """Wird bei jeder Nachricht ausgeführt"""
-        # Ignoriere Bot-Nachrichten
+    async def process_commands(self, message):
+        """Überschreibt process_commands für dynamische Prefix-Behandlung"""
         if message.author.bot:
             return
 
-        # Verarbeite Commands normal
+        # Lade dynamischen Prefix
+        prefix = await self.get_prefix(message)
+
+        # Setze temporär den command_prefix für diese Nachricht
+        original_prefix = self.command_prefix
+        self.command_prefix = prefix
+
+        try:
+            # Verarbeite Commands mit dem dynamischen Prefix
+            await super().process_commands(message)
+        finally:
+            # Stelle ursprünglichen Prefix wieder her
+            self.command_prefix = original_prefix
+
+    async def on_message(self, message):
+        """Wird bei jeder Nachricht ausgeführt"""
         await self.process_commands(message)
 
 

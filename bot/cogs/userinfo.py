@@ -178,8 +178,15 @@ class UserInfo(commands.Cog):
 async def userinfo_context_menu(interaction: discord.Interaction, user: discord.Member):
     """Context Menu für Benutzerinformationen"""
     # Hole das UserInfo Cog um die Helper-Methode zu verwenden
-    userinfo_cog = interaction.client.get_cog("UserInfo")  # type: ignore
-    if not userinfo_cog:
+    from discord.ext.commands import Bot
+
+    if not isinstance(interaction.client, Bot):
+        embed = EmbedFactory.error_embed("Fehler", "Bot-Instanz nicht verfügbar.")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return
+    cog = interaction.client.get_cog("UserInfo")
+
+    if not cog or not isinstance(cog, UserInfo):
         await interaction.response.send_message(
             "Userinfo-System ist nicht verfügbar.", ephemeral=True
         )
@@ -199,7 +206,7 @@ async def userinfo_context_menu(interaction: discord.Interaction, user: discord.
                     f"Kontextmenü: Konnte kein frisches Member-Objekt für {user.name} finden, verwende vorhandenes"
                 )
 
-        embed = await userinfo_cog.create_userinfo_embed(user, interaction.user)
+        embed = await cog.create_userinfo_embed(user, interaction.user)
         await interaction.response.send_message(embed=embed)
         log_command_success(
             logger,

@@ -358,6 +358,16 @@ class Specs(commands.Cog):
                 await ctx.defer(ephemeral=True)
 
             # Hole alle Spezifikationen für diese Guild
+            if not ctx.guild:
+                embed = EmbedFactory.error_embed(
+                    "Fehler", "Dieser Befehl kann nur in einem Server verwendet werden."
+                )
+                if ctx.interaction:
+                    await ctx.interaction.followup.send(embed=embed)
+                else:
+                    await ctx.send(embed=embed)
+                return
+
             all_specs = await self.bot.db.get_all_guild_specifications(ctx.guild.id)  # type: ignore
 
             if not all_specs:
@@ -524,48 +534,50 @@ async def show_user_specs_context(
     interaction: discord.Interaction, user: discord.Member
 ):
     """Zeigt die Hardware-Spezifikationen eines Benutzers über das Kontextmenü an"""
-    if not interaction.guild:
-        embed = EmbedFactory.error_embed(
-            "Fehler", "Dieser Befehl kann nur in einem Server verwendet werden."
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return
+    if interaction.guild:
+        try:
+            # Hole die Spezifikationen aus der Datenbank
+            from bot.main import LorettaBot
 
-    try:
-        # Hole die Spezifikationen aus der Datenbank
-        from discord.ext.commands import Bot
+            if not isinstance(interaction.client, LorettaBot):
+                embed = EmbedFactory.error_embed(
+                    "Fehler", "Bot-Instanz nicht verfügbar."
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+                return
 
-        if not isinstance(interaction.client, Bot):
-            embed = EmbedFactory.error_embed("Fehler", "Bot-Instanz nicht verfügbar.")
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-            return
-
-        specification = await interaction.client.db.get_specification(  # type: ignore
-            interaction.guild.id, user.id
-        )
-
-        # Hole die Cog-Instanz um die Embed-Erstellungsmethode zu verwenden
-        cog = interaction.client.get_cog("Specs")
-        if cog and isinstance(cog, Specs):
-            embed = cog._create_specifications_embed(
-                specification, user, interaction.user
+            specification = await interaction.client.db.get_specification(
+                interaction.guild.id, user.id
             )
-            ephemeral = specification is None
-            await interaction.response.send_message(embed=embed, ephemeral=ephemeral)
-        else:
-            embed = EmbedFactory.error_embed(
-                "Systemfehler", "Spezifikations-Cog nicht verfügbar."
+
+            # Hole die Cog-Instanz um die Embed-Erstellungsmethode zu verwenden
+            cog = interaction.client.get_cog("Specs")
+            if not cog or not isinstance(cog, Specs):
+                return
+            if cog and isinstance(cog, Specs):
+                embed = cog._create_specifications_embed(
+                    specification, user, interaction.user
+                )
+                ephemeral = specification is None
+                await interaction.response.send_message(
+                    embed=embed, ephemeral=ephemeral
+                )
+            else:
+                embed = EmbedFactory.error_embed(
+                    "Systemfehler", "Spezifikations-Cog nicht verfügbar."
+                )
+                await interaction.response.send_message(embed=embed, ephemeral=True)
+
+            logger.info(
+                f"Context menu specs request by {interaction.user} for {user} in guild {interaction.guild.name}"
             )
+
+        except Exception as e:
+            logger.error(
+                f"Fehler im Kontextmenü-Specs-Befehl für Benutzer {user.id}: {e}"
+            )
+            embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
             await interaction.response.send_message(embed=embed, ephemeral=True)
-
-        logger.info(
-            f"Context menu specs request by {interaction.user} for {user} in guild {interaction.guild.name}"
-        )
-
-    except Exception as e:
-        logger.error(f"Fehler im Kontextmenü-Specs-Befehl für Benutzer {user.id}: {e}")
-        embed = EmbedFactory.unexpected_error_embed("Laden der Spezifikationen")
-        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot):

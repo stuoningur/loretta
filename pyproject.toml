@@ -1,7 +1,7 @@
 [project]
 name = "loretta"
 version = "0.1.0"
-description = "Add your description here"
+description = "Ein vielseitiger Discord-Bot"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -20,9 +20,15 @@ dependencies = [
 dev = [
     "aiosqlite>=0.21.0",
     "discord-py[speed,voice]>=2.5.2",
-    "pytest>=8.4.1",
     "python-dotenv>=1.1.1",
     "ruff>=0.12.7",
 ]
+[project.scripts]
+loretta = "bot.main:main"
+
 [tool.ruff]
 lint.extend-select = ["I"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
