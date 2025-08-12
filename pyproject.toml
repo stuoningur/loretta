@@ -28,7 +28,3 @@ loretta = "bot.main:main"
 
 [tool.ruff]
 lint.extend-select = ["I"]
-
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
