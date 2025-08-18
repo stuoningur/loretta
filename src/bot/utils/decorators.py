@@ -96,8 +96,9 @@ def track_command_usage(func):
             guild = ctx.guild
         else:  # discord.Interaction
             guild_id = ctx.guild.id if ctx.guild else 0
-            user_id = ctx.user.id
-            user = ctx.user
+            # For interactions, we need to check if user attribute exists
+            user = getattr(ctx, "user", None)
+            user_id = user.id if user else 0
             guild = ctx.guild
 
         # Command-Namen aus der Funktion ermitteln

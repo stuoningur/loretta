@@ -3,10 +3,11 @@ Hilfe-Befehl für den Loretta Discord Bot
 """
 
 import logging
-from typing import Optional
 
+import discord
 from discord.ext import commands
 
+from src.bot.main import LorettaBot
 from src.bot.utils.decorators import track_command_usage
 from src.bot.utils.embeds import EmbedFactory
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class Help(commands.Cog):
     """Hilfe-Befehl für Bot-Kommandos"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: LorettaBot) -> None:
         self.bot = bot
         # Entferne den Standard-Hilfe-Befehl
         self.bot.remove_command("help")
@@ -27,7 +28,9 @@ class Help(commands.Cog):
         description="Zeigt alle verfügbaren Bot-Befehle an",
     )
     @track_command_usage
-    async def help(self, ctx, *, command_name: Optional[str] = None):
+    async def help(
+        self, ctx: commands.Context, *, command_name: str | None = None
+    ) -> None:
         """Zeigt Hilfe für Bot-Befehle an"""
 
         if command_name:
@@ -37,7 +40,7 @@ class Help(commands.Cog):
             # Zeige allgemeine Hilfe
             await self._show_general_help(ctx)
 
-    async def _show_general_help(self, ctx):
+    async def _show_general_help(self, ctx: commands.Context) -> None:
         """Zeigt die allgemeine Hilfe-Übersicht an"""
 
         embed = EmbedFactory.info_command_embed(
@@ -114,7 +117,7 @@ class Help(commands.Cog):
 
             if category_commands:
                 embed.add_field(
-                    name=category, value="\n".join(category_commands), inline=False
+                    name=category, value="".join(category_commands), inline=False
                 )
 
         embed.add_field(
@@ -125,7 +128,7 @@ class Help(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    async def _get_available_commands(self, ctx):
+    async def _get_available_commands(self, ctx: commands.Context) -> dict:
         """Sammelt alle verfügbaren Befehle basierend auf Benutzerberechtigungen"""
         available_commands = {}
 
@@ -154,15 +157,19 @@ class Help(commands.Cog):
                 for command in self.bot.tree.get_commands(guild=ctx.guild):
                     # Prüfe App-Command-Berechtigungen
                     if await self._can_use_app_command(command, ctx):
+                        # Handle ContextMenu commands which don't have a description attribute
+                        description = getattr(
+                            command, "description", "Keine Beschreibung"
+                        )
                         mock_command = type(
                             "MockCommand",
                             (),
                             {
                                 "name": command.name,
-                                "description": command.description,
+                                "description": description,
                                 "aliases": [],
                                 "signature": "",
-                                "help": command.description,
+                                "help": description,
                             },
                         )()
                         available_commands[command.name] = mock_command
@@ -174,15 +181,19 @@ class Help(commands.Cog):
                     ):  # Vermeiden von Duplikaten
                         # Prüfe App-Command-Berechtigungen
                         if await self._can_use_app_command(command, ctx):
+                            # Handle ContextMenu commands which don't have a description attribute
+                            description = getattr(
+                                command, "description", "Keine Beschreibung"
+                            )
                             mock_command = type(
                                 "MockCommand",
                                 (),
                                 {
                                     "name": command.name,
-                                    "description": command.description,
+                                    "description": description,
                                     "aliases": [],
                                     "signature": "",
-                                    "help": command.description,
+                                    "help": description,
                                 },
                             )()
                             available_commands[command.name] = mock_command
@@ -192,13 +203,15 @@ class Help(commands.Cog):
 
         return available_commands
 
-    async def _can_use_app_command(self, command, ctx):
+    async def _can_use_app_command(self, command, ctx: commands.Context) -> bool:
         """Prüft ob ein Benutzer einen App-Command verwenden kann"""
         try:
             # Prüfe Default-Permissions
+            # Only Members have guild_permissions, Users don't
             if (
                 hasattr(command, "_default_permissions")
                 and command._default_permissions
+                and isinstance(ctx.author, discord.Member)
             ):
                 # App-Command hat spezielle Default-Permissions
                 required_perms = command._default_permissions
@@ -215,7 +228,7 @@ class Help(commands.Cog):
             )
             return False
 
-    def _get_command_permissions_map(self):
+    def _get_command_permissions_map(self) -> dict:
         """Gibt eine Zuordnung von Command-Namen zu erforderlichen Berechtigungen zurück"""
         return {
             # Owner-only commands
@@ -274,26 +287,40 @@ class Help(commands.Cog):
             "mystats": None,
         }
 
-    async def _check_command_permission(self, command_name, ctx):
+    async def _check_command_permission(
+        self, command_name: str, ctx: commands.Context
+    ) -> bool:
         """Prüft ob ein Benutzer einen Command basierend auf Namen verwenden kann"""
         permission_map = self._get_command_permissions_map()
         required_permission = permission_map.get(command_name)
 
+        # Only Members have guild_permissions, Users don't
         if required_permission == "is_owner":
-            return await self.bot.is_owner(ctx.author)
+            return await self.bot.is_owner(ctx.author)  # type: ignore
         elif required_permission == "administrator":
-            return ctx.author.guild_permissions.administrator
+            return (
+                isinstance(ctx.author, discord.Member)
+                and ctx.author.guild_permissions.administrator
+            )
         elif required_permission == "manage_messages":
-            return ctx.author.guild_permissions.manage_messages
+            return (
+                isinstance(ctx.author, discord.Member)
+                and ctx.author.guild_permissions.manage_messages
+            )
         elif required_permission == "manage_channels":
-            return ctx.author.guild_permissions.manage_channels
+            return (
+                isinstance(ctx.author, discord.Member)
+                and ctx.author.guild_permissions.manage_channels
+            )
         elif required_permission is None:
             return True  # Für alle verfügbar
         else:
             # Unbekannte Berechtigung - für Sicherheit nicht anzeigen
             return False
 
-    async def _show_command_help(self, ctx, command_name: str):
+    async def _show_command_help(
+        self, ctx: commands.Context, command_name: str
+    ) -> None:
         """Zeigt Hilfe für einen spezifischen Befehl an"""
 
         # Entferne Präfix falls vorhanden
@@ -329,9 +356,13 @@ class Help(commands.Cog):
             return
 
         # Erstelle detaillierte Befehl-Hilfe
+        # Handle ContextMenu commands which don't have a description attribute
+        description = (
+            getattr(command, "description", None) or "Keine Beschreibung verfügbar."
+        )
         embed = EmbedFactory.info_command_embed(
             title=f"Hilfe für `/{command.name}`",
-            description=command.description or "Keine Beschreibung verfügbar.",
+            description=description,
             requester=ctx.author,
         )
 
@@ -419,13 +450,13 @@ class Help(commands.Cog):
 
         if command.name in examples:
             embed.add_field(
-                name="Beispiele", value="\n".join(examples[command.name]), inline=False
+                name="Beispiele", value="".join(examples[command.name]), inline=False
             )
 
         await ctx.send(embed=embed)
 
 
-async def setup(bot):
+async def setup(bot: LorettaBot) -> None:
     """Lädt das Help Cog"""
     await bot.add_cog(Help(bot))
     logger.info("Help Cog geladen")

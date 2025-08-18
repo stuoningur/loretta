@@ -4,7 +4,7 @@ Embed-Factory für konsistente Discord-Embed-Erstellung
 
 import re
 from datetime import datetime, timezone
-from typing import Optional, Union
+from typing import Any
 
 import discord
 
@@ -13,14 +13,14 @@ class EmbedFactory:
     """Factory-Klasse für die Erstellung konsistenter Discord-Embeds"""
 
     # RSS-spezifische Konfigurationen
-    RSS_COLORS = {
+    RSS_COLORS: dict[str, discord.Color] = {
         "hardwareluxx": discord.Color.red(),
         "computerbase": discord.Color.blue(),
         "pcgh": discord.Color.dark_blue(),
         "software": discord.Color.blurple(),
     }
 
-    RSS_FOOTER_CONFIG = {
+    RSS_FOOTER_CONFIG: dict[str, dict[str, str]] = {
         "hardwareluxx": {
             "text": "Hardwareluxx • Nachrichten",
             "icon_url": "https://github.com/stuoningur/loretta/blob/master/resources/icons/rss/hardwareluxx.png?raw=true",
@@ -69,10 +69,10 @@ class EmbedFactory:
 
     @staticmethod
     def specs_embed(
-        user: Union[discord.Member, discord.User],
+        user: discord.Member | discord.User,
         specs_text: str,
-        requester: Union[discord.Member, discord.User],
-        updated_at: Optional[str] = None,
+        requester: discord.Member | discord.User,
+        updated_at: str | None = None,
     ) -> discord.Embed:
         """Erstellt ein Spezifikations-Anzeige-Embed"""
         embed = discord.Embed(
@@ -106,7 +106,7 @@ class EmbedFactory:
         return embed
 
     @staticmethod
-    def no_specs_embed(user: Union[discord.Member, discord.User]) -> discord.Embed:
+    def no_specs_embed(user: discord.Member | discord.User) -> discord.Embed:
         """Erstellt Embed wenn keine Spezifikationen gefunden wurden"""
         return EmbedFactory.error_embed(
             "Keine Spezifikationen gefunden",
@@ -206,8 +206,8 @@ class EmbedFactory:
         title: str,
         description: str,
         color: discord.Color,
-        requester: Union[discord.Member, discord.User],
-        thumbnail_url: Optional[str] = None,
+        requester: discord.Member | discord.User,
+        thumbnail_url: str | None = None,
     ) -> discord.Embed:
         """Erstellt ein standardmäßiges Command-Response-Embed mit Footer und Timestamp"""
         embed = discord.Embed(
@@ -231,8 +231,8 @@ class EmbedFactory:
     def info_command_embed(
         title: str,
         description: str,
-        requester: Union[discord.Member, discord.User],
-        thumbnail_url: Optional[str] = None,
+        requester: discord.Member | discord.User,
+        thumbnail_url: str | None = None,
     ) -> discord.Embed:
         """Erstellt ein Info-Command-Embed mit Footer und Timestamp"""
         return EmbedFactory.command_response_embed(
@@ -243,8 +243,8 @@ class EmbedFactory:
     def success_command_embed(
         title: str,
         description: str,
-        requester: Union[discord.Member, discord.User],
-        thumbnail_url: Optional[str] = None,
+        requester: discord.Member | discord.User,
+        thumbnail_url: str | None = None,
     ) -> discord.Embed:
         """Erstellt ein Erfolgs-Command-Embed mit Footer und Timestamp"""
         return EmbedFactory.command_response_embed(
@@ -255,8 +255,8 @@ class EmbedFactory:
     def error_command_embed(
         title: str,
         description: str,
-        requester: Union[discord.Member, discord.User],
-        thumbnail_url: Optional[str] = None,
+        requester: discord.Member | discord.User,
+        thumbnail_url: str | None = None,
     ) -> discord.Embed:
         """Erstellt ein Fehler-Command-Embed mit Footer und Timestamp"""
         return EmbedFactory.command_response_embed(
@@ -265,7 +265,7 @@ class EmbedFactory:
 
     @staticmethod
     def single_birthday_embed(
-        member: Union[discord.Member, discord.User], message: str
+        member: discord.Member | discord.User, message: str
     ) -> discord.Embed:
         """Erstellt ein Embed für einen einzelnen Geburtstag"""
         embed = discord.Embed(
@@ -279,7 +279,7 @@ class EmbedFactory:
         return embed
 
     @staticmethod
-    def multiple_birthdays_embed(user_mentions: list) -> discord.Embed:
+    def multiple_birthdays_embed(user_mentions: list[str]) -> discord.Embed:
         """Erstellt ein Embed für mehrere Geburtstage"""
         embed = discord.Embed(
             title="🎉 Mehrere Geburtstage heute! 🎂",
@@ -313,7 +313,7 @@ class EmbedFactory:
         return None
 
     @staticmethod
-    def _extract_enclosure_image(entry) -> str | None:
+    def _extract_enclosure_image(entry: Any) -> str | None:
         """
         Extrahiert Bild-URL aus RSS-Enclosures
 
@@ -361,7 +361,7 @@ class EmbedFactory:
     @classmethod
     def rss_news_embed(
         cls,
-        entry,
+        entry: Any,
         source: str,
         include_description: bool = True,
         include_thumbnail: bool = True,
@@ -418,7 +418,10 @@ class EmbedFactory:
 
         # Veröffentlichungsdatum hinzufügen falls vorhanden
         if hasattr(entry, "published_parsed") and entry.published_parsed:
-            pub_date = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+            # Create datetime without tzinfo first, then set it to UTC
+            pub_date = datetime(*entry.published_parsed[:6]).replace(
+                tzinfo=timezone.utc
+            )
             embed.add_field(
                 name="Veröffentlicht",
                 value=f"<t:{int(pub_date.timestamp())}:R>",

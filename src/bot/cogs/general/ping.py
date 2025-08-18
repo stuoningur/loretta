@@ -6,10 +6,12 @@ import asyncio
 import logging
 import platform
 import time
+from asyncio import subprocess
 
 import discord
 from discord.ext import commands
 
+from src.bot.main import LorettaBot
 from src.bot.utils.decorators import track_command_usage
 from src.bot.utils.embeds import EmbedFactory
 from src.bot.utils.logging import log_command_success
@@ -20,7 +22,7 @@ logger = logging.getLogger(__name__)
 class Ping(commands.Cog):
     """Ping Befehl und Latenz-Informationen"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: LorettaBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(
@@ -28,7 +30,7 @@ class Ping(commands.Cog):
         description="Zeigt die Bot-Latenz an",
     )
     @track_command_usage
-    async def ping(self, ctx):
+    async def ping(self, ctx: commands.Context) -> None:
         """Zeigt Ping-Informationen mit Latenz und API-Antwortzeit"""
 
         # Beginne Zeitmessung für API-Antwortzeit
@@ -120,7 +122,7 @@ class Ping(commands.Cog):
             internet_latency=internet_log,
         )
 
-    async def _get_internet_latency(self):
+    async def _get_internet_latency(self) -> float | None:
         """Misst Internet-Latenz durch Ping zu google.de"""
         try:
             # Ping-Befehl je nach Betriebssystem
@@ -132,7 +134,7 @@ class Ping(commands.Cog):
 
             # Führe Ping-Befehl asynchron aus
             process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
 
             stdout, _ = await asyncio.wait_for(process.communicate(), timeout=5.0)
@@ -170,7 +172,7 @@ class Ping(commands.Cog):
         return None
 
 
-async def setup(bot):
+async def setup(bot: LorettaBot) -> None:
     """Lädt das Ping Cog"""
     await bot.add_cog(Ping(bot))
     logger.info("Ping Cog geladen")

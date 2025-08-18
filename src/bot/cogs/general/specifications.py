@@ -4,12 +4,12 @@ Spezifikationskommandos für Hardware-Specs der Benutzer
 
 import logging
 import time
-from typing import Dict, Optional, Tuple, Union
 
 import discord
 from discord import app_commands
 from discord.ext import commands
 
+from src.bot.main import LorettaBot
 from src.bot.utils.decorators import track_command_usage, validate_input
 from src.bot.utils.embeds import EmbedFactory
 from src.bot.utils.pagination import SearchPaginationView
@@ -28,15 +28,15 @@ logger = logging.getLogger(__name__)
 class Specs(commands.Cog):
     """Cog für Hardware-Spezifikationen der Benutzer"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: LorettaBot) -> None:
         self.bot = bot
         # Einfacher In-Memory-Cache für Suchergebnisse
         # Format: {(guild_id, search_term, page): (results, total_count, timestamp)}
-        self._search_cache: Dict[Tuple[int, str, int], Tuple[list, int, float]] = {}
+        self._search_cache: dict[tuple[int, str, int], tuple[list, int, float]] = {}
 
     def _get_cache_key(
         self, guild_id: int, search_term: str, page: int
-    ) -> Tuple[int, str, int]:
+    ) -> tuple[int, str, int]:
         """Generiere Cache-Schlüssel für Suchergebnisse"""
         return (guild_id, search_term.lower().strip(), page)
 
@@ -44,7 +44,7 @@ class Specs(commands.Cog):
         """Prüfe ob Cache-Eintrag noch gültig ist"""
         return time.time() - timestamp < CACHE_TTL
 
-    def _cleanup_cache(self):
+    def _cleanup_cache(self) -> None:
         """Entferne abgelaufene Cache-Einträge"""
         current_time = time.time()
         expired_keys = [
@@ -57,7 +57,7 @@ class Specs(commands.Cog):
 
     async def _get_cached_search_results(
         self, guild_id: int, search_term: str, limit: int, offset: int
-    ) -> Tuple[list, int]:
+    ) -> tuple[list, int]:
         """Hole Suchergebnisse aus Cache oder Datenbank"""
         page = offset // limit
         cache_key = self._get_cache_key(guild_id, search_term, page)
@@ -89,7 +89,7 @@ class Specs(commands.Cog):
 
         return results, total_count
 
-    def _invalidate_guild_cache(self, guild_id: int):
+    def _invalidate_guild_cache(self, guild_id: int) -> None:
         """Invalidiere alle Cache-Einträge für eine bestimmte Guild"""
         keys_to_remove = [
             key for key in self._search_cache.keys() if key[0] == guild_id
@@ -105,7 +105,7 @@ class Specs(commands.Cog):
     )
     @commands.guild_only()
     @track_command_usage
-    async def specs(self, ctx: commands.Context, *, user: Optional[str] = None):
+    async def specs(self, ctx: commands.Context, *, user: str | None = None) -> None:
         """Hardware-Spezifikationen verwalten und anzeigen"""
         # Zeige Spezifikationen für den angegebenen Benutzer oder den Autor
         target_user = ctx.author
@@ -119,7 +119,9 @@ class Specs(commands.Cog):
     @specs.command(name="show")
     @commands.guild_only()
     @track_command_usage
-    async def specs_show(self, ctx: commands.Context, *, user: Optional[str] = None):
+    async def specs_show(
+        self, ctx: commands.Context, *, user: str | None = None
+    ) -> None:
         """Zeige Spezifikationen eines Benutzers an"""
         target_user = ctx.author
         if user:
@@ -129,7 +131,7 @@ class Specs(commands.Cog):
 
         await self.show_specifications_ctx(ctx, target_user)
 
-    def _validate_specs_text(self, specs_text: str) -> Optional[str]:
+    def _validate_specs_text(self, specs_text: str) -> str | None:
         """Validiere Spezifikationstext-Eingabe
 
         Args:
@@ -162,7 +164,7 @@ class Specs(commands.Cog):
         min_length=10, max_length=MAX_SPECS_LENGTH, field_name="Spezifikationen"
     )
     @track_command_usage
-    async def specs_set(self, ctx: commands.Context, *, specs_text: str):
+    async def specs_set(self, ctx: commands.Context, *, specs_text: str) -> None:
         """Setze deine Hardware-Spezifikationen"""
         # Zusätzliche Validierung für Spezifikationen
         validation_error = self._validate_specs_text(specs_text)
@@ -226,7 +228,7 @@ class Specs(commands.Cog):
     @specs.command(name="delete")
     @commands.guild_only()
     @track_command_usage
-    async def specs_delete(self, ctx: commands.Context):
+    async def specs_delete(self, ctx: commands.Context) -> None:
         """Lösche deine Hardware-Spezifikationen"""
         try:
             if not ctx.guild:
@@ -268,7 +270,7 @@ class Specs(commands.Cog):
     @specs.command(name="raw")
     @commands.guild_only()
     @track_command_usage
-    async def specs_raw(self, ctx: commands.Context):
+    async def specs_raw(self, ctx: commands.Context) -> None:
         """Zeige deine Spezifikationen als Raw-Text an"""
         try:
             if not ctx.guild:
@@ -307,7 +309,7 @@ class Specs(commands.Cog):
     @commands.guild_only()
     @validate_input(min_length=2, max_length=100, field_name="Suchbegriff")
     @track_command_usage
-    async def specs_search(self, ctx: commands.Context, *, search_term: str):
+    async def specs_search(self, ctx: commands.Context, *, search_term: str) -> None:
         """Suche nach Hardware in allen Spezifikationen"""
         try:
             if not ctx.guild:
@@ -315,7 +317,7 @@ class Specs(commands.Cog):
             guild_id = ctx.guild.id
 
             # Erstelle Suchfunktion für Paginierung
-            async def search_function(limit: int, offset: int):
+            async def search_function(limit: int, offset: int) -> tuple[list, int]:
                 return await self._get_cached_search_results(
                     guild_id, search_term, limit, offset
                 )
@@ -349,7 +351,7 @@ class Specs(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(administrator=True)
     @track_command_usage
-    async def specs_clean(self, ctx: commands.Context):
+    async def specs_clean(self, ctx: commands.Context) -> None:
         """Bereinige die Spezifikations-Datenbank von Benutzern, die nicht mehr im Server sind"""
 
         try:
@@ -368,7 +370,7 @@ class Specs(commands.Cog):
                     await ctx.send(embed=embed)
                 return
 
-            all_specs = await self.bot.db.get_all_guild_specifications(ctx.guild.id)  # type: ignore
+            all_specs = await self.bot.db.get_all_guild_specifications(ctx.guild.id)
 
             if not all_specs:
                 embed = EmbedFactory.info_embed(
@@ -452,9 +454,9 @@ class Specs(commands.Cog):
 
     def _create_specifications_embed(
         self,
-        specification: Optional[Specification],
-        target_user: Union[discord.Member, discord.User],
-        requester: Union[discord.Member, discord.User],
+        specification: Specification | None,
+        target_user: discord.Member | discord.User,
+        requester: discord.Member | discord.User,
     ) -> discord.Embed:
         """Erstelle Embed für Anzeige von Spezifikationen"""
         if not specification:
@@ -467,8 +469,8 @@ class Specs(commands.Cog):
     async def show_specifications_ctx(
         self,
         ctx: commands.Context,
-        user: Union[discord.Member, discord.User],
-    ):
+        user: discord.Member | discord.User,
+    ) -> None:
         """Zeige Spezifikationen für einen Benutzer an (Context-Version)"""
         if not ctx.guild:
             return
@@ -488,8 +490,8 @@ class Specs(commands.Cog):
     async def show_specifications_interaction(
         self,
         interaction: discord.Interaction,
-        user: Union[discord.Member, discord.User],
-    ):
+        user: discord.Member | discord.User,
+    ) -> None:
         """Zeige Spezifikationen für einen Benutzer an (Interaction-Version)"""
         if not interaction.guild:
             return
@@ -532,13 +534,11 @@ class Specs(commands.Cog):
 @app_commands.context_menu(name="Spezifikationen anzeigen")
 async def show_user_specs_context(
     interaction: discord.Interaction, user: discord.Member
-):
+) -> None:
     """Zeigt die Hardware-Spezifikationen eines Benutzers über das Kontextmenü an"""
     if interaction.guild:
         try:
             # Hole die Spezifikationen aus der Datenbank
-            from bot.main import LorettaBot
-
             if not isinstance(interaction.client, LorettaBot):
                 embed = EmbedFactory.error_embed(
                     "Fehler", "Bot-Instanz nicht verfügbar."
@@ -580,7 +580,7 @@ async def show_user_specs_context(
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
-async def setup(bot):
+async def setup(bot: LorettaBot) -> None:
     await bot.add_cog(Specs(bot))
 
     # Füge das Kontext-Menü zum Command Tree hinzu

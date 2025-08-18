@@ -3,7 +3,6 @@ Utility-Funktionen für Discord-Interaction-Responses
 """
 
 import logging
-from typing import Optional, Union
 
 import discord
 from discord.ext import commands
@@ -12,11 +11,11 @@ logger = logging.getLogger(__name__)
 
 
 async def send_response(
-    ctx: Union[commands.Context, discord.Interaction],
+    ctx: commands.Context | discord.Interaction,
     embed: discord.Embed,
     ephemeral: bool = False,
-    content: Optional[str] = None,
-) -> Optional[discord.Message]:
+    content: str | None = None,
+) -> discord.Message | None:
     """
     Sendet eine Response über den angemessensten Weg basierend auf dem Context-Typ
 
@@ -100,11 +99,11 @@ async def send_response(
 
 
 async def send_error_response(
-    ctx: Union[commands.Context, discord.Interaction],
+    ctx: commands.Context | discord.Interaction,
     title: str,
     description: str,
     ephemeral: bool = True,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     """
     Sendet eine Fehler-Response
 
@@ -124,11 +123,11 @@ async def send_error_response(
 
 
 async def send_success_response(
-    ctx: Union[commands.Context, discord.Interaction],
+    ctx: commands.Context | discord.Interaction,
     title: str,
     description: str,
     ephemeral: bool = False,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     """
     Sendet eine Erfolgs-Response
 
@@ -148,11 +147,11 @@ async def send_success_response(
 
 
 async def send_info_response(
-    ctx: Union[commands.Context, discord.Interaction],
+    ctx: commands.Context | discord.Interaction,
     title: str,
     description: str,
     ephemeral: bool = False,
-) -> Optional[discord.Message]:
+) -> discord.Message | None:
     """
     Sendet eine Info-Response
 
@@ -172,7 +171,7 @@ async def send_info_response(
 
 
 async def defer_response(
-    ctx: Union[commands.Context, discord.Interaction],
+    ctx: commands.Context | discord.Interaction,
     ephemeral: bool = False,
 ) -> bool:
     """

@@ -7,7 +7,6 @@ import logging
 import logging.handlers
 import os
 from pathlib import Path
-from typing import Optional, Union
 
 import discord
 
@@ -29,13 +28,13 @@ class ColoredConsoleHandler(logging.StreamHandler):
     }
     RESET = "\033[0m"
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         log_color = self.COLORS.get(record.levelno, "")
         record.levelname = f"{log_color}{record.levelname}{self.RESET}"
         return super().format(record)
 
 
-def setup_logging():
+def setup_logging() -> logging.Logger:
     """Richtet Logging mit rotierenden Dateien und farbiger Console-Ausgabe ein"""
     log_level = getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper())
 
@@ -77,11 +76,11 @@ def setup_logging():
 def log_command_execution(
     logger: logging.Logger,
     command_name: str,
-    user: Union[discord.Member, discord.User],
-    guild: Optional[discord.Guild],
+    user: discord.Member | discord.User,
+    guild: discord.Guild | None,
     level: int = logging.INFO,
     **kwargs,
-):
+) -> None:
     """
     Loggt Command-Ausführung mit konsistenter Formatierung
 
@@ -93,7 +92,7 @@ def log_command_execution(
         level: Log-Level (default: INFO)
         **kwargs: Zusätzliche Informationen für das Log
     """
-    from utils.formatting import format_command_context
+    from src.bot.utils.formatting import format_command_context
 
     message = format_command_context(command_name, user, guild, **kwargs)
     logger.log(level, message)
@@ -102,10 +101,10 @@ def log_command_execution(
 def log_command_success(
     logger: logging.Logger,
     command_name: str,
-    user: Union[discord.Member, discord.User],
-    guild: Optional[discord.Guild],
+    user: discord.Member | discord.User,
+    guild: discord.Guild | None,
     **kwargs,
-):
+) -> None:
     """
     Loggt erfolgreiche Command-Ausführung
     """
@@ -115,15 +114,15 @@ def log_command_success(
 def log_command_error(
     logger: logging.Logger,
     command_name: str,
-    user: Union[discord.Member, discord.User],
-    guild: Optional[discord.Guild],
+    user: discord.Member | discord.User,
+    guild: discord.Guild | None,
     error: Exception,
     **kwargs,
-):
+) -> None:
     """
     Loggt Command-Fehler mit Exception-Informationen
     """
-    from utils.formatting import format_command_context
+    from src.bot.utils.formatting import format_command_context
 
     message = format_command_context(command_name, user, guild, **kwargs)
     logger.error(f"{message} - Fehler: {type(error).__name__}: {error}", exc_info=error)
@@ -132,11 +131,11 @@ def log_command_error(
 def log_database_operation(
     logger: logging.Logger,
     operation: str,
-    guild_id: Optional[int] = None,
-    user_id: Optional[int] = None,
+    guild_id: int | None = None,
+    user_id: int | None = None,
     success: bool = True,
-    error: Optional[Exception] = None,
-):
+    error: Exception | None = None,
+) -> None:
     """
     Loggt Datenbank-Operationen konsistent
 
@@ -168,10 +167,10 @@ def log_database_operation(
 def log_api_request(
     logger: logging.Logger,
     endpoint: str,
-    status_code: Optional[int] = None,
-    response_time: Optional[float] = None,
-    error: Optional[Exception] = None,
-):
+    status_code: int | None = None,
+    response_time: float | None = None,
+    error: Exception | None = None,
+) -> None:
     """
     Loggt API-Requests konsistent
 

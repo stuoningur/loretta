@@ -10,6 +10,7 @@ import os
 import signal
 import sys
 from pathlib import Path
+from typing import Any
 
 import discord
 from discord.ext import commands
@@ -29,7 +30,11 @@ logger = logging.getLogger(__name__)
 class LorettaBot(commands.Bot):
     """Hauptbot-Klasse für Loretta"""
 
-    def __init__(self):
+    db_path: Path
+    db: DatabaseManager
+    configured_owner_id: int | None
+
+    def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
@@ -61,7 +66,7 @@ class LorettaBot(commands.Bot):
         else:
             logger.warning("Keine OWNER_ID in Umgebungsvariablen gesetzt")
 
-    async def is_owner(self, user):
+    async def is_owner(self, user: discord.abc.User) -> bool:
         """Überprüft ob ein Benutzer der Bot-Owner ist"""
         # Verwende konfigurierte Owner-ID falls gesetzt
         if self.configured_owner_id:
@@ -70,7 +75,7 @@ class LorettaBot(commands.Bot):
         # Fallback auf Standard-Discord.py is_owner Verhalten
         return await super().is_owner(user)
 
-    async def get_prefix(self, message) -> str:
+    async def get_prefix(self, message: discord.Message) -> str:
         """Dynamische Prefix-Funktion die Einstellungen aus der Datenbank lädt"""
         # Behandle Grenzfälle wo Nachricht None sein könnte oder Guild fehlt
         if not message or not hasattr(message, "guild") or not message.guild:
@@ -85,7 +90,7 @@ class LorettaBot(commands.Bot):
             )
             return "!"  # Rückfall auf Standard-Prefix
 
-    async def setup_hook(self):
+    async def setup_hook(self) -> None:
         """Wird beim Bot-Start ausgeführt"""
         logger.info("Bot wird initialisiert...")
 
@@ -103,38 +108,38 @@ class LorettaBot(commands.Bot):
 
         # Automatische Erkennung aller Cog-Module
         cogs_dir = Path(__file__).parent / "cogs"
-        
-        def discover_cogs():
+
+        def discover_cogs() -> list[tuple[str, str, str]]:
             """Entdeckt alle Python-Dateien in den Cog-Verzeichnissen"""
-            cog_modules = []
-            
+            cog_modules: list[tuple[str, str, str]] = []
+
             for py_file in cogs_dir.rglob("*.py"):
                 # Überspringe __init__.py Dateien
                 if py_file.name == "__init__.py":
                     continue
-                
+
                 # Erstelle Modulpfad relativ zum src Verzeichnis
                 relative_path = py_file.relative_to(Path(__file__).parent.parent.parent)
                 module_path = ".".join(relative_path.with_suffix("").parts)
-                
+
                 # Bestimme Kategorie aus dem Verzeichnisnamen
                 category = py_file.parent.name
                 cog_name = py_file.stem
-                
+
                 cog_modules.append((category, cog_name, module_path))
-            
+
             return sorted(cog_modules)
 
         # Entdecke und lade alle Cogs
         discovered_cogs = discover_cogs()
-        current_category = None
-        
+        current_category: str | None = None
+
         for category, _, module_path in discovered_cogs:
             # Logge Kategorie-Header nur einmal
             if category != current_category:
                 logger.info(f"Lade {category.title()} Cogs...")
                 current_category = category
-            
+
             try:
                 await self.load_extension(module_path)
                 loaded_cogs += 1
@@ -147,7 +152,7 @@ class LorettaBot(commands.Bot):
             f"Cog-Ladevorgang abgeschlossen: {loaded_cogs} erfolgreich, {failed_cogs} fehlgeschlagen"
         )
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         """Wird ausgeführt wenn der Bot bereit ist"""
         logger.info(f"{self.user} ist jetzt online!")
         logger.info(f"Bot-ID: {self.user.id if self.user else 'Unbekannt'}")
@@ -180,7 +185,7 @@ class LorettaBot(commands.Bot):
         except Exception as e:
             logger.error(f"Fehler beim Synchronisieren der Slash-Commands: {e}")
 
-    async def on_guild_join(self, guild):
+    async def on_guild_join(self, guild: discord.Guild) -> None:
         """Wird ausgeführt wenn der Bot einem Server beitritt"""
         logger.info(f'Bot ist dem Server "{guild.name}" (ID: {guild.id}) beigetreten')
 
@@ -194,11 +199,11 @@ class LorettaBot(commands.Bot):
                 f"Fehler beim Erstellen der Serverkonfiguration für {guild.id}: {e}"
             )
 
-    async def on_guild_remove(self, guild):
+    async def on_guild_remove(self, guild: discord.Guild) -> None:
         """Wird ausgeführt wenn der Bot einen Server verlässt"""
         logger.info(f'Bot hat den Server "{guild.name}" (ID: {guild.id}) verlassen')
 
-    async def process_commands(self, message):
+    async def process_commands(self, message: discord.Message) -> None:
         """Überschreibt process_commands für dynamische Prefix-Behandlung"""
         if message.author.bot:
             return
@@ -217,7 +222,7 @@ class LorettaBot(commands.Bot):
             # Stelle ursprünglichen Prefix wieder her
             self.command_prefix = original_prefix
 
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message) -> None:
         """Wird bei jeder Nachricht ausgeführt"""
         await self.process_commands(message)
 
@@ -225,12 +230,12 @@ class LorettaBot(commands.Bot):
 class KeyboardInterruptHandler:
     """Handler für graceful shutdown bei SIGINT/SIGTERM"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: LorettaBot) -> None:
         self.bot = bot
-        self._task = None
+        self._task: asyncio.Task | None = None
         self._shutdown_initiated = False
 
-    def __call__(self, signum=None, frame=None):
+    def __call__(self, signum: int | None = None, frame: Any | None = None) -> None:
         """Signal-Handler-Rückruf"""
         if self._shutdown_initiated:
             logger.warning("Shutdown bereits eingeleitet, warte auf Abschluss...")
@@ -251,7 +256,7 @@ class KeyboardInterruptHandler:
 
         self._task = asyncio.create_task(self._shutdown())
 
-    async def _shutdown(self):
+    async def _shutdown(self) -> None:
         """Führt graceful shutdown durch"""
         try:
             logger.info("Beginne Bot-Herunterfahren...")
@@ -261,7 +266,7 @@ class KeyboardInterruptHandler:
             logger.error(f"Fehler beim Herunterfahren des Bots: {e}", exc_info=True)
 
 
-async def main():
+async def main() -> int:
     """Hauptfunktion zum Starten des Bots"""
     token = os.getenv("DISCORD_TOKEN")
     if not token:

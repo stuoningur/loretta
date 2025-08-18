@@ -103,21 +103,51 @@ class Weather(commands.Cog):
         return descriptions.get(weather_code, "Unbekannt")
 
     async def _geocode_location(self, location: str) -> Optional[Dict[str, Any]]:
-        """Sucht Koordinaten für einen Ortsnamen"""
+        """Sucht Koordinaten für einen Ortsnamen mit Nominatim OpenStreetMap API"""
         try:
             if not self.session:
                 logger.error("HTTP-Session nicht initialisiert")
                 return None
 
-            url = "https://geocoding-api.open-meteo.com/v1/search"
-            params = {"name": location, "count": 1, "language": "de", "format": "json"}
+            url = "https://nominatim.openstreetmap.org/search"
+            params = {
+                "q": location,
+                "format": "json",
+                "limit": 1,
+                "addressdetails": 1,
+                "namedetails": 1,
+                "accept-language": "de",
+            }
 
-            async with self.session.get(url, params=params) as response:
+            headers = {"User-Agent": "LorrettaBot/1.0 (Discord Weather Bot)"}
+
+            async with self.session.get(
+                url, params=params, headers=headers
+            ) as response:
                 log_api_request(logger, f"geocoding: {location}", response.status)
                 if response.status == 200:
                     data = await response.json()
-                    if data and data.get("results"):
-                        return data["results"][0]
+                    if data and len(data) > 0:
+                        result = data[0]
+                        
+                        # Extrahiere den besten verfügbaren Namen in der Priorität: name:de -> name -> suburb
+                        namedetails = result.get("namedetails", {})
+                        address = result.get("address", {})
+                        
+                        location_name = (
+                            namedetails.get("name:de") or 
+                            namedetails.get("name") or 
+                            address.get("suburb") or
+                            result.get("display_name", "").split(",")[0]
+                        )
+                        
+                        # Konvertiere Nominatim-Antwort zu Open-Meteo-ähnlichem Format
+                        return {
+                            "name": location_name,
+                            "latitude": float(result["lat"]),
+                            "longitude": float(result["lon"]),
+                            "country": address.get("country", ""),
+                        }
                 return None
 
         except Exception as e:

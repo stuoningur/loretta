@@ -3,11 +3,11 @@ Userinfo Befehle für den Loretta Discord Bot
 """
 
 import logging
-from typing import Optional
 
 import discord
 from discord.ext import commands
 
+from src.bot.main import LorettaBot
 from src.bot.utils.decorators import track_command_usage
 from src.bot.utils.embeds import EmbedFactory
 from src.bot.utils.formatting import format_member_status
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class UserInfo(commands.Cog):
     """Userinfo Befehle und Funktionen"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: LorettaBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(
@@ -28,7 +28,7 @@ class UserInfo(commands.Cog):
         description="Zeigt Informationen über einen Benutzer an",
     )
     @track_command_usage
-    async def userinfo(self, ctx, *, user: Optional[str] = None):
+    async def userinfo(self, ctx: commands.Context, *, user: str | None = None) -> None:
         """Zeigt detaillierte Informationen über einen Benutzer an"""
         # Wenn kein User angegeben wurde, verwende den Autor des Befehls
         if user is None:
@@ -58,7 +58,11 @@ class UserInfo(commands.Cog):
             logger, "userinfo", ctx.author, ctx.guild, target_user=target_user.name
         )
 
-    async def create_userinfo_embed(self, user, requester):
+    async def create_userinfo_embed(
+        self,
+        user: discord.Member | discord.User,
+        requester: discord.Member | discord.User,
+    ) -> discord.Embed:
         """Erstellt ein Userinfo-Embed für die gegebenen Benutzer"""
         embed = EmbedFactory.command_response_embed(
             title="Benutzer Informationen",
@@ -86,8 +90,11 @@ class UserInfo(commands.Cog):
 
         # Account-Informationen
         created_at = user.created_at
+        # Only Members have joined_at, Users don't
         joined_at = (
-            user.joined_at if hasattr(user, "joined_at") and user.joined_at else None
+            user.joined_at
+            if isinstance(user, discord.Member) and user.joined_at
+            else None
         )
 
         account_info = f"**Account erstellt:** <t:{int(created_at.timestamp())}:R>\n"
@@ -149,17 +156,27 @@ class UserInfo(commands.Cog):
 
             # Berechtigung Informationen
             key_permissions = []
-            if user.guild_permissions.administrator:
+            # Only Members have guild_permissions, Users don't
+            if (
+                isinstance(user, discord.Member)
+                and user.guild_permissions.administrator
+            ):
                 key_permissions.append("Administrator")
-            if user.guild_permissions.manage_guild:
+            if isinstance(user, discord.Member) and user.guild_permissions.manage_guild:
                 key_permissions.append("Server verwalten")
-            if user.guild_permissions.manage_channels:
+            if (
+                isinstance(user, discord.Member)
+                and user.guild_permissions.manage_channels
+            ):
                 key_permissions.append("Kanäle verwalten")
-            if user.guild_permissions.manage_messages:
+            if (
+                isinstance(user, discord.Member)
+                and user.guild_permissions.manage_messages
+            ):
                 key_permissions.append("Nachrichten verwalten")
-            if user.guild_permissions.kick_members:
+            if isinstance(user, discord.Member) and user.guild_permissions.kick_members:
                 key_permissions.append("Mitglieder kicken")
-            if user.guild_permissions.ban_members:
+            if isinstance(user, discord.Member) and user.guild_permissions.ban_members:
                 key_permissions.append("Mitglieder bannen")
 
             if key_permissions:
@@ -175,12 +192,12 @@ class UserInfo(commands.Cog):
 
 
 @discord.app_commands.context_menu(name="Benutzerinfo")
-async def userinfo_context_menu(interaction: discord.Interaction, user: discord.Member):
+async def userinfo_context_menu(
+    interaction: discord.Interaction, user: discord.Member
+) -> None:
     """Context Menu für Benutzerinformationen"""
     # Hole das UserInfo Cog um die Helper-Methode zu verwenden
-    from discord.ext.commands import Bot
-
-    if not isinstance(interaction.client, Bot):
+    if not isinstance(interaction.client, commands.Bot):
         embed = EmbedFactory.error_embed("Fehler", "Bot-Instanz nicht verfügbar.")
         await interaction.response.send_message(embed=embed, ephemeral=True)
         return
@@ -229,7 +246,7 @@ async def userinfo_context_menu(interaction: discord.Interaction, user: discord.
         )
 
 
-async def setup(bot):
+async def setup(bot: LorettaBot) -> None:
     """Lädt das UserInfo Cog"""
     await bot.add_cog(UserInfo(bot))
 

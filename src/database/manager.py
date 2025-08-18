@@ -6,7 +6,6 @@ import json
 import logging
 from datetime import date
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
 
 import aiosqlite
 import discord
@@ -19,7 +18,7 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     """Manager-Klasse für Datenbankoperationen."""
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
 
     async def get_guild_config(self, guild_id: int) -> GuildConfig:
@@ -63,7 +62,7 @@ class DatabaseManager:
             return GuildConfig(guild_id=guild_id)
 
     async def set_guild_config(
-        self, config: GuildConfig, guild: Optional[discord.Guild] = None
+        self, config: GuildConfig, guild: discord.Guild | None = None
     ) -> bool:
         """
         Setzt die Guild-Konfiguration für eine Guild.
@@ -110,7 +109,7 @@ class DatabaseManager:
             return False
 
     async def set_command_prefix(
-        self, guild_id: int, prefix: str, guild: Optional[discord.Guild] = None
+        self, guild_id: int, prefix: str, guild: discord.Guild | None = None
     ) -> bool:
         """
         Setzt das Command-Prefix für eine Guild.
@@ -138,8 +137,8 @@ class DatabaseManager:
     async def set_log_channel(
         self,
         guild_id: int,
-        channel_id: Optional[int],
-        guild: Optional[discord.Guild] = None,
+        channel_id: int | None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Setzt den Log-Kanal für eine Guild.
@@ -167,8 +166,8 @@ class DatabaseManager:
     async def set_news_channel(
         self,
         guild_id: int,
-        channel_id: Optional[int],
-        guild: Optional[discord.Guild] = None,
+        channel_id: int | None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Setzt den News-Kanal für eine Guild.
@@ -194,7 +193,7 @@ class DatabaseManager:
             return False
 
     async def add_picture_only_channel(
-        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+        self, guild_id: int, channel_id: int, guild: discord.Guild | None = None
     ) -> bool:
         """
         Fügt einen Kanal zur Liste der Nur-Bild-Kanäle hinzu.
@@ -222,7 +221,7 @@ class DatabaseManager:
             return False
 
     async def remove_picture_only_channel(
-        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+        self, guild_id: int, channel_id: int, guild: discord.Guild | None = None
     ) -> bool:
         """
         Entfernt einen Kanal aus der Liste der Nur-Bild-Kanäle.
@@ -270,7 +269,7 @@ class DatabaseManager:
             )
             return False
 
-    async def get_all_guild_configs(self) -> List[GuildConfig]:
+    async def get_all_guild_configs(self) -> list[GuildConfig]:
         """
         Holt alle Guild-Konfigurationen.
 
@@ -278,7 +277,7 @@ class DatabaseManager:
             Liste von GuildConfig-Objekten
         """
         try:
-            configs = []
+            configs: list[GuildConfig] = []
             async with aiosqlite.connect(self.db_path) as db:
                 cursor = await db.execute(
                     "SELECT guild_id, command_prefix, log_channel_id, news_channel_id, birthday_channel_id, picture_only_channels "
@@ -358,7 +357,7 @@ class DatabaseManager:
             logger.error(f"Fehler beim Markieren des RSS-Eintrags als gepostet: {e}")
             return False
 
-    async def get_news_channels(self) -> List[int]:
+    async def get_news_channels(self) -> list[int]:
         """
         Holt alle konfigurierten News-Kanäle.
 
@@ -382,8 +381,8 @@ class DatabaseManager:
     async def add_birthday(
         self,
         birthday: Birthday,
-        guild: Optional[discord.Guild] = None,
-        user: Optional[Union[discord.User, discord.Member]] = None,
+        guild: discord.Guild | None = None,
+        user: discord.User | discord.Member | None = None,
     ) -> bool:
         """
         Fügt einen Benutzer-Geburtstag hinzu oder aktualisiert ihn.
@@ -432,8 +431,8 @@ class DatabaseManager:
         self,
         guild_id: int,
         user_id: int,
-        guild: Optional[discord.Guild] = None,
-        user: Optional[Union[discord.User, discord.Member]] = None,
+        guild: discord.Guild | None = None,
+        user: discord.User | discord.Member | None = None,
     ) -> bool:
         """
         Entfernt einen Benutzer-Geburtstag.
@@ -466,7 +465,7 @@ class DatabaseManager:
             logger.error(f"Fehler beim Entfernen des Geburtstags: {e}")
             return False
 
-    async def get_birthday(self, guild_id: int, user_id: int) -> Optional[Birthday]:
+    async def get_birthday(self, guild_id: int, user_id: int) -> Birthday | None:
         """
         Holt einen Benutzer-Geburtstag.
 
@@ -500,7 +499,7 @@ class DatabaseManager:
             logger.error(f"Fehler beim Abrufen des Geburtstags: {e}")
             return None
 
-    async def get_birthdays_today(self) -> List[Birthday]:
+    async def get_birthdays_today(self) -> list[Birthday]:
         """
         Holt alle Geburtstage für heute über alle Guilds hinweg.
 
@@ -517,7 +516,7 @@ class DatabaseManager:
                 )
                 rows = await cursor.fetchall()
 
-                birthdays = []
+                birthdays: list[Birthday] = []
                 for row in rows:
                     birthdays.append(
                         Birthday(
@@ -535,7 +534,7 @@ class DatabaseManager:
             logger.error(f"Fehler beim Abrufen der heutigen Geburtstage: {e}")
             return []
 
-    async def get_guild_birthdays(self, guild_id: int) -> List[Birthday]:
+    async def get_guild_birthdays(self, guild_id: int) -> list[Birthday]:
         """
         Holt alle Geburtstage für eine bestimmte Guild.
 
@@ -555,7 +554,7 @@ class DatabaseManager:
                 )
                 rows = await cursor.fetchall()
 
-                birthdays = []
+                birthdays: list[Birthday] = []
                 for row in rows:
                     birthdays.append(
                         Birthday(
@@ -576,8 +575,8 @@ class DatabaseManager:
     async def set_birthday_channel(
         self,
         guild_id: int,
-        channel_id: Optional[int],
-        guild: Optional[discord.Guild] = None,
+        channel_id: int | None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Setzt den Geburtstags-Ankündigungs-Kanal für eine Guild.
@@ -603,7 +602,7 @@ class DatabaseManager:
             return False
 
     async def remove_birthday_channel(
-        self, guild_id: int, guild: Optional[discord.Guild] = None
+        self, guild_id: int, guild: discord.Guild | None = None
     ) -> bool:
         """
         Entfernt den Geburtstags-Ankündigungs-Kanal für eine Guild.
@@ -625,7 +624,7 @@ class DatabaseManager:
             )
             return False
 
-    async def get_birthday_channel(self, guild_id: int) -> Optional[int]:
+    async def get_birthday_channel(self, guild_id: int) -> int | None:
         """
         Holt den Geburtstags-Ankündigungs-Kanal für eine Guild.
 
@@ -645,7 +644,7 @@ class DatabaseManager:
             )
             return None
 
-    async def get_all_birthday_channels(self) -> List[Tuple[int, int]]:
+    async def get_all_birthday_channels(self) -> list[tuple[int, int]]:
         """
         Holt alle Geburtstags-Ankündigungs-Kanäle über alle Guilds hinweg.
 
@@ -665,7 +664,7 @@ class DatabaseManager:
             return []
 
     async def add_birthday_channel(
-        self, guild_id: int, channel_id: int, guild: Optional[discord.Guild] = None
+        self, guild_id: int, channel_id: int, guild: discord.Guild | None = None
     ) -> bool:
         """
         Fügt einen Geburtstags-Ankündigungs-Kanal für eine Guild hinzu.
@@ -694,8 +693,8 @@ class DatabaseManager:
     async def add_specification(
         self,
         specification: Specification,
-        user: Optional[Union[discord.User, discord.Member]] = None,
-        guild: Optional[discord.Guild] = None,
+        user: discord.User | discord.Member | None = None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Fügt Benutzer-Spezifikationen hinzu oder aktualisiert sie.
@@ -765,7 +764,7 @@ class DatabaseManager:
 
     async def get_specification(
         self, guild_id: int, user_id: int
-    ) -> Optional[Specification]:
+    ) -> Specification | None:
         """
         Holt die Spezifikationen eines Benutzers.
 
@@ -804,8 +803,8 @@ class DatabaseManager:
         self,
         guild_id: int,
         user_id: int,
-        user: Optional[Union[discord.User, discord.Member]] = None,
-        guild: Optional[discord.Guild] = None,
+        user: discord.User | discord.Member | None = None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Entfernt die Spezifikationen eines Benutzers.
@@ -842,7 +841,7 @@ class DatabaseManager:
 
     async def search_specifications(
         self, guild_id: int, search_term: str, limit: int = 50, offset: int = 0
-    ) -> tuple[List[tuple], int]:
+    ) -> tuple[list[tuple[int, str]], int]:
         """
         Sucht nach Hardware in allen Spezifikationen einer Guild mit Paginierung.
 
@@ -880,7 +879,7 @@ class DatabaseManager:
                     (guild_id, f"%{search_term}%", limit, offset),
                 )
                 rows = await cursor.fetchall()
-                results = [(row[0], row[1]) for row in rows]
+                results: list[tuple[int, str]] = [(row[0], row[1]) for row in rows]
                 logger.info(
                     f"Datenbanksuche gab {len(results)} Ergebnisse zurück (Seite {offset // limit + 1}, insgesamt: {total_count})"
                 )
@@ -892,7 +891,7 @@ class DatabaseManager:
             )
             return [], 0
 
-    async def get_all_guild_specifications(self, guild_id: int) -> List[Specification]:
+    async def get_all_guild_specifications(self, guild_id: int) -> list[Specification]:
         """
         Holt alle Spezifikationen für eine Guild.
 
@@ -912,7 +911,7 @@ class DatabaseManager:
                 )
                 rows = await cursor.fetchall()
 
-                specifications = []
+                specifications: list[Specification] = []
                 for row in rows:
                     specifications.append(
                         Specification(
@@ -936,8 +935,8 @@ class DatabaseManager:
     async def log_command_usage(
         self,
         stat: CommandStatistic,
-        user: Optional[Union[discord.User, discord.Member]] = None,
-        guild: Optional[discord.Guild] = None,
+        user: discord.User | discord.Member | None = None,
+        guild: discord.Guild | None = None,
     ) -> bool:
         """
         Protokolliert eine Command-Ausführung in der Statistik-Tabelle.
@@ -1153,13 +1152,13 @@ class DatabaseManager:
 
     async def search_memory_timings(
         self,
-        generation: Optional[str] = None,
-        vendor: Optional[str] = None,
-        ics: Optional[str] = None,
-        memclk: Optional[int] = None,
-        preset: Optional[str] = None,
+        generation: str | None = None,
+        vendor: str | None = None,
+        ics: str | None = None,
+        memclk: int | None = None,
+        preset: str | None = None,
         limit: int = 100,
-    ) -> List[MemoryTiming]:
+    ) -> list[MemoryTiming]:
         """
         Durchsuche Memory-Timings-Datenbank mit optionalen Filtern.
 
@@ -1175,7 +1174,7 @@ class DatabaseManager:
             Liste von MemoryTiming-Objekten
         """
         query = "SELECT * FROM memory_timings WHERE 1=1"
-        params = []
+        params: list = []
 
         if generation:
             query += " AND generation LIKE ?"
@@ -1206,7 +1205,7 @@ class DatabaseManager:
                 cursor = await db.execute(query, params)
                 rows = await cursor.fetchall()
 
-                timings = []
+                timings: list[MemoryTiming] = []
                 for row in rows:
                     timing = MemoryTiming(
                         id=row["id"],
@@ -1278,7 +1277,7 @@ class DatabaseManager:
         """
         try:
             async with aiosqlite.connect(self.db_path) as db:
-                result = {}
+                result: dict = {}
 
                 # Hole verfügbare Generationen
                 cursor = await db.execute(
